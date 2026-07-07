@@ -1,0 +1,7 @@
+@"
+streamlit
+pandas
+SQLAlchemy
+psycopg2-binary
+plotly
+"@ | Set-Content -Encoding UTF8 requirements.txt
