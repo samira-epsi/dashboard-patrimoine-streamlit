@@ -18,10 +18,14 @@ from common.filters import render_filtres_patrimoine
 from config import DB_URL
 
 
-SOURCE_ESI = "public.mv_esi_couverture"
-SOURCE_CONTRATS = "public.mv_contrats_patrimoine"
-SOURCE_CREATIONS = "public.mv_kpi_creation_detail"
-SOURCE_SERVICE_CODES = "public.service_codes_current"
+SOURCE_ESI = "dashboard.esi_couverture"
+SOURCE_CONTRATS = "dashboard.contrats_patrimoine"
+SOURCE_CREATIONS = "dashboard.kpi_creation_detail"
+SOURCE_GLOBAL = "dashboard.kpi_globale"
+
+# Optionnel : table légère uniquement pour les codes de prestation.
+# Si elle n'existe pas encore dans Supabase, le tableau contrats fonctionne quand même.
+SOURCE_SERVICE_CODES = "dashboard.service_codes_light"
 
 CACHE_TTL = 3600
 SQL_TIMEOUT_MS = 20000
@@ -393,14 +397,16 @@ def tester_connexion():
 
 
 def verifier_sources(conn):
+    """
+    Supabase doit rester léger :
+    on vérifie uniquement les tables prêtes pour le dashboard.
+    Les grosses tables public.* ne sont PAS nécessaires ici.
+    """
     sources = [
         SOURCE_ESI,
         SOURCE_CONTRATS,
         SOURCE_CREATIONS,
-        "public.contracts_current",
-        "public.programs_current",
-        "public.housings_current",
-        "public.equipment_current"
+        SOURCE_GLOBAL
     ]
 
     sources_manquantes = []
@@ -746,6 +752,205 @@ def refs_ont_change(df_base, df_filtre, colonne):
 
 
 # =====================================================
+# OUTILS SQL SUPABASE LÉGER
+# =====================================================
+
+def split_source(source: str):
+    morceaux = str(source).split(".")
+    if len(morceaux) != 2:
+        raise ValueError(f"Source SQL invalide : {source}")
+    return morceaux[0], morceaux[1]
+
+
+def colonnes_source(conn, source: str):
+    schema, table_name = split_source(source)
+
+    rows = conn.execute(
+        text("""
+            SELECT column_name
+            FROM information_schema.columns
+            WHERE table_schema = :schema
+              AND table_name = :table_name
+        """),
+        {
+            "schema": schema,
+            "table_name": table_name
+        }
+    ).scalars().all()
+
+    return set(rows)
+
+
+def expr_colonne(alias: str, colonne: str, colonnes_disponibles: set, default_sql: str = "NULL"):
+    if colonne in colonnes_disponibles:
+        return f'{alias}."{colonne}" AS "{colonne}"'
+
+    return f'{default_sql} AS "{colonne}"'
+
+
+def expr_date(alias: str, colonne: str, colonnes_disponibles: set):
+    if colonne not in colonnes_disponibles:
+        return f'NULL::date AS "{colonne}"'
+
+    return f"""
+        CASE
+            WHEN {alias}."{colonne}" IS NULL THEN NULL
+            WHEN NULLIF({alias}."{colonne}"::text, '') IS NULL THEN NULL
+            ELSE NULLIF({alias}."{colonne}"::text, '')::date
+        END AS "{colonne}"
+    """
+
+
+def charger_table_colonnes(conn, source: str, colonnes_attendues: list, colonnes_dates: list | None = None):
+    colonnes_dates = colonnes_dates or []
+    colonnes_disponibles = colonnes_source(conn, source)
+
+    expressions = []
+
+    for col in colonnes_attendues:
+        if col in colonnes_dates:
+            expressions.append(expr_date("t", col, colonnes_disponibles))
+        else:
+            expressions.append(expr_colonne("t", col, colonnes_disponibles))
+
+    sql = f"""
+        SELECT
+            {", ".join(expressions)}
+        FROM {source} t
+    """
+
+    return pd.read_sql_query(text(sql), conn)
+
+
+GLOBAL_KPI_COLS = [
+    "contrats_total",
+    "contrats_actifs",
+    "contrats_inactifs",
+    "contrats_actifs_fin_depassee",
+    "programmes_total",
+    "logements_total",
+    "equipements_total"
+]
+
+
+def charger_kpi_global_brut(conn):
+    colonnes = colonnes_source(conn, SOURCE_GLOBAL)
+
+    order_by = ""
+    if "date_maj" in colonnes:
+        order_by = 'ORDER BY "date_maj" DESC NULLS LAST'
+
+    return pd.read_sql_query(
+        text(f"""
+            SELECT *
+            FROM {SOURCE_GLOBAL}
+            {order_by}
+            LIMIT 1
+        """),
+        conn
+    )
+
+
+def construire_global_depuis_tables_dashboard(df_esi, df_contrats):
+    """
+    Fallback léger si dashboard.kpi_globale n'a pas exactement les bons noms de colonnes.
+    On recalcule les totaux depuis les tables dashboard déjà chargées.
+    """
+    df_esi_unique = dedupliquer_esi(df_esi)
+    df_contrats_unique = df_contrats.drop_duplicates(subset=["contract_reference"], keep="first").copy()
+
+    if "contract_status_clean" not in df_contrats_unique.columns:
+        df_contrats_unique = normaliser_statut_contrat(df_contrats_unique)
+
+    contrats_total = len(liste_refs_valides(df_contrats_unique, "contract_reference"))
+
+    contrats_actifs = int(
+        df_contrats_unique[df_contrats_unique["contract_status_clean"] == "active"]["contract_reference"].nunique()
+    )
+
+    contrats_inactifs = int(
+        df_contrats_unique[df_contrats_unique["contract_status_clean"] != "active"]["contract_reference"].nunique()
+    )
+
+    if "contract_end_date" in df_contrats_unique.columns:
+        today = pd.Timestamp(aujourd_hui_france())
+        end_dates = pd.to_datetime(df_contrats_unique["contract_end_date"], errors="coerce")
+
+        contrats_actifs_fin_depassee = int(
+            df_contrats_unique[
+                (df_contrats_unique["contract_status_clean"] == "active")
+                & end_dates.notna()
+                & (end_dates < today)
+            ]["contract_reference"].nunique()
+        )
+    else:
+        contrats_actifs_fin_depassee = 0
+
+    programmes_total = len(liste_refs_valides(df_esi_unique, "esi_reference"))
+
+    logements_total = int(
+        pd.to_numeric(
+            df_esi_unique.get("nb_logements", pd.Series(dtype=float)),
+            errors="coerce"
+        ).fillna(0).sum()
+    )
+
+    equipements_total = int(
+        pd.to_numeric(
+            df_esi_unique.get("nb_equipements", pd.Series(dtype=float)),
+            errors="coerce"
+        ).fillna(0).sum()
+    )
+
+    return {
+        "contrats_total": contrats_total,
+        "contrats_actifs": contrats_actifs,
+        "contrats_inactifs": contrats_inactifs,
+        "contrats_actifs_fin_depassee": contrats_actifs_fin_depassee,
+        "programmes_total": programmes_total,
+        "logements_total": logements_total,
+        "equipements_total": equipements_total
+    }
+
+
+def normaliser_kpi_global(df_global_brut, df_esi, df_contrats):
+    """
+    Sortie garantie avec les colonnes attendues par les KPI.
+    Priorité à dashboard.kpi_globale si les colonnes existent.
+    Sinon fallback depuis esi_couverture + contrats_patrimoine.
+    """
+    valeurs = construire_global_depuis_tables_dashboard(df_esi, df_contrats)
+
+    if df_global_brut is not None and not df_global_brut.empty:
+        row = df_global_brut.iloc[0]
+
+        candidats = {
+            "contrats_total": ["contrats_total", "nb_contrats_total", "total_contrats", "contrats"],
+            "contrats_actifs": ["contrats_actifs", "nb_contrats_actifs", "total_contrats_actifs"],
+            "contrats_inactifs": ["contrats_inactifs", "nb_contrats_inactifs", "total_contrats_inactifs"],
+            "contrats_actifs_fin_depassee": [
+                "contrats_actifs_fin_depassee",
+                "nb_contrats_actifs_fin_depassee",
+                "contrats_fin_depassee",
+                "alertes_contrats_fin_depassee"
+            ],
+            "programmes_total": ["programmes_total", "nb_programmes_total", "total_programmes", "programmes"],
+            "logements_total": ["logements_total", "nb_logements_total", "total_logements", "logements"],
+            "equipements_total": ["equipements_total", "nb_equipements_total", "total_equipements", "equipements"]
+        }
+
+        for cible, noms_possibles in candidats.items():
+            col = trouver_colonne(df_global_brut, noms_possibles)
+
+            if col is not None:
+                value = pd.to_numeric(pd.Series([row[col]]), errors="coerce").iloc[0]
+                if pd.notna(value):
+                    valeurs[cible] = int(value)
+
+    return pd.DataFrame([valeurs])
+
+
+# =====================================================
 # CHARGEMENT INTELLIGENT
 # =====================================================
 
@@ -762,154 +967,75 @@ def charger_donnees():
                     "Sources SQL manquantes : " + ", ".join(sources_manquantes)
                 )
 
-            df_global = pd.read_sql_query(
-                text("""
-                    SELECT
-                        (
-                            SELECT COUNT(DISTINCT reference)
-                            FROM public.contracts_current
-                        ) AS contrats_total,
-
-                        (
-                            SELECT COUNT(DISTINCT reference)
-                            FROM public.contracts_current
-                            WHERE LOWER(COALESCE(status, '')) = 'active'
-                        ) AS contrats_actifs,
-
-                        (
-                            SELECT COUNT(DISTINCT reference)
-                            FROM public.contracts_current
-                            WHERE LOWER(COALESCE(status, '')) <> 'active'
-                               OR status IS NULL
-                        ) AS contrats_inactifs,
-
-                        (
-                            SELECT COUNT(DISTINCT reference)
-                            FROM public.contracts_current
-                            WHERE LOWER(COALESCE(status, '')) = 'active'
-                              AND "endDate" IS NOT NULL
-                              AND NULLIF("endDate"::text, '')::date < CURRENT_DATE
-                        ) AS contrats_actifs_fin_depassee,
-
-                        (
-                            SELECT COUNT(DISTINCT reference)
-                            FROM public.programs_current
-                        ) AS programmes_total,
-
-                        (
-                            SELECT COUNT(DISTINCT reference)
-                            FROM public.housings_current
-                        ) AS logements_total,
-
-                        (
-                            SELECT COUNT(DISTINCT reference)
-                            FROM public.equipment_current
-                        ) AS equipements_total
-                """),
-                conn
+            df_esi = charger_table_colonnes(
+                conn=conn,
+                source=SOURCE_ESI,
+                colonnes_attendues=[
+                    "esi_reference",
+                    "esi_label",
+                    "societe",
+                    "agence",
+                    "groupe",
+                    "secteur",
+                    "nb_logements",
+                    "nb_equipements",
+                    "nb_contrats_actifs",
+                    "nb_contrats_inactifs",
+                    "esi_couvert",
+                    "esi_multi_couvert",
+                    "esi_sans_contrat",
+                    "esi_sans_equipement"
+                ]
             )
 
-            df_esi = pd.read_sql_query(
-                text(f"""
-                    SELECT
-                        esi_reference,
-                        esi_label,
-                        societe,
-                        agence,
-                        groupe,
-                        secteur,
-                        nb_logements,
-                        nb_equipements,
-                        nb_contrats_actifs,
-                        nb_contrats_inactifs,
-                        esi_couvert,
-                        esi_multi_couvert,
-                        esi_sans_contrat,
-                        esi_sans_equipement
-                    FROM {SOURCE_ESI}
-                """),
-                conn
+            df_contrats = charger_table_colonnes(
+                conn=conn,
+                source=SOURCE_CONTRATS,
+                colonnes_attendues=[
+                    "contract_reference",
+                    "contract_label",
+                    "contract_status",
+                    "contract_topic",
+                    "third_party_id",
+                    "third_party_label",
+                    "esi_reference",
+                    "esi_label",
+                    "societe",
+                    "agence",
+                    "groupe",
+                    "secteur",
+                    "contract_start_date",
+                    "contract_end_date"
+                ],
+                colonnes_dates=[
+                    "contract_start_date",
+                    "contract_end_date"
+                ]
             )
 
-            df_contrats = pd.read_sql_query(
-                text(f"""
-                    SELECT
-                        mv.contract_reference,
-                        mv.contract_label,
-                        mv.contract_status,
-                        mv.contract_topic,
-                        mv.third_party_id,
-                        mv.third_party_label,
-                        mv.esi_reference,
-                        mv.esi_label,
-                        mv.societe,
-                        mv.agence,
-                        mv.groupe,
-                        mv.secteur,
-
-                        CASE
-                            WHEN cc."startDate" IS NULL THEN NULL
-                            WHEN NULLIF(cc."startDate"::text, '') IS NULL THEN NULL
-                            ELSE NULLIF(cc."startDate"::text, '')::date
-                        END AS contract_start_date,
-
-                        CASE
-                            WHEN cc."endDate" IS NULL THEN NULL
-                            WHEN NULLIF(cc."endDate"::text, '') IS NULL THEN NULL
-                            ELSE NULLIF(cc."endDate"::text, '')::date
-                        END AS contract_end_date
-
-                    FROM {SOURCE_CONTRATS} mv
-                    LEFT JOIN public.contracts_current cc
-                        ON cc.reference = mv.contract_reference
-                """),
-                conn
+            df_creations = charger_table_colonnes(
+                conn=conn,
+                source=SOURCE_CREATIONS,
+                colonnes_attendues=[
+                    "objet_type",
+                    "objet_reference",
+                    "objet_label",
+                    "creation_date",
+                    "esi_reference",
+                    "esi_label",
+                    "societe",
+                    "agence",
+                    "groupe",
+                    "secteur",
+                    "contract_topic",
+                    "third_party_label"
+                ],
+                colonnes_dates=[
+                    "creation_date"
+                ]
             )
 
-            df_creations = pd.read_sql_query(
-                text(f"""
-                    SELECT
-                        objet_type,
-                        objet_reference,
-                        objet_label,
-                        creation_date,
-                        esi_reference,
-                        esi_label,
-                        societe,
-                        agence,
-                        groupe,
-                        secteur,
-                        contract_topic,
-                        third_party_label
-                    FROM {SOURCE_CREATIONS}
-                """),
-                conn
-            )
-
-            df_alertes_globales = pd.read_sql_query(
-                text("""
-                    SELECT
-                        reference AS contract_reference,
-                        label AS contract_label,
-                        status AS contract_status,
-                        topic AS contract_topic,
-                        "thirdParty.entity.label" AS third_party_label,
-
-                        CASE
-                            WHEN "endDate" IS NULL THEN NULL
-                            WHEN NULLIF("endDate"::text, '') IS NULL THEN NULL
-                            ELSE NULLIF("endDate"::text, '')::date
-                        END AS contract_end_date
-
-                    FROM public.contracts_current
-                    WHERE LOWER(COALESCE(status, '')) = 'active'
-                      AND "endDate" IS NOT NULL
-                      AND NULLIF("endDate"::text, '')::date < CURRENT_DATE
-                    ORDER BY "endDate" ASC
-                """),
-                conn
-            )
-
+            df_global_brut = charger_kpi_global_brut(conn)
             df_service_codes = charger_service_codes_current(conn)
 
     except SQLAlchemyError as e:
@@ -927,9 +1053,13 @@ def charger_donnees():
         errors="coerce"
     )
 
-    df_alertes_globales = nettoyer_df(df_alertes_globales)
-    df_alertes_globales = normaliser_statut_contrat(df_alertes_globales)
-    df_alertes_globales = normaliser_date_fin_contrat(df_alertes_globales)
+    df_global = normaliser_kpi_global(
+        df_global_brut=df_global_brut,
+        df_esi=df_esi,
+        df_contrats=df_contrats
+    )
+
+    df_alertes_globales = calculer_contrats_actifs_fin_depassee(df_contrats)
 
     df_service_codes = normaliser_service_codes(df_service_codes)
 
