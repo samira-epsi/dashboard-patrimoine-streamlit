@@ -11,4 +11,4 @@
 
 import streamlit as st
 
-DB_URL = st.secrets["postgres"]["DB_URL"]
+DB_URL = st.secrets["postgres"]["postgresql+psycopg2://postgres.ppjnxrqauxiyoyunaobf:momopopolove2026?@aws-0-eu-west-1.pooler.supabase.com:5432/postgres?sslmode=require"]
