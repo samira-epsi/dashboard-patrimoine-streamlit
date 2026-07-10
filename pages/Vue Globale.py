@@ -1378,7 +1378,7 @@ def afficher_detail_qualite(focus, df_contrats_kpi, df_esi_context, df_qualite, 
 # =====================================================
 
 hero(
-    "Vue lalalalal",
+    "Vue globale",
     "Une lecture simple : volumes réels, données exploitables pour la couverture, puis points d’attention qualité.",
 )
 
