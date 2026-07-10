@@ -34,6 +34,24 @@ SQL_TIMEOUT_MS = 20000
 
 
 # =====================================================
+# PALETTE CHARTE 3F
+# =====================================================
+
+C_NAVY = "#173B69"
+C_NAVY_DEEP = "#0F2647"
+C_RED = "#E5114D"
+C_VIOLET = "#432ABD"
+C_TEAL = "#008080"
+C_BLUE = "#0074FF"
+C_BLUE_LIGHT = "#80CDFF"
+C_YELLOW = "#FFDC55"
+C_PINK = "#FFB7E3"
+
+C_GRID = "#EDF0F5"
+C_INK = "#16233B"
+
+
+# =====================================================
 # PAGE + STYLE
 # =====================================================
 
@@ -51,226 +69,295 @@ def inject_style():
     st.markdown(
         """
         <style>
-        .block-container {
-            padding-top: 1.25rem !important;
-            padding-left: 2rem !important;
-            padding-right: 2rem !important;
-            max-width: 1560px !important;
+        :root {
+            --navy: #173B69;
+            --navy-deep: #0F2647;
+            --red: #E5114D;
+            --violet: #432ABD;
+            --teal: #008080;
+            --blue: #0074FF;
+            --blue-light: #80CDFF;
+            --yellow: #FFDC55;
+            --pink: #FFB7E3;
+
+            --ink: #16233B;
+            --ink-soft: #51617A;
+            --ink-mute: #8493A8;
+            --line: #E6EAF1;
+            --line-soft: #EEF1F6;
+            --surface: #FFFFFF;
+            --canvas: #F4F6FA;
         }
 
+        html, body, [class*="css"], .stApp, button, input, textarea, select {
+            font-family: Arial, Helvetica, sans-serif !important;
+        }
+
+        .stApp {
+            background: var(--canvas);
+        }
+
+        .block-container {
+            padding-top: 1.5rem !important;
+            padding-left: 2.2rem !important;
+            padding-right: 2.2rem !important;
+            max-width: 1520px !important;
+        }
+
+        hr {
+            border: none !important;
+            border-top: 1px solid var(--line-soft) !important;
+            margin: 22px 0 !important;
+        }
+
+        /* ---------- HERO ---------- */
         .vg-hero {
             position: relative;
             overflow: hidden;
-            padding: 28px 30px;
-            border-radius: 28px;
-            background: linear-gradient(135deg, #B5121B 0%, #D64550 54%, #8F0E15 100%);
-            box-shadow: 0 22px 52px rgba(181, 18, 27, 0.22);
-            margin-bottom: 18px;
-            border: 1px solid rgba(255,255,255,0.22);
+            padding: 30px 34px;
+            border-radius: 20px;
+            background: linear-gradient(118deg, #173B69 0%, #1E4A82 58%, #0F2647 100%);
+            box-shadow: 0 1px 2px rgba(23,59,105,0.10),
+                        0 22px 44px -20px rgba(23,59,105,0.55);
+            margin-bottom: 22px;
+        }
+        .vg-hero:before {
+            content: "";
+            position: absolute;
+            left: 0; top: 0; right: 0;
+            height: 4px;
+            background: var(--red);
         }
         .vg-hero:after {
             content: "";
             position: absolute;
-            width: 300px;
-            height: 300px;
-            right: -150px;
-            top: -150px;
+            width: 360px; height: 360px;
+            right: -140px; top: -190px;
             border-radius: 999px;
-            background: rgba(255,255,255,0.13);
+            background: radial-gradient(circle, rgba(255,255,255,0.10) 0%, rgba(255,255,255,0) 70%);
+        }
+        .vg-hero-eyebrow {
+            position: relative; z-index: 1;
+            display: inline-flex;
+            align-items: center;
+            gap: 7px;
+            color: rgba(255,255,255,0.72);
+            font-size: 11.5px;
+            font-weight: 700;
+            letter-spacing: 1.4px;
+            text-transform: uppercase;
+            margin-bottom: 12px;
+        }
+        .vg-hero-eyebrow:before {
+            content: "";
+            width: 22px; height: 2px;
+            background: var(--red);
+            border-radius: 99px;
         }
         .vg-hero-title {
-            position: relative;
-            z-index: 1;
-            color: white;
-            font-size: 42px;
-            line-height: 1.05;
-            letter-spacing: -1.1px;
-            font-weight: 950;
-            margin-bottom: 10px;
+            position: relative; z-index: 1;
+            color: #FFFFFF;
+            font-size: 34px;
+            line-height: 1.08;
+            letter-spacing: -0.6px;
+            font-weight: 800;
+            margin-bottom: 9px;
         }
         .vg-hero-subtitle {
-            position: relative;
-            z-index: 1;
-            color: rgba(255,255,255,0.90);
-            font-size: 15px;
+            position: relative; z-index: 1;
+            color: rgba(255,255,255,0.82);
+            font-size: 14.5px;
             line-height: 1.55;
-            font-weight: 650;
-            max-width: 980px;
+            font-weight: 500;
+            max-width: 940px;
         }
 
+        /* ---------- INFO ---------- */
         .vg-info {
-            padding: 14px 16px;
-            border-radius: 18px;
-            background: #FFFFFF;
-            border: 1px solid #E2E8F0;
-            color: #475569;
-            font-size: 13px;
-            font-weight: 650;
-            box-shadow: 0 10px 26px rgba(15, 23, 42, 0.055);
-            margin: 10px 0 18px 0;
+            padding: 12px 16px;
+            border-radius: 12px;
+            background: #EFF3F9;
+            border: 1px solid #E1E9F3;
+            color: var(--ink-soft);
+            font-size: 12.5px;
+            font-weight: 500;
+            line-height: 1.5;
+            margin: 8px 0 16px 0;
         }
+
+        /* ---------- SECTIONS ---------- */
         .vg-section-title {
-            font-size: 26px;
-            font-weight: 950;
-            color: #0F172A;
-            letter-spacing: -0.6px;
-            margin-top: 4px;
-            margin-bottom: 5px;
+            font-size: 20px;
+            font-weight: 800;
+            color: var(--navy);
+            letter-spacing: -0.3px;
+            margin-top: 2px;
+            margin-bottom: 3px;
         }
         .vg-section-subtitle {
-            color: #64748B;
+            color: var(--ink-soft);
             font-size: 13px;
-            font-weight: 650;
-            margin-bottom: 16px;
+            font-weight: 500;
+            line-height: 1.5;
+            margin-bottom: 14px;
+            max-width: 920px;
+        }
+        .vg-mini-title {
+            color: var(--navy);
+            font-size: 14px;
+            font-weight: 700;
+            margin: 2px 0 10px 0;
         }
 
+        /* ---------- KPI CARDS ---------- */
         .vg-card {
-            min-height: 166px;
-            border-radius: 26px;
-            padding: 19px 20px 17px 20px;
-            background: linear-gradient(180deg, #FFFFFF 0%, #FBFDFF 100%);
-            border: 1px solid #E2E8F0;
-            box-shadow: 0 18px 42px rgba(15, 23, 42, 0.085);
+            min-height: 156px;
+            border-radius: 16px;
+            padding: 20px 20px 18px 20px;
+            background: var(--surface);
+            border: 1px solid var(--line);
+            box-shadow: 0 1px 2px rgba(16,35,59,0.04),
+                        0 12px 28px -20px rgba(16,35,59,0.35);
             position: relative;
             overflow: hidden;
+            transition: transform .18s ease, box-shadow .18s ease;
         }
-        .vg-card:before {
-            content: "";
-            position: absolute;
-            inset: 0 0 auto 0;
-            height: 5px;
-            background: var(--accent, #B5121B);
+        .vg-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 1px 2px rgba(16,35,59,0.05),
+                        0 18px 34px -20px rgba(16,35,59,0.42);
         }
-        .vg-card:after {
-            content: "";
-            position: absolute;
-            width: 150px;
-            height: 150px;
-            right: -90px;
-            top: -90px;
-            border-radius: 999px;
-            background: color-mix(in srgb, var(--accent, #B5121B) 12%, transparent);
-        }
-        .vg-card-label {
-            position: relative;
-            z-index: 1;
-            color: #64748B;
-            font-size: 13px;
-            font-weight: 900;
+        .vg-card-accent {
+            width: 32px; height: 4px;
+            border-radius: 99px;
+            background: var(--accent, #173B69);
             margin-bottom: 15px;
         }
-        .vg-card-value {
-            position: relative;
-            z-index: 1;
-            color: #0F172A;
-            font-size: 36px;
-            font-weight: 950;
-            letter-spacing: -1px;
-            line-height: 1;
-            margin-bottom: 11px;
-        }
-        .vg-card-pill {
-            position: relative;
-            z-index: 1;
-            display: inline-flex;
-            padding: 6px 10px;
-            border-radius: 999px;
-            background: #F8FAFC;
-            border: 1px solid #E2E8F0;
-            color: #334155;
-            font-size: 12px;
-            font-weight: 850;
-            margin-bottom: 9px;
-        }
-        .vg-card-help {
-            position: relative;
-            z-index: 1;
-            color: #94A3B8;
-            font-size: 11.7px;
-            font-weight: 650;
-            line-height: 1.42;
-        }
-
-        .vg-alert-card {
-            min-height: 132px;
-            border-radius: 24px;
-            padding: 17px 18px;
-            background: #FFFFFF;
-            border: 1px solid #E2E8F0;
-            box-shadow: 0 16px 36px rgba(15, 23, 42, 0.075);
-        }
-        .vg-alert-title {
-            color: #475569;
-            font-size: 12px;
-            font-weight: 950;
+        .vg-card-label {
+            color: var(--ink-mute);
+            font-size: 11.5px;
+            font-weight: 700;
             text-transform: uppercase;
-            letter-spacing: .25px;
+            letter-spacing: 0.6px;
             margin-bottom: 10px;
         }
-        .vg-alert-value {
-            font-size: 30px;
+        .vg-card-value {
+            color: var(--ink);
+            font-size: 34px;
+            font-weight: 800;
+            letter-spacing: -1px;
             line-height: 1;
-            color: #0F172A;
-            font-weight: 950;
-            letter-spacing: -0.6px;
+            margin-bottom: 12px;
+        }
+        .vg-card-pill {
+            display: inline-flex;
+            align-items: center;
+            padding: 4px 10px;
+            border-radius: 99px;
+            background: color-mix(in srgb, var(--accent, #173B69) 11%, transparent);
+            color: var(--accent, #173B69);
+            font-size: 11.5px;
+            font-weight: 700;
+            margin-bottom: 10px;
+        }
+        .vg-card-help {
+            color: var(--ink-mute);
+            font-size: 11.5px;
+            font-weight: 500;
+            line-height: 1.45;
+        }
+
+        /* ---------- ALERT CARDS ---------- */
+        .vg-alert-card {
+            min-height: 118px;
+            border-radius: 14px;
+            padding: 16px 18px;
+            background: var(--surface);
+            border: 1px solid var(--line);
+            border-left: 3px solid var(--red);
+            box-shadow: 0 1px 2px rgba(16,35,59,0.04);
+        }
+        .vg-alert-title {
+            color: var(--ink-soft);
+            font-size: 10.5px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
             margin-bottom: 9px;
         }
+        .vg-alert-value {
+            color: var(--ink);
+            font-size: 28px;
+            font-weight: 800;
+            letter-spacing: -0.5px;
+            line-height: 1;
+            margin-bottom: 8px;
+        }
         .vg-alert-help {
-            color: #64748B;
-            font-size: 12px;
-            font-weight: 650;
+            color: var(--ink-mute);
+            font-size: 11.5px;
+            font-weight: 500;
             line-height: 1.4;
         }
 
-        .vg-mini-title {
-            color: #1F2937;
-            font-size: 16px;
-            font-weight: 900;
-            margin: 2px 0 10px 0;
-        }
+        /* ---------- CHARTS + TABLES ---------- */
         div[data-testid="stPlotlyChart"] {
-            background: #FFFFFF;
-            border: 1px solid #E2E8F0;
-            border-radius: 24px;
-            padding: 10px;
-            box-shadow: 0 16px 38px rgba(15, 23, 42, 0.075);
+            background: var(--surface);
+            border: 1px solid var(--line);
+            border-radius: 16px;
+            padding: 12px;
+            box-shadow: 0 1px 2px rgba(16,35,59,0.04);
         }
         div[data-testid="stDataFrame"] {
-            border-radius: 20px !important;
+            border-radius: 14px !important;
             overflow: hidden !important;
-            border: 1px solid #E2E8F0 !important;
-            box-shadow: 0 12px 28px rgba(15, 23, 42, 0.065) !important;
-            background: white !important;
+            border: 1px solid var(--line) !important;
+            box-shadow: 0 1px 2px rgba(16,35,59,0.04) !important;
+            background: var(--surface) !important;
         }
         div[data-testid="stDataFrame"] [role="columnheader"] {
-            background: #F8FAFC !important;
-            color: #334155 !important;
-            font-weight: 900 !important;
-        }
-        .stButton button {
-            border-radius: 14px !important;
-            font-weight: 850 !important;
-        }
-        .stDownloadButton button {
-            border-radius: 14px !important;
-            font-weight: 850 !important;
+            background: #F5F7FB !important;
+            color: var(--navy) !important;
+            font-weight: 700 !important;
         }
 
+        /* ---------- BUTTONS ---------- */
+        .stButton button {
+            border-radius: 10px !important;
+            font-weight: 600 !important;
+            border: 1px solid var(--line) !important;
+            background: var(--surface) !important;
+            color: var(--navy) !important;
+            transition: all .15s ease !important;
+        }
+        .stButton button:hover {
+            border-color: var(--navy) !important;
+            background: #F5F7FB !important;
+        }
+        .stDownloadButton button {
+            border-radius: 10px !important;
+            font-weight: 600 !important;
+            border: 1px solid var(--navy) !important;
+            background: var(--navy) !important;
+            color: #FFFFFF !important;
+        }
+        .stDownloadButton button:hover {
+            background: var(--navy-deep) !important;
+        }
+
+        /* ---------- RESPONSIVE ---------- */
         @media screen and (max-width: 1100px) {
             .block-container {
                 padding-left: 1rem !important;
                 padding-right: 1rem !important;
             }
-            .vg-hero-title { font-size: 34px; }
-            .vg-card-value { font-size: 31px; }
+            .vg-hero-title { font-size: 28px; }
+            .vg-card-value { font-size: 30px; }
         }
         @media screen and (max-width: 760px) {
-            .vg-hero {
-                padding: 22px 20px;
-                border-radius: 22px;
-            }
-            .vg-hero-title { font-size: 29px; }
-            .vg-section-title { font-size: 23px; }
+            .vg-hero { padding: 24px 20px; border-radius: 16px; }
+            .vg-hero-title { font-size: 25px; }
+            .vg-section-title { font-size: 18px; }
         }
         </style>
         """,
@@ -282,6 +369,7 @@ def hero(title: str, subtitle: str):
     st.markdown(
         f"""
         <div class="vg-hero">
+            <div class="vg-hero-eyebrow">Patrimoine 3F</div>
             <div class="vg-hero-title">{_safe(title)}</div>
             <div class="vg-hero-subtitle">{_safe(subtitle)}</div>
         </div>
@@ -723,10 +811,11 @@ def global_value(df_global: pd.DataFrame, col: str, default=0):
 # COMPOSANTS VISUELS
 # =====================================================
 
-def kpi_card(label, value, pill, help_text, accent="#B5121B"):
+def kpi_card(label, value, pill, help_text, accent=C_NAVY):
     st.markdown(
         f"""
         <div class="vg-card" style="--accent:{_safe(accent)};">
+            <div class="vg-card-accent"></div>
             <div class="vg-card-label">{_safe(label)}</div>
             <div class="vg-card-value">{_safe(fmt_nombre(value))}</div>
             <div class="vg-card-pill">{_safe(pill)}</div>
@@ -748,6 +837,18 @@ def alert_card(title, value, help_text):
         """,
         unsafe_allow_html=True,
     )
+
+
+def _layout_plotly(fig, height):
+    fig.update_layout(
+        height=height,
+        margin=dict(l=8, r=24, t=10, b=18),
+        plot_bgcolor="white",
+        paper_bgcolor="white",
+        font=dict(family="Arial", size=12, color=C_INK),
+        showlegend=False,
+    )
+    return fig
 
 
 def construire_couverture(df_esi_base, df_esi_couverts, utiliser_selection_contrats):
@@ -800,6 +901,17 @@ def afficher_couverture(df_couverture: pd.DataFrame):
         return
 
     fig = go.Figure()
+    # rail de fond (100 %) pour lire la progression d'un coup d'oeil
+    fig.add_trace(
+        go.Bar(
+            x=[100] * len(df),
+            y=df["Indicateur"],
+            orientation="h",
+            marker=dict(color="#EEF1F6"),
+            hoverinfo="skip",
+            showlegend=False,
+        )
+    )
     fig.add_trace(
         go.Bar(
             x=df["Taux"],
@@ -807,20 +919,18 @@ def afficher_couverture(df_couverture: pd.DataFrame):
             orientation="h",
             text=df["Texte"],
             textposition="auto",
+            insidetextfont=dict(color="white"),
             customdata=df["Détail"],
             hovertemplate="<b>%{y}</b><br>Taux : %{x:.1f} %<br>Détail : %{customdata}<extra></extra>",
-            marker=dict(color="#0057A8", line=dict(color="#003F7D", width=1)),
+            marker=dict(color=C_NAVY),
         )
     )
+    _layout_plotly(fig, 300)
     fig.update_layout(
-        height=320,
-        margin=dict(l=8, r=18, t=8, b=18),
-        plot_bgcolor="white",
-        paper_bgcolor="white",
-        xaxis=dict(range=[0, 105], ticksuffix=" %", gridcolor="#E5E7EB", zeroline=False, title=None),
+        barmode="overlay",
+        bargap=0.42,
+        xaxis=dict(range=[0, 100], ticksuffix=" %", gridcolor=C_GRID, zeroline=False, title=None),
         yaxis=dict(title=None, automargin=True),
-        font=dict(family="Arial", size=12, color="#111827"),
-        showlegend=False,
     )
     st.plotly_chart(fig, use_container_width=True, config={"displayModeBar": False, "responsive": True})
 
@@ -845,7 +955,7 @@ def construire_graph_metier(df_contrats: pd.DataFrame, top_n=12):
     return out
 
 
-def afficher_barres_horizontales(df: pd.DataFrame, label_col: str, value_col: str, color="#B5121B", height_base=320):
+def afficher_barres_horizontales(df: pd.DataFrame, label_col: str, value_col: str, color=C_RED, height_base=320):
     if df.empty:
         st.info("Aucune donnée disponible.")
         return
@@ -865,20 +975,18 @@ def afficher_barres_horizontales(df: pd.DataFrame, label_col: str, value_col: st
             orientation="h",
             text=df[value_col].apply(fmt_nombre),
             textposition="outside",
+            textfont=dict(color=C_INK, size=12),
             cliponaxis=False,
             hovertemplate="<b>%{y}</b><br>Nombre : %{x}<extra></extra>",
             marker=dict(color=color),
         )
     )
+    _layout_plotly(fig, height)
     fig.update_layout(
-        height=height,
-        margin=dict(l=10, r=48, t=8, b=18),
-        plot_bgcolor="white",
-        paper_bgcolor="white",
-        xaxis=dict(range=[0, max_value * 1.18], gridcolor="#E5E7EB", zeroline=False, title=None),
+        bargap=0.36,
+        margin=dict(l=10, r=52, t=10, b=18),
+        xaxis=dict(range=[0, max_value * 1.18], gridcolor=C_GRID, zeroline=False, title=None),
         yaxis=dict(title=None, automargin=True),
-        font=dict(family="Arial", size=12, color="#111827"),
-        showlegend=False,
     )
     st.plotly_chart(fig, use_container_width=True, config={"displayModeBar": False, "responsive": True})
 
@@ -1073,7 +1181,7 @@ def afficher_detail_qualite(focus, df_contrats_kpi, df_esi_context, df_qualite, 
     st.markdown("---")
 
     if focus == "expired":
-        section("Détail — contrats actifs avec date de fin dépassée", "Contrats exploitables dans le périmètre filtré.")
+        section("Détail : contrats actifs avec date de fin dépassée", "Contrats exploitables dans le périmètre filtré.")
         table = preparer_contrats_table(contrats_actifs_fin_depassee(df_contrats_kpi))
         if table.empty:
             st.success("Aucun contrat actif expiré dans le périmètre affiché.")
@@ -1082,7 +1190,7 @@ def afficher_detail_qualite(focus, df_contrats_kpi, df_esi_context, df_qualite, 
             dataframe_download("Télécharger les contrats expirés", table, "contrats_actifs_expires.csv")
 
     elif focus == "unlinked_contracts":
-        section("Détail — contrats non rattachés", "Contrats présents en source mais absents de la couverture programme.")
+        section("Détail : contrats non rattachés", "Contrats présents en source mais absents de la couverture programme.")
         table = df_qualite[df_qualite.get("anomalie_type", "") == "CONTRAT_NON_RATTACHE_PROGRAMME"].copy() if not df_qualite.empty else pd.DataFrame()
         table = preparer_qualite_table(table)
         if table.empty:
@@ -1092,7 +1200,7 @@ def afficher_detail_qualite(focus, df_contrats_kpi, df_esi_context, df_qualite, 
             dataframe_download("Télécharger les contrats non rattachés", table, "contrats_non_rattaches.csv")
 
     elif focus == "housing":
-        section("Détail — logements sans programme", "Logements non exploitables dans les calculs de couverture ESI.")
+        section("Détail : logements sans programme", "Logements non exploitables dans les calculs de couverture ESI.")
         table = df_qualite[df_qualite.get("anomalie_type", "") == "LOGEMENT_SANS_PROGRAMME"].copy() if not df_qualite.empty else pd.DataFrame()
         table = preparer_qualite_table(table)
         if table.empty:
@@ -1104,7 +1212,7 @@ def afficher_detail_qualite(focus, df_contrats_kpi, df_esi_context, df_qualite, 
                 st.caption(f"Affichage limité à 500 lignes sur {fmt_nombre(len(table))}.")
 
     elif focus == "multi_topic":
-        section("Détail — ESI avec plusieurs contrats actifs sur le même métier", "Ce signal peut révéler des doublons ou des chevauchements de contrats.")
+        section("Détail : ESI avec plusieurs contrats actifs sur le même métier", "Ce signal peut révéler des doublons ou des chevauchements de contrats.")
         if "esi_multi_meme_metier" not in df_esi_context.columns:
             st.info("La colonne esi_multi_meme_metier n'est pas disponible.")
             return
@@ -1117,7 +1225,7 @@ def afficher_detail_qualite(focus, df_contrats_kpi, df_esi_context, df_qualite, 
             dataframe_download("Télécharger les ESI multi même métier", table, "esi_multi_meme_metier.csv")
 
     elif focus == "no_contract":
-        section("Détail — ESI sans contrat actif", "Programmes sans contrat actif rattaché dans le périmètre affiché.")
+        section("Détail : ESI sans contrat actif", "Programmes sans contrat actif rattaché dans le périmètre affiché.")
         table = df_esi_context[pd.to_numeric(df_esi_context.get("nb_contrats_actifs", 0), errors="coerce").fillna(0) == 0].copy()
         table = preparer_esi_table(table)
         if table.empty:
@@ -1161,7 +1269,7 @@ if df_global.empty:
     st.stop()
 
 # =====================================================
-# FILTRES EXISTANTS — ON GARDE LA DYNAMIQUE DU PROJET
+# FILTRES EXISTANTS
 # =====================================================
 
 info("Les filtres ci-dessous pilotent les indicateurs, les graphiques et les tableaux de détail. Les totaux source restent séparés des données exploitables.")
@@ -1248,13 +1356,13 @@ else:
 
 c1, c2, c3, c4 = st.columns(4)
 with c1:
-    kpi_card("Contrats", contrats_value, contrats_pill, contrats_help, accent="#B5121B")
+    kpi_card("Contrats", contrats_value, contrats_pill, contrats_help, accent=C_NAVY)
 with c2:
-    kpi_card("Programmes / ESI", programmes_value, programmes_pill, programmes_help, accent="#0057A8")
+    kpi_card("Programmes / ESI", programmes_value, programmes_pill, programmes_help, accent=C_BLUE)
 with c3:
-    kpi_card("Logements", logements_value, logements_pill, logements_help, accent="#16A34A")
+    kpi_card("Logements", logements_value, logements_pill, logements_help, accent=C_TEAL)
 with c4:
-    kpi_card("Équipements", equipements_value, equipements_pill, equipements_help, accent="#EA580C")
+    kpi_card("Équipements", equipements_value, equipements_pill, equipements_help, accent=C_VIOLET)
 
 # =====================================================
 # COUVERTURE
@@ -1281,7 +1389,7 @@ with col_cov:
 with col_metier:
     st.markdown('<div class="vg-mini-title">Contrats par métier</div>', unsafe_allow_html=True)
     df_metier = construire_graph_metier(df_contrats_kpi, top_n=12)
-    afficher_barres_horizontales(df_metier, "Métier", "Contrats", color="#B5121B", height_base=320)
+    afficher_barres_horizontales(df_metier, "Métier", "Contrats", color=C_RED, height_base=320)
 
 # =====================================================
 # POINTS D'ATTENTION
@@ -1355,7 +1463,7 @@ col_quality_graph, col_quality_table = st.columns([1, 1])
 with col_quality_graph:
     st.markdown('<div class="vg-mini-title">Anomalies principales</div>', unsafe_allow_html=True)
     df_q_graph = construire_graph_qualite(df_qualite_resume, df_qualite)
-    afficher_barres_horizontales(df_q_graph, "Anomalie", "Objets distincts", color="#EA580C", height_base=320)
+    afficher_barres_horizontales(df_q_graph, "Anomalie", "Objets distincts", color=C_VIOLET, height_base=320)
 
 with col_quality_table:
     st.markdown('<div class="vg-mini-title">Résumé qualité</div>', unsafe_allow_html=True)
