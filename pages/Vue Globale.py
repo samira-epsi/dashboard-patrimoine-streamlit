@@ -267,50 +267,6 @@ def inject_style():
             line-height: 1.45;
         }
 
-        /* ---------- SYNTHESE (30 s) ---------- */
-        .vg-synthese {
-            display: flex;
-            flex-wrap: wrap;
-            background: var(--surface);
-            border: 1px solid var(--line);
-            border-radius: 16px;
-            box-shadow: 0 1px 2px rgba(16,35,59,0.04),
-                        0 12px 28px -20px rgba(16,35,59,0.35);
-            overflow: hidden;
-            margin: 4px 0 6px 0;
-        }
-        .vg-syn-item {
-            flex: 1 1 0;
-            min-width: 172px;
-            padding: 16px 22px;
-            border-left: 1px solid var(--line-soft);
-        }
-        .vg-syn-item:first-child { border-left: none; }
-        .vg-syn-label {
-            color: var(--ink-mute);
-            font-size: 10.5px;
-            font-weight: 700;
-            text-transform: uppercase;
-            letter-spacing: 0.6px;
-            margin-bottom: 9px;
-        }
-        .vg-syn-value {
-            color: var(--ink);
-            font-size: 28px;
-            font-weight: 800;
-            letter-spacing: -0.8px;
-            line-height: 1;
-            margin-bottom: 7px;
-        }
-        .vg-syn-sub {
-            font-size: 11.5px;
-            font-weight: 600;
-            line-height: 1.35;
-        }
-        .vg-syn-sub.ok { color: var(--teal); }
-        .vg-syn-sub.warn { color: var(--red); }
-        .vg-syn-sub.mute { color: var(--ink-mute); }
-
         /* ---------- ALERT CARDS ---------- */
         .vg-alert-card {
             min-height: 118px;
@@ -434,21 +390,6 @@ def section(title: str, subtitle: str = ""):
 
 def info(text: str):
     st.markdown(f'<div class="vg-info">{_safe(text)}</div>', unsafe_allow_html=True)
-
-
-def synthese_strip(items):
-    """items = liste de tuples (label, valeur, sous_texte, tonalite) ; tonalite dans {ok, warn, mute}."""
-    blocs = ""
-    for label, value, sub, tone in items:
-        sub_html = f'<div class="vg-syn-sub {tone}">{_safe(sub)}</div>' if sub else ""
-        blocs += (
-            '<div class="vg-syn-item">'
-            f'<div class="vg-syn-label">{_safe(label)}</div>'
-            f'<div class="vg-syn-value">{_safe(value)}</div>'
-            f"{sub_html}"
-            "</div>"
-        )
-    st.markdown(f'<div class="vg-synthese">{blocs}</div>', unsafe_allow_html=True)
 
 
 inject_style()
@@ -994,85 +935,6 @@ def afficher_couverture(df_couverture: pd.DataFrame):
     st.plotly_chart(fig, use_container_width=True, config={"displayModeBar": False, "responsive": True})
 
 
-def construire_exploitabilite(df_global: pd.DataFrame) -> pd.DataFrame:
-    def gv(col):
-        return int(float(global_value(df_global, col, 0) or 0))
-
-    lignes = [
-        ("Contrats", gv("contrats_total"), gv("contrats_rattaches_programme")),
-        ("Logements", gv("logements_total"), gv("logements_rattaches_programme")),
-        ("Équipements", gv("equipements_total"), gv("equipements_rattaches_programme")),
-    ]
-
-    rows = []
-    for nom, total, expl in lignes:
-        gap = max(total - expl, 0)
-        taux = round((expl / total) * 100, 1) if total else 0.0
-        rows.append({
-            "Entité": nom,
-            "Total": total,
-            "Exploitable": expl,
-            "Non exploitable": gap,
-            "Taux": taux,
-        })
-    return pd.DataFrame(rows)
-
-
-def afficher_exploitabilite(df: pd.DataFrame):
-    if df.empty:
-        st.info("Aucune donnée d’exploitabilité disponible.")
-        return
-
-    df = df.copy().sort_values("Taux", ascending=True)
-
-    if go is None:
-        st.dataframe(df, use_container_width=True, hide_index=True)
-        return
-
-    tot = df["Total"].replace(0, 1)
-    pct_expl = df["Exploitable"] / tot * 100
-    pct_gap = 100 - pct_expl
-
-    fig = go.Figure()
-    fig.add_trace(
-        go.Bar(
-            y=df["Entité"],
-            x=pct_expl,
-            orientation="h",
-            name="Exploitable",
-            marker=dict(color=C_TEAL),
-            text=df["Exploitable"].apply(fmt_nombre),
-            textposition="auto",
-            insidetextfont=dict(color="white"),
-            customdata=df["Taux"],
-            hovertemplate="<b>%{y}</b><br>Exploitable : %{customdata:.1f} %<extra></extra>",
-        )
-    )
-    fig.add_trace(
-        go.Bar(
-            y=df["Entité"],
-            x=pct_gap,
-            orientation="h",
-            name="Non exploitable",
-            marker=dict(color="#F4C4CF"),
-            text=df["Non exploitable"].apply(fmt_nombre),
-            textposition="auto",
-            insidetextfont=dict(color=C_RED),
-            hovertemplate="<b>%{y}</b><br>Non exploitable : %{x:.1f} %<extra></extra>",
-        )
-    )
-    _layout_plotly(fig, 250)
-    fig.update_layout(
-        barmode="stack",
-        bargap=0.45,
-        showlegend=True,
-        legend=dict(orientation="h", yanchor="bottom", y=1.05, x=0, font=dict(size=11)),
-        xaxis=dict(range=[0, 100], ticksuffix=" %", gridcolor=C_GRID, zeroline=False, title=None),
-        yaxis=dict(title=None, automargin=True),
-    )
-    st.plotly_chart(fig, use_container_width=True, config={"displayModeBar": False, "responsive": True})
-
-
 def construire_graph_metier(df_contrats: pd.DataFrame, top_n=12):
     if df_contrats.empty:
         return pd.DataFrame(columns=["Métier", "Contrats"])
@@ -1407,40 +1269,6 @@ if df_global.empty:
     st.stop()
 
 # =====================================================
-# SYNTHESE — LA VERITE EN 30 SECONDES (VUE SOURCE)
-# =====================================================
-
-section(
-    "En un coup d’œil",
-    "État source du patrimoine, indépendant des filtres. Le volume réel, la part exploitable, la couverture et ce qui bloque.",
-)
-
-_syn_contrats_total = int(float(global_value(df_global, "contrats_total", 0) or 0))
-_syn_contrats_expl = int(float(global_value(df_global, "contrats_rattaches_programme", 0) or 0))
-_syn_contrats_nonr = int(float(global_value(df_global, "contrats_non_rattaches_programme", 0) or 0))
-_syn_esi_total = int(float(global_value(df_global, "programmes_total", 0) or 0))
-_syn_esi_couv = int(pd.to_numeric(df_esi.get("esi_couvert", pd.Series(dtype=float)), errors="coerce").fillna(0).sum())
-_syn_esi_sans = int(pd.to_numeric(df_esi.get("esi_sans_contrat", pd.Series(dtype=float)), errors="coerce").fillna(0).sum())
-_syn_taux = round((_syn_esi_couv / _syn_esi_total) * 100, 1) if _syn_esi_total else 0.0
-_syn_log_sans = int(float(global_value(df_global, "logements_sans_programme", 0) or 0))
-_syn_contrats_exp = int(float(global_value(df_global, "contrats_actifs_fin_depassee", 0) or 0))
-
-synthese_strip([
-    ("Contrats", fmt_nombre(_syn_contrats_total),
-     f"{fmt_nombre(_syn_contrats_expl)} exploitables · {fmt_nombre(_syn_contrats_nonr)} non rattachés", "mute"),
-    ("Programmes / ESI", fmt_nombre(_syn_esi_total),
-     f"{fmt_nombre(_syn_esi_couv)} couverts · {fmt_nombre(_syn_esi_sans)} sans contrat", "mute"),
-    ("Couverture programmes", fmt_pourcentage(_syn_taux),
-     f"{fmt_nombre(_syn_esi_couv)} ESI sur {fmt_nombre(_syn_esi_total)} couverts", "ok" if _syn_taux >= 80 else "warn"),
-    ("Logements sans programme", fmt_nombre(_syn_log_sans),
-     "Exclus du calcul de couverture", "warn"),
-    ("Contrats actifs expirés", fmt_nombre(_syn_contrats_exp),
-     "Date de fin dépassée", "warn"),
-])
-
-st.divider()
-
-# =====================================================
 # FILTRES EXISTANTS
 # =====================================================
 
@@ -1535,24 +1363,6 @@ with c3:
     kpi_card("Logements", logements_value, logements_pill, logements_help, accent=C_TEAL)
 with c4:
     kpi_card("Équipements", equipements_value, equipements_pill, equipements_help, accent=C_VIOLET)
-
-# =====================================================
-# SOURCE VS EXPLOITABLE
-# =====================================================
-
-st.divider()
-section(
-    "Réalité source et données exploitables",
-    "Tout ce qui existe dans Intent n’est pas utilisable pour la couverture. Un logement sans programme ou un contrat non rattaché existe bien, mais ne peut pas entrer proprement dans un calcul ESI. Voici la part réellement exploitable et l’écart, sans le cacher.",
-)
-
-st.markdown('<div class="vg-mini-title">Part exploitable par entité (vue source)</div>', unsafe_allow_html=True)
-df_exploitabilite = construire_exploitabilite(df_global)
-afficher_exploitabilite(df_exploitabilite)
-st.caption(
-    "Barres en proportion, valeurs affichées en volumes réels. "
-    "« Exploitable » signifie rattaché à un programme, ce qui est distinct de « couvert » (au moins un contrat actif) mesuré plus bas."
-)
 
 # =====================================================
 # COUVERTURE
