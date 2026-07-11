@@ -1866,7 +1866,7 @@ def afficher_couverture(df_couverture: pd.DataFrame):
     df["Détail"] = df.apply(lambda r: f"{fmt_nombre(r['Couverts'])} / {fmt_nombre(r['Total'])}", axis=1)
 
     if go is None:
-        st.bar_chart(df.set_index("Indicateur")["Taux"], use_container_width=True)
+        st.bar_chart(df.set_index("Indicateur")["Taux"], width="stretch")
         return
 
     fig = go.Figure()
@@ -1930,7 +1930,7 @@ def afficher_barres_horizontales(df: pd.DataFrame, label_col: str, value_col: st
         return
 
     if go is None:
-        st.bar_chart(df.set_index(label_col)[value_col], use_container_width=True)
+        st.bar_chart(df.set_index(label_col)[value_col], width="stretch")
         return
 
     max_value = max(float(df[value_col].max()), 1.0)
@@ -1986,11 +1986,26 @@ def construire_graph_qualite(df_resume: pd.DataFrame, df_qualite: pd.DataFrame):
     return pd.DataFrame(columns=["Anomalie", "Objets distincts"])
 
 
+@st.cache_data(show_spinner=False, max_entries=20)
+def dataframe_to_csv_bytes(df: pd.DataFrame) -> bytes:
+    """
+    Convertit un DataFrame en CSV une seule fois par contenu.
+    Évite de refaire la sérialisation à chaque interaction.
+    """
+    return df.to_csv(index=False).encode("utf-8-sig")
+
+
 def dataframe_download(label: str, df: pd.DataFrame, filename: str):
     if df.empty:
         return
-    csv = df.to_csv(index=False).encode("utf-8-sig")
-    st.download_button(label, csv, file_name=filename, mime="text/csv", use_container_width=True)
+
+    st.download_button(
+        label,
+        data=dataframe_to_csv_bytes(df),
+        file_name=filename,
+        mime="text/csv",
+        width="stretch",
+    )
 
 
 # =====================================================
@@ -2155,7 +2170,7 @@ def afficher_detail_qualite(focus, df_contrats_kpi, df_esi_context, df_qualite, 
         if table.empty:
             st.success("Aucun contrat actif expiré dans le périmètre affiché.")
         else:
-            st.dataframe(table.head(500), use_container_width=True, hide_index=True, height=360)
+            st.dataframe(table.head(500), width="stretch", hide_index=True, height=360)
             dataframe_download("Télécharger les contrats expirés", table, "contrats_actifs_expires.csv")
 
     elif focus == "unlinked_contracts":
@@ -2165,7 +2180,7 @@ def afficher_detail_qualite(focus, df_contrats_kpi, df_esi_context, df_qualite, 
         if table.empty:
             st.info("Aucun détail disponible dans la table qualité.")
         else:
-            st.dataframe(table.head(500), use_container_width=True, hide_index=True, height=360)
+            st.dataframe(table.head(500), width="stretch", hide_index=True, height=360)
             dataframe_download("Télécharger les contrats non rattachés", table, "contrats_non_rattaches.csv")
 
     elif focus == "housing":
@@ -2175,7 +2190,7 @@ def afficher_detail_qualite(focus, df_contrats_kpi, df_esi_context, df_qualite, 
         if table.empty:
             st.info("Aucun détail disponible dans la table qualité.")
         else:
-            st.dataframe(table.head(500), use_container_width=True, hide_index=True, height=360)
+            st.dataframe(table.head(500), width="stretch", hide_index=True, height=360)
             dataframe_download("Télécharger les logements sans programme", table, "logements_sans_programme.csv")
             if len(table) > 500:
                 st.caption(f"Affichage limité à 500 lignes sur {fmt_nombre(len(table))}.")
@@ -2190,7 +2205,7 @@ def afficher_detail_qualite(focus, df_contrats_kpi, df_esi_context, df_qualite, 
         if table.empty:
             st.success("Aucun ESI multi même métier dans le périmètre affiché.")
         else:
-            st.dataframe(table.head(500), use_container_width=True, hide_index=True, height=360)
+            st.dataframe(table.head(500), width="stretch", hide_index=True, height=360)
             dataframe_download("Télécharger les ESI multi même métier", table, "esi_multi_meme_metier.csv")
 
     elif focus == "no_contract":
@@ -2200,7 +2215,7 @@ def afficher_detail_qualite(focus, df_contrats_kpi, df_esi_context, df_qualite, 
         if table.empty:
             st.success("Aucun ESI sans contrat actif dans le périmètre affiché.")
         else:
-            st.dataframe(table.head(500), use_container_width=True, hide_index=True, height=360)
+            st.dataframe(table.head(500), width="stretch", hide_index=True, height=360)
             dataframe_download("Télécharger les ESI sans contrat actif", table, "esi_sans_contrat_actif.csv")
 
 
@@ -2235,7 +2250,7 @@ with nav_col:
 with refresh_col:
     if st.button(
         "Actualiser",
-        use_container_width=True,
+        width="stretch",
         key="dashboard_refresh",
     ):
         st.cache_data.clear()
@@ -2379,7 +2394,7 @@ if vue_active == "Vue globale":
                             "Contrats": [nb_actifs, nb_inactifs],
                         }
                     ),
-                    use_container_width=True,
+                    width="stretch",
                     hide_index=True,
                 )
             else:
@@ -2592,7 +2607,7 @@ if vue_active == "Vue globale":
 
             with st.popover(
                 "Choisir les colonnes",
-                use_container_width=True,
+                width="stretch",
             ):
                 with st.form(
                     key=f"form_colonnes_{cle_mode}",
@@ -2603,13 +2618,13 @@ if vue_active == "Vue globale":
                     with boutons_col_1:
                         tout_selectionner = st.form_submit_button(
                             "Tout sélectionner",
-                            use_container_width=True,
+                            width="stretch",
                         )
 
                     with boutons_col_2:
                         reinitialiser = st.form_submit_button(
                             "Réinitialiser",
-                            use_container_width=True,
+                            width="stretch",
                         )
 
                     # Les deux actions sont traitées avant la création
@@ -2641,7 +2656,7 @@ if vue_active == "Vue globale":
 
                     st.form_submit_button(
                         "Appliquer",
-                        use_container_width=True,
+                        width="stretch",
                         type="primary",
                     )
 
@@ -2665,25 +2680,42 @@ if vue_active == "Vue globale":
                 else "Aucune colonne sélectionnée."
             )
 
+        LIMITE_APERCU_TABLEAU = 500
+
         if not colonnes_affichees:
             st.warning("Sélectionne au moins une colonne à afficher.")
-            table_contrats_affichee = pd.DataFrame()
+            table_contrats_export = pd.DataFrame()
+            table_contrats_apercu = pd.DataFrame()
         else:
-            table_contrats_affichee = table_contrats_complete[
+            # Le jeu complet reste disponible pour le téléchargement.
+            # Seul un aperçu limité est envoyé au navigateur.
+            table_contrats_export = table_contrats_complete[
                 colonnes_affichees
             ].copy()
 
-            # Sécurise les types pour éviter les erreurs Arrow / Streamlit
-            # lorsque toutes les colonnes de rattachement sont affichées.
-            for colonne in table_contrats_affichee.columns:
-                table_contrats_affichee[colonne] = (
-                    table_contrats_affichee[colonne]
-                    .where(
-                        table_contrats_affichee[colonne].notna(),
-                        "",
+            table_contrats_apercu = (
+                table_contrats_export
+                .head(LIMITE_APERCU_TABLEAU)
+                .copy()
+            )
+
+            # Conversion uniquement de l'aperçu affiché.
+            # Évite de convertir tout le jeu de rattachements à chaque rerun.
+            for colonne in table_contrats_apercu.columns:
+                serie = table_contrats_apercu[colonne]
+
+                if pd.api.types.is_datetime64_any_dtype(serie):
+                    table_contrats_apercu[colonne] = (
+                        pd.to_datetime(serie, errors="coerce")
+                        .dt.strftime("%d/%m/%Y")
+                        .fillna("")
                     )
-                    .astype(str)
-                )
+                else:
+                    table_contrats_apercu[colonne] = (
+                        serie
+                        .where(serie.notna(), "")
+                        .astype(str)
+                    )
 
         if "Référence contrat" in table_contrats_complete.columns:
             nb_contrats_resultat = int(
@@ -2714,7 +2746,7 @@ if vue_active == "Vue globale":
                         {format_nombre(nb_lignes_resultat)}
                     </span>
                     <span class="vg-table-summary-label">
-                        ligne{"s" if nb_lignes_resultat != 1 else ""} affichée{"s" if nb_lignes_resultat != 1 else ""}
+                        ligne{"s" if nb_lignes_resultat != 1 else ""} trouvée{"s" if nb_lignes_resultat != 1 else ""}
                     </span>
                 </div>
                 <div class="vg-table-summary-mode">
@@ -2725,12 +2757,12 @@ if vue_active == "Vue globale":
             unsafe_allow_html=True,
         )
 
-        if table_contrats_affichee.empty:
+        if table_contrats_export.empty:
             st.info("Aucun résultat ne correspond aux filtres et à la recherche.")
         else:
             st.dataframe(
-                table_contrats_affichee,
-                use_container_width=True,
+                table_contrats_apercu,
+                width="stretch",
                 hide_index=True,
                 height=430,
                 column_config={
@@ -2763,9 +2795,16 @@ if vue_active == "Vue globale":
                 else "contrats_et_rattachements.csv"
             )
 
+            if len(table_contrats_export) > LIMITE_APERCU_TABLEAU:
+                st.caption(
+                    f"Aperçu limité aux {LIMITE_APERCU_TABLEAU} premières lignes "
+                    f"sur {format_nombre(len(table_contrats_export))}. "
+                    "Le téléchargement contient toutes les lignes."
+                )
+
             dataframe_download(
-                "Télécharger la liste affichée",
-                table_contrats_affichee,
+                "Télécharger la liste complète",
+                table_contrats_export,
                 nom_export,
             )
 
@@ -2848,7 +2887,7 @@ elif vue_active == "Couverture":
             repartition = repartition.sort_values("Classe")
 
             if go is None:
-                st.bar_chart(repartition.set_index("Classe")["ESI"], use_container_width=True)
+                st.bar_chart(repartition.set_index("Classe")["ESI"], width="stretch")
             else:
                 fig = go.Figure(
                     go.Bar(
@@ -2892,7 +2931,7 @@ elif vue_active == "Couverture":
             table_source = table_source[serie_numerique(table_source, "esi_multi_meme_metier") > 0]
 
         table_esi = filtrer_table_recherche(preparer_esi_table(table_source), recherche_esi)
-        st.dataframe(table_esi, use_container_width=True, hide_index=True, height=460)
+        st.dataframe(table_esi, width="stretch", hide_index=True, height=460)
         dataframe_download("Télécharger le détail", table_esi, "couverture_esi.csv")
 
 
@@ -2936,19 +2975,19 @@ else:
 
     b1, b2, b3, b4, b5 = st.columns(5)
     with b1:
-        if st.button("Contrats expirés", use_container_width=True, key="quality_expired"):
+        if st.button("Contrats expirés", width="stretch", key="quality_expired"):
             st.session_state["vg_detail_focus"] = "expired"
     with b2:
-        if st.button("Non rattachés", use_container_width=True, key="quality_unlinked"):
+        if st.button("Non rattachés", width="stretch", key="quality_unlinked"):
             st.session_state["vg_detail_focus"] = "unlinked_contracts"
     with b3:
-        if st.button("Logements sans programme", use_container_width=True, key="quality_housing"):
+        if st.button("Logements sans programme", width="stretch", key="quality_housing"):
             st.session_state["vg_detail_focus"] = "housing"
     with b4:
-        if st.button("Multi même métier", use_container_width=True, key="quality_multi"):
+        if st.button("Multi même métier", width="stretch", key="quality_multi"):
             st.session_state["vg_detail_focus"] = "multi_topic"
     with b5:
-        if st.button("ESI sans contrat", use_container_width=True, key="quality_no_contract"):
+        if st.button("ESI sans contrat", width="stretch", key="quality_no_contract"):
             st.session_state["vg_detail_focus"] = "no_contract"
 
     afficher_detail_qualite(
@@ -2999,7 +3038,7 @@ else:
                         "nb_lignes_detail": "Lignes détail",
                     }
                 )
-                st.dataframe(resume, use_container_width=True, hide_index=True, height=320)
+                st.dataframe(resume, width="stretch", hide_index=True, height=320)
 
         recherche_anomalie = st.text_input(
             "Rechercher dans toutes les anomalies",
@@ -3007,7 +3046,7 @@ else:
             key="quality_search_all",
         )
         table_qualite = filtrer_table_recherche(preparer_qualite_table(df_qualite), recherche_anomalie)
-        st.dataframe(table_qualite, use_container_width=True, hide_index=True, height=460)
+        st.dataframe(table_qualite, width="stretch", hide_index=True, height=460)
         dataframe_download("Télécharger les anomalies", table_qualite, "anomalies_patrimoine.csv")
 
 
