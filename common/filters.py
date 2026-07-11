@@ -295,6 +295,149 @@ def inject_filters_style():
         unsafe_allow_html=True,
     )
 
+    st.markdown(
+        r"""
+        <style>
+        [data-testid="stSidebar"] {
+            background: #F5F7FA !important;
+            border-right: 1px solid #DCE4EC !important;
+        }
+
+        [data-testid="stSidebarContent"] {
+            padding-top: 1rem !important;
+        }
+
+        .filters-header {
+            position: relative;
+            overflow: hidden;
+            margin: 10px 0 18px 0 !important;
+            padding: 20px 20px 18px 20px !important;
+            background: #FFF1F6 !important;
+            border: 1px solid #E8D9E1 !important;
+            border-radius: 16px !important;
+            box-shadow: none !important;
+        }
+
+        .filters-header::before {
+            content: "";
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 5px;
+            background: #E5114D !important;
+        }
+
+        .filters-header::after {
+            display: none !important;
+        }
+
+        .filters-title {
+            color: #173B69 !important;
+            font-size: 23px !important;
+            line-height: 1.12 !important;
+            font-weight: 800 !important;
+            margin-bottom: 7px !important;
+        }
+
+        .filters-subtitle {
+            color: #5D6E82 !important;
+            font-size: 12.5px !important;
+            font-weight: 600 !important;
+            line-height: 1.5 !important;
+        }
+
+        [data-testid="stSidebar"] label,
+        [data-testid="stSidebar"] [data-testid="stWidgetLabel"] p {
+            color: #173B69 !important;
+            font-weight: 700 !important;
+        }
+
+        [data-testid="stSidebar"] div[data-baseweb="select"] > div {
+            min-height: 48px !important;
+            background: #FFFFFF !important;
+            border: 1px solid #D8E1E9 !important;
+            border-radius: 12px !important;
+            box-shadow: none !important;
+            transition: border-color .15s ease, box-shadow .15s ease !important;
+        }
+
+        [data-testid="stSidebar"] div[data-baseweb="select"] > div:hover {
+            border-color: #B8C6D2 !important;
+            background: #FFFFFF !important;
+            transform: none !important;
+        }
+
+        [data-testid="stSidebar"] div[data-baseweb="select"] > div:focus-within {
+            border-color: #173B69 !important;
+            box-shadow: 0 0 0 3px rgba(23, 59, 105, 0.08) !important;
+        }
+
+        [data-testid="stSidebar"] span[data-baseweb="tag"] {
+            background: #EEF4F8 !important;
+            color: #173B69 !important;
+            border: 1px solid #CBD9E4 !important;
+            border-radius: 8px !important;
+            font-weight: 700 !important;
+        }
+
+        [data-testid="stSidebar"] span[data-baseweb="tag"] svg {
+            fill: #173B69 !important;
+        }
+
+        .filter-meta {
+            margin-top: 6px !important;
+            margin-bottom: 16px !important;
+            color: #77879A !important;
+            font-size: 11px !important;
+            font-weight: 600 !important;
+        }
+
+        .filter-meta::before {
+            width: 6px !important;
+            height: 6px !important;
+            margin-right: 7px !important;
+            background: #173B69 !important;
+        }
+
+        [data-testid="stSidebar"] .stButton button {
+            min-height: 47px !important;
+            margin-bottom: 16px !important;
+            color: #173B69 !important;
+            background: #FFFFFF !important;
+            border: 1px solid #D8E1E9 !important;
+            border-radius: 12px !important;
+            box-shadow: none !important;
+            font-weight: 700 !important;
+        }
+
+        [data-testid="stSidebar"] .stButton button:hover {
+            color: #173B69 !important;
+            background: #EEF4F8 !important;
+            border-color: #B8C6D2 !important;
+            transform: none !important;
+        }
+
+        div[data-baseweb="popover"] ul {
+            background: #FFFFFF !important;
+            border: 1px solid #D8E1E9 !important;
+            border-radius: 12px !important;
+            box-shadow: 0 12px 28px -20px rgba(23, 59, 105, 0.28) !important;
+        }
+
+        div[data-baseweb="popover"] li:hover {
+            background: #EEF4F8 !important;
+        }
+
+        div[data-baseweb="popover"] li[aria-selected="true"] {
+            background: #E7F0F6 !important;
+            color: #173B69 !important;
+        }
+        </style>
+""",
+        unsafe_allow_html=True,
+    )
+
 
 # =====================================================
 # OUTILS
