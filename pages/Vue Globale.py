@@ -345,6 +345,41 @@ def inject_style():
             background: var(--navy-deep) !important;
         }
 
+        /* ---------- NAVIGATION EN BOUTONS ---------- */
+        div[role="radiogroup"] {
+            gap: 8px !important;
+            background: #E9EDF4;
+            padding: 5px;
+            border-radius: 13px;
+            width: fit-content;
+        }
+        div[role="radiogroup"] label {
+            background: transparent;
+            border-radius: 9px;
+            padding: 8px 15px !important;
+            margin: 0 !important;
+            transition: background .15s ease, box-shadow .15s ease;
+        }
+        div[role="radiogroup"] label:has(input:checked) {
+            background: #FFFFFF !important;
+            box-shadow: 0 2px 8px rgba(15,38,71,0.12);
+        }
+        div[role="radiogroup"] label:has(input:checked) p {
+            color: var(--navy) !important;
+            font-weight: 800 !important;
+        }
+        div[role="radiogroup"] label > div:first-child {
+            display: none !important;
+        }
+
+        /* ---------- EXPANDERS ---------- */
+        div[data-testid="stExpander"] {
+            border: 1px solid var(--line) !important;
+            border-radius: 14px !important;
+            background: var(--surface) !important;
+            overflow: hidden;
+        }
+
         /* ---------- RESPONSIVE ---------- */
         @media screen and (max-width: 1100px) {
             .block-container {
@@ -798,6 +833,14 @@ def contrats_actifs_fin_depassee(df_contrats: pd.DataFrame) -> pd.DataFrame:
     return out.sort_values(["contract_end_date", "contract_reference"]).drop_duplicates("contract_reference")
 
 
+
+
+def serie_numerique(df: pd.DataFrame, colonne: str) -> pd.Series:
+    """Retourne une série numérique sûre, même si la colonne est absente."""
+    if colonne not in df.columns:
+        return pd.Series(0, index=df.index, dtype="float64")
+    return pd.to_numeric(df[colonne], errors="coerce").fillna(0)
+
 def global_value(df_global: pd.DataFrame, col: str, default=0):
     if df_global.empty or col not in df_global.columns:
         return default
@@ -1226,7 +1269,7 @@ def afficher_detail_qualite(focus, df_contrats_kpi, df_esi_context, df_qualite, 
 
     elif focus == "no_contract":
         section("Détail : ESI sans contrat actif", "Programmes sans contrat actif rattaché dans le périmètre affiché.")
-        table = df_esi_context[pd.to_numeric(df_esi_context.get("nb_contrats_actifs", 0), errors="coerce").fillna(0) == 0].copy()
+        table = df_esi_context[serie_numerique(df_esi_context, "nb_contrats_actifs") == 0].copy()
         table = preparer_esi_table(table)
         if table.empty:
             st.success("Aucun ESI sans contrat actif dans le périmètre affiché.")
@@ -1240,8 +1283,8 @@ def afficher_detail_qualite(focus, df_contrats_kpi, df_esi_context, df_qualite, 
 # =====================================================
 
 hero(
-    "Vue globale",
-    "Une lecture simple : volumes réels, données exploitables pour la couverture, puis points d’attention qualité.",
+    "Pilotage du patrimoine",
+    "Une lecture en trois temps : réalité source, couverture exploitable, puis anomalies à corriger.",
 )
 
 ok, erreur = tester_connexion()
@@ -1250,14 +1293,23 @@ if not ok:
     st.code(erreur)
     st.stop()
 
-col_refresh, col_update = st.columns([1, 4])
-with col_refresh:
-    if st.button("Actualiser l’affichage", use_container_width=True):
+# Navigation principale : une seule vue visible à la fois.
+nav_col, refresh_col = st.columns([5, 1])
+with nav_col:
+    vue_active = st.radio(
+        "Navigation",
+        ["Vue globale", "Couverture", "Qualité et anomalies"],
+        horizontal=True,
+        label_visibility="collapsed",
+        key="dashboard_vue_active",
+    )
+with refresh_col:
+    if st.button("Actualiser", use_container_width=True, key="dashboard_refresh"):
         st.cache_data.clear()
         st.rerun()
 
 try:
-    with st.spinner("Chargement des données..." ):
+    with st.spinner("Chargement des données..."):
         df_global, df_esi, df_contrats, df_creations, df_qualite, df_qualite_resume = charger_donnees()
 except Exception as e:
     st.error("Erreur pendant le chargement des données.")
@@ -1268,21 +1320,22 @@ if df_global.empty:
     st.error("La table dashboard.kpi_globale est vide.")
     st.stop()
 
-# =====================================================
-# FILTRES EXISTANTS
-# =====================================================
+# Les filtres sont communs aux trois vues, mais restent repliés pour alléger la page.
+with st.expander("Filtres du périmètre", expanded=False):
+    info(
+        "Les totaux source restent fixes dans la vue globale. "
+        "Les indicateurs de couverture et les tableaux de détail suivent le périmètre sélectionné."
+    )
 
-info("Les filtres ci-dessous pilotent les indicateurs, les graphiques et les tableaux de détail. Les totaux source restent séparés des données exploitables.")
+    df_esi_filtre, df_contrats_filtre, filtres_selectionnes = render_filtres_patrimoine(
+        df_esi=df_esi,
+        df_contrats=df_contrats,
+    )
 
-df_esi_filtre, df_contrats_filtre, filtres_selectionnes = render_filtres_patrimoine(
-    df_esi=df_esi,
-    df_contrats=df_contrats,
-)
+    st.markdown('<div class="vg-mini-title">Statut des contrats</div>', unsafe_allow_html=True)
+    statut_selectionne = afficher_filtre_statut_contrat()
 
-st.divider()
-section("Périmètre contrat", "Le statut contrat affine les indicateurs sans changer les filtres patrimoine existants.")
-statut_selectionne = afficher_filtre_statut_contrat()
-
+# Calculs communs à toutes les vues.
 df_contrats_kpi = filtrer_contrats_par_statut(df_contrats_filtre, statut_selectionne)
 
 perimetre_commun_actif = (
@@ -1304,143 +1357,299 @@ df_esi_kpi = filtrer_esi_depuis_contrats(df_esi_filtre, df_contrats_kpi, filtre_
 df_esi_base = dedupliquer_esi(df_esi_filtre)
 df_esi_context = dedupliquer_esi(df_esi_kpi)
 
-# =====================================================
-# VUE D'ENSEMBLE
-# =====================================================
-
-st.divider()
-section(
-    "Vue d’ensemble",
-    "Les cartes affichent la situation du périmètre. Sans filtre, elles montrent la réalité source et ce qui est exploitable pour la couverture.",
-)
-
-if not perimetre_filtre_actif:
-    contrats_value = global_value(df_global, "contrats_total")
-    contrats_pill = f"{fmt_nombre(global_value(df_global, 'contrats_rattaches_programme'))} exploitables"
-    contrats_help = f"{fmt_nombre(global_value(df_global, 'contrats_non_rattaches_programme'))} contrats ne sont pas rattachés à un programme."
-
-    programmes_value = global_value(df_global, "programmes_total")
-    programmes_couverts = int(pd.to_numeric(df_esi["esi_couvert"], errors="coerce").fillna(0).sum()) if "esi_couvert" in df_esi.columns else 0
-    programmes_sans = int(pd.to_numeric(df_esi["esi_sans_contrat"], errors="coerce").fillna(0).sum()) if "esi_sans_contrat" in df_esi.columns else 0
-    programmes_pill = f"{fmt_nombre(programmes_couverts)} couverts"
-    programmes_help = f"{fmt_nombre(programmes_sans)} programmes / ESI n'ont pas de contrat actif."
-
-    logements_value = global_value(df_global, "logements_total")
-    logements_pill = f"{fmt_nombre(global_value(df_global, 'logements_rattaches_programme'))} exploitables"
-    logements_help = f"{fmt_nombre(global_value(df_global, 'logements_sans_programme'))} logements sont sans programme."
-
-    equipements_value = global_value(df_global, "equipements_total")
-    equipements_pill = f"{fmt_nombre(global_value(df_global, 'equipements_rattaches_programme'))} exploitables"
-    equipements_help = f"{fmt_nombre(global_value(df_global, 'equipements_sans_programme'))} équipement(s) sans programme."
-else:
-    contrats_value = len(liste_refs_valides(df_contrats_kpi, "contract_reference"))
-    nouveaux_contrats = calcul_nouveaux_ce_mois(df_creations, "contrat", object_refs=liste_refs_valides(df_contrats_kpi, "contract_reference"))
-    contrats_pill = f"+{fmt_nombre(nouveaux_contrats)} ce mois-ci"
-    contrats_help = "Contrats exploitables dans le périmètre filtré."
-
-    programmes_value = len(liste_refs_valides(df_esi_context, "esi_reference"))
-    programmes_couverts = int(pd.to_numeric(df_esi_context.get("esi_couvert", pd.Series(dtype=float)), errors="coerce").fillna(0).sum())
-    programmes_sans = int(pd.to_numeric(df_esi_context.get("esi_sans_contrat", pd.Series(dtype=float)), errors="coerce").fillna(0).sum())
-    programmes_pill = f"{fmt_nombre(programmes_couverts)} couverts"
-    programmes_help = f"{fmt_nombre(programmes_sans)} programmes / ESI sans contrat actif dans le périmètre."
-
-    logements_value = int(pd.to_numeric(df_esi_context.get("nb_logements", pd.Series(dtype=float)), errors="coerce").fillna(0).sum())
-    nouveaux_logements = calcul_nouveaux_ce_mois(df_creations, "logement", esi_refs=liste_refs_valides(df_esi_context, "esi_reference"))
-    logements_pill = f"+{fmt_nombre(nouveaux_logements)} ce mois-ci"
-    logements_help = "Logements rattachés aux ESI du périmètre filtré."
-
-    equipements_value = int(pd.to_numeric(df_esi_context.get("nb_equipements", pd.Series(dtype=float)), errors="coerce").fillna(0).sum())
-    nouveaux_equipements = calcul_nouveaux_ce_mois(df_creations, "equipement", esi_refs=liste_refs_valides(df_esi_context, "esi_reference"))
-    equipements_pill = f"+{fmt_nombre(nouveaux_equipements)} ce mois-ci"
-    equipements_help = "Équipements rattachés aux ESI du périmètre filtré."
-
-c1, c2, c3, c4 = st.columns(4)
-with c1:
-    kpi_card("Contrats", contrats_value, contrats_pill, contrats_help, accent=C_NAVY)
-with c2:
-    kpi_card("Programmes / ESI", programmes_value, programmes_pill, programmes_help, accent=C_BLUE)
-with c3:
-    kpi_card("Logements", logements_value, logements_pill, logements_help, accent=C_TEAL)
-with c4:
-    kpi_card("Équipements", equipements_value, equipements_pill, equipements_help, accent=C_VIOLET)
 
 # =====================================================
-# COUVERTURE
+# VUE 1 — VUE GLOBALE
 # =====================================================
 
-st.divider()
-section(
-    "Couverture du patrimoine",
-    "Lecture simple : part du patrimoine exploitable couverte par au moins un contrat actif. La couverture stricte métier par équipement sera une couche dédiée.",
-)
+if vue_active == "Vue globale":
+    section(
+        "Vue globale",
+        "La réalité présente dans Intent, puis la part réellement exploitable pour les analyses de couverture.",
+    )
 
-col_cov, col_metier = st.columns([1, 1.18])
+    if not perimetre_filtre_actif:
+        contrats_value = global_value(df_global, "contrats_total")
+        contrats_pill = f"{fmt_nombre(global_value(df_global, 'contrats_rattaches_programme'))} exploitables"
+        contrats_help = f"{fmt_nombre(global_value(df_global, 'contrats_non_rattaches_programme'))} non rattachés à un programme."
 
-with col_cov:
-    st.markdown('<div class="vg-mini-title">Taux de couverture</div>', unsafe_allow_html=True)
-    df_couverture = construire_couverture(df_esi_base, df_esi_context, filtre_contrat_actif)
-    afficher_couverture(df_couverture)
+        programmes_value = global_value(df_global, "programmes_total")
+        programmes_couverts = int(serie_numerique(df_esi, "esi_couvert").sum())
+        programmes_pill = f"{fmt_nombre(programmes_couverts)} couverts"
+        programmes_help = "Programmes / ESI présents dans la source patrimoniale."
 
-    if filtre_contrat_actif:
-        st.caption("Le taux mesure la part du patrimoine filtré touchée par les contrats sélectionnés.")
+        logements_value = global_value(df_global, "logements_total")
+        logements_pill = f"{fmt_nombre(global_value(df_global, 'logements_rattaches_programme'))} exploitables"
+        logements_help = f"{fmt_nombre(global_value(df_global, 'logements_sans_programme'))} sans programme."
+
+        equipements_value = global_value(df_global, "equipements_total")
+        equipements_pill = f"{fmt_nombre(global_value(df_global, 'equipements_rattaches_programme'))} exploitables"
+        equipements_help = f"{fmt_nombre(global_value(df_global, 'equipements_sans_programme'))} sans programme."
     else:
-        st.caption("Le taux mesure les ESI ayant au moins un contrat actif. Les données sans programme sont exclues de ce calcul.")
+        contrats_value = len(liste_refs_valides(df_contrats_kpi, "contract_reference"))
+        contrats_pill = "Périmètre filtré"
+        contrats_help = "Contrats exploitables correspondant aux filtres actifs."
 
-with col_metier:
-    st.markdown('<div class="vg-mini-title">Contrats par métier</div>', unsafe_allow_html=True)
-    df_metier = construire_graph_metier(df_contrats_kpi, top_n=12)
-    afficher_barres_horizontales(df_metier, "Métier", "Contrats", color=C_RED, height_base=320)
+        programmes_value = len(liste_refs_valides(df_esi_context, "esi_reference"))
+        programmes_couverts = int(serie_numerique(df_esi_context, "esi_couvert").sum())
+        programmes_pill = f"{fmt_nombre(programmes_couverts)} couverts"
+        programmes_help = "Programmes / ESI correspondant aux filtres actifs."
+
+        logements_value = int(serie_numerique(df_esi_context, "nb_logements").sum())
+        logements_pill = "Rattachés aux ESI"
+        logements_help = "Logements exploitables du périmètre filtré."
+
+        equipements_value = int(serie_numerique(df_esi_context, "nb_equipements").sum())
+        equipements_pill = "Rattachés aux ESI"
+        equipements_help = "Équipements exploitables du périmètre filtré."
+
+    c1, c2, c3, c4 = st.columns(4)
+    with c1:
+        kpi_card("Contrats", contrats_value, contrats_pill, contrats_help, accent=C_NAVY)
+    with c2:
+        kpi_card("Programmes / ESI", programmes_value, programmes_pill, programmes_help, accent=C_BLUE)
+    with c3:
+        kpi_card("Logements", logements_value, logements_pill, logements_help, accent=C_TEAL)
+    with c4:
+        kpi_card("Équipements", equipements_value, equipements_pill, equipements_help, accent=C_VIOLET)
+
+    st.markdown("<br>", unsafe_allow_html=True)
+    col_statut, col_metier = st.columns([0.82, 1.35])
+
+    with col_statut:
+        st.markdown('<div class="vg-mini-title">Statut des contrats</div>', unsafe_allow_html=True)
+        contrats_uniques = df_contrats_kpi.drop_duplicates("contract_reference").copy()
+        nb_actifs = int((contrats_uniques["contract_status_clean"] == "active").sum())
+        nb_inactifs = int((contrats_uniques["contract_status_clean"] != "active").sum())
+
+        if go is None:
+            st.dataframe(
+                pd.DataFrame({"Statut": ["Actifs", "Inactifs"], "Contrats": [nb_actifs, nb_inactifs]}),
+                use_container_width=True,
+                hide_index=True,
+            )
+        else:
+            fig = go.Figure(
+                data=[
+                    go.Pie(
+                        labels=["Actifs", "Inactifs"],
+                        values=[nb_actifs, nb_inactifs],
+                        hole=0.68,
+                        marker=dict(colors=[C_TEAL, "#D9DEE8"]),
+                        textinfo="label+value",
+                        hovertemplate="<b>%{label}</b><br>%{value} contrat(s)<extra></extra>",
+                    )
+                ]
+            )
+            _layout_plotly(fig, 300)
+            fig.update_layout(margin=dict(l=8, r=8, t=8, b=8), showlegend=False)
+            st.plotly_chart(fig, use_container_width=True, config={"displayModeBar": False})
+
+    with col_metier:
+        st.markdown('<div class="vg-mini-title">Répartition des contrats par métier</div>', unsafe_allow_html=True)
+        afficher_barres_horizontales(
+            construire_graph_metier(df_contrats_kpi, top_n=10),
+            "Métier",
+            "Contrats",
+            color=C_RED,
+            height_base=300,
+        )
+
+    with st.expander("Consulter la liste des contrats", expanded=False):
+        recherche_contrat = st.text_input(
+            "Rechercher un contrat",
+            placeholder="Référence, libellé, prestataire, métier...",
+            key="global_search_contract",
+        )
+        table_contrats = preparer_contrats_table(
+            df_contrats_kpi.drop_duplicates(["contract_reference", "esi_reference"])
+        )
+        table_contrats = filtrer_table_recherche(table_contrats, recherche_contrat)
+        st.dataframe(table_contrats, use_container_width=True, hide_index=True, height=430)
+        dataframe_download("Télécharger la liste", table_contrats, "contrats_patrimoine.csv")
+
 
 # =====================================================
-# POINTS D'ATTENTION
+# VUE 2 — COUVERTURE
 # =====================================================
 
-st.divider()
-section(
-    "Points d’attention",
-    "Les chiffres ci-dessous servent à piloter la qualité de la donnée et à comprendre ce qui limite la couverture.",
-)
+elif vue_active == "Couverture":
+    section(
+        "Couverture du patrimoine",
+        "La couverture est calculée uniquement sur le patrimoine exploitable et sur les contrats actifs rattachés à un programme.",
+    )
 
-expired_detail = contrats_actifs_fin_depassee(df_contrats_kpi)
-expired_global = int(global_value(df_global, "contrats_actifs_fin_depassee", 0))
-expired_value = expired_global if not perimetre_filtre_actif else expired_detail["contract_reference"].nunique()
+    df_couverture = construire_couverture(df_esi_base, df_esi_context, filtre_contrat_actif)
+    cov_map = df_couverture.set_index("Indicateur").to_dict("index") if not df_couverture.empty else {}
 
-unlinked_contracts = int(global_value(df_global, "contrats_non_rattaches_programme", 0))
-housing_without_program = int(global_value(df_global, "logements_sans_programme", 0))
-multi_meme_metier = int(pd.to_numeric(df_esi_context.get("esi_multi_meme_metier", pd.Series(dtype=float)), errors="coerce").fillna(0).sum())
-esi_sans_contrat = int(pd.to_numeric(df_esi_context.get("esi_sans_contrat", pd.Series(dtype=float)), errors="coerce").fillna(0).sum())
+    esi_total = int(cov_map.get("Programmes", {}).get("Total", 0))
+    esi_couverts = int(cov_map.get("Programmes", {}).get("Couverts", 0))
+    esi_sans = max(esi_total - esi_couverts, 0)
+    taux_esi = float(cov_map.get("Programmes", {}).get("Taux", 0))
+    moyenne_contrats = (
+        serie_numerique(df_esi_context, "nb_contrats_actifs").mean()
+        if not df_esi_context.empty else 0
+    )
 
-q1, q2, q3, q4 = st.columns(4)
-with q1:
-    alert_card("Contrats actifs expirés", expired_value, "Actifs dans le système alors que leur date de fin est dépassée.")
-with q2:
-    alert_card("Contrats non rattachés", unlinked_contracts, "Contrats source absents de la couverture programme.")
-with q3:
-    alert_card("Logements sans programme", housing_without_program, "Logements existants mais exclus du calcul de couverture ESI.")
-with q4:
-    alert_card("ESI multi même métier", multi_meme_metier, "Plusieurs contrats actifs sur le même métier pour un même ESI.")
+    c1, c2, c3, c4 = st.columns(4)
+    with c1:
+        kpi_card("ESI couverts", esi_couverts, fmt_pourcentage(taux_esi), "Au moins un contrat actif.", accent=C_TEAL)
+    with c2:
+        kpi_card("ESI sans contrat actif", esi_sans, "À traiter", "Aucun contrat actif rattaché.", accent=C_RED)
+    with c3:
+        kpi_card(
+            "Logements couverts",
+            cov_map.get("Logements", {}).get("Couverts", 0),
+            fmt_pourcentage(cov_map.get("Logements", {}).get("Taux", 0)),
+            "Logements situés dans des ESI couverts.",
+            accent=C_BLUE,
+        )
+    with c4:
+        st.markdown(
+            f"""
+            <div class="vg-card" style="--accent:{C_VIOLET};">
+                <div class="vg-card-accent"></div>
+                <div class="vg-card-label">Contrats actifs moyens / ESI</div>
+                <div class="vg-card-value">{moyenne_contrats:.1f}</div>
+                <div class="vg-card-pill">Moyenne du périmètre</div>
+                <div class="vg-card-help">Nombre moyen de contrats actifs rattachés à chaque ESI affiché.</div>
+            </div>
+            """,
+            unsafe_allow_html=True,
+        )
 
-b1, b2, b3, b4, b5 = st.columns(5)
-if "vg_detail_focus" not in st.session_state:
-    st.session_state["vg_detail_focus"] = None
+    st.markdown("<br>", unsafe_allow_html=True)
+    col_cov, col_repartition = st.columns([1, 1.15])
 
-with b1:
-    if st.button("Voir expirés", use_container_width=True):
+    with col_cov:
+        st.markdown('<div class="vg-mini-title">Taux de couverture</div>', unsafe_allow_html=True)
+        afficher_couverture(df_couverture)
+
+    with col_repartition:
+        st.markdown('<div class="vg-mini-title">Répartition des ESI par nombre de contrats actifs</div>', unsafe_allow_html=True)
+        if df_esi_context.empty or "nb_contrats_actifs" not in df_esi_context.columns:
+            st.info("Aucune donnée disponible.")
+        else:
+            repartition = df_esi_context.copy()
+            repartition["nb_contrats_actifs"] = pd.to_numeric(
+                repartition["nb_contrats_actifs"], errors="coerce"
+            ).fillna(0).astype(int)
+            repartition["Classe"] = repartition["nb_contrats_actifs"].apply(
+                lambda x: "0" if x == 0 else "1" if x == 1 else "2" if x == 2 else "3" if x == 3 else "4 et +"
+            )
+            ordre = ["0", "1", "2", "3", "4 et +"]
+            repartition = (
+                repartition.groupby("Classe", as_index=False)["esi_reference"]
+                .nunique()
+                .rename(columns={"esi_reference": "ESI"})
+            )
+            repartition["Classe"] = pd.Categorical(repartition["Classe"], categories=ordre, ordered=True)
+            repartition = repartition.sort_values("Classe")
+
+            if go is None:
+                st.bar_chart(repartition.set_index("Classe")["ESI"], use_container_width=True)
+            else:
+                fig = go.Figure(
+                    go.Bar(
+                        x=repartition["Classe"].astype(str),
+                        y=repartition["ESI"],
+                        text=repartition["ESI"].apply(fmt_nombre),
+                        textposition="outside",
+                        marker=dict(color=C_NAVY),
+                        hovertemplate="<b>%{x} contrat(s)</b><br>%{y} ESI<extra></extra>",
+                    )
+                )
+                _layout_plotly(fig, 300)
+                fig.update_layout(
+                    xaxis_title="Nombre de contrats actifs",
+                    yaxis_title=None,
+                    margin=dict(l=8, r=20, t=10, b=45),
+                )
+                st.plotly_chart(fig, use_container_width=True, config={"displayModeBar": False})
+
+    with st.expander("Consulter le détail des ESI", expanded=False):
+        col_search, col_only = st.columns([2.3, 1])
+        with col_search:
+            recherche_esi = st.text_input(
+                "Rechercher un ESI",
+                placeholder="Référence, libellé, société, agence, groupe...",
+                key="coverage_search_esi",
+            )
+        with col_only:
+            filtre_esi = st.selectbox(
+                "Afficher",
+                ["Tous les ESI", "ESI couverts", "ESI sans contrat actif", "Multi même métier"],
+                key="coverage_filter_esi",
+            )
+
+        table_source = df_esi_context.copy()
+        if filtre_esi == "ESI couverts":
+            table_source = table_source[serie_numerique(table_source, "nb_contrats_actifs") > 0]
+        elif filtre_esi == "ESI sans contrat actif":
+            table_source = table_source[serie_numerique(table_source, "nb_contrats_actifs") == 0]
+        elif filtre_esi == "Multi même métier":
+            table_source = table_source[serie_numerique(table_source, "esi_multi_meme_metier") > 0]
+
+        table_esi = filtrer_table_recherche(preparer_esi_table(table_source), recherche_esi)
+        st.dataframe(table_esi, use_container_width=True, hide_index=True, height=460)
+        dataframe_download("Télécharger le détail", table_esi, "couverture_esi.csv")
+
+
+# =====================================================
+# VUE 3 — QUALITÉ ET ANOMALIES
+# =====================================================
+
+else:
+    section(
+        "Qualité et anomalies",
+        "Les données non exploitables ou incohérentes sont rendues visibles pour être corrigées, pas masquées.",
+    )
+
+    expired_detail = contrats_actifs_fin_depassee(df_contrats_kpi)
+    expired_value = (
+        int(global_value(df_global, "contrats_actifs_fin_depassee", 0))
+        if not perimetre_filtre_actif
+        else expired_detail["contract_reference"].nunique()
+    )
+    unlinked_contracts = int(global_value(df_global, "contrats_non_rattaches_programme", 0))
+    housing_without_program = int(global_value(df_global, "logements_sans_programme", 0))
+    multi_meme_metier = int(
+        serie_numerique(df_esi_context, "esi_multi_meme_metier").sum()
+    )
+
+    q1, q2, q3, q4 = st.columns(4)
+    with q1:
+        alert_card("Contrats actifs expirés", expired_value, "Statut actif malgré une date de fin dépassée.")
+    with q2:
+        alert_card("Contrats non rattachés", unlinked_contracts, "Présents en source mais hors couverture programme.")
+    with q3:
+        alert_card("Logements sans programme", housing_without_program, "Existants mais non exploitables pour la couverture ESI.")
+    with q4:
+        alert_card("ESI multi même métier", multi_meme_metier, "Plusieurs contrats actifs sur un même métier.")
+
+    st.markdown("<br>", unsafe_allow_html=True)
+    section("Choisir une anomalie", "Un seul détail est affiché à la fois pour garder une lecture claire.")
+
+    if "vg_detail_focus" not in st.session_state:
         st.session_state["vg_detail_focus"] = "expired"
-with b2:
-    if st.button("Voir non rattachés", use_container_width=True):
-        st.session_state["vg_detail_focus"] = "unlinked_contracts"
-with b3:
-    if st.button("Voir logements", use_container_width=True):
-        st.session_state["vg_detail_focus"] = "housing"
-with b4:
-    if st.button("Voir multi métier", use_container_width=True):
-        st.session_state["vg_detail_focus"] = "multi_topic"
-with b5:
-    if st.button("Voir ESI sans contrat", use_container_width=True):
-        st.session_state["vg_detail_focus"] = "no_contract"
 
-if st.session_state.get("vg_detail_focus"):
+    b1, b2, b3, b4, b5 = st.columns(5)
+    with b1:
+        if st.button("Contrats expirés", use_container_width=True, key="quality_expired"):
+            st.session_state["vg_detail_focus"] = "expired"
+    with b2:
+        if st.button("Non rattachés", use_container_width=True, key="quality_unlinked"):
+            st.session_state["vg_detail_focus"] = "unlinked_contracts"
+    with b3:
+        if st.button("Logements sans programme", use_container_width=True, key="quality_housing"):
+            st.session_state["vg_detail_focus"] = "housing"
+    with b4:
+        if st.button("Multi même métier", use_container_width=True, key="quality_multi"):
+            st.session_state["vg_detail_focus"] = "multi_topic"
+    with b5:
+        if st.button("ESI sans contrat", use_container_width=True, key="quality_no_contract"):
+            st.session_state["vg_detail_focus"] = "no_contract"
+
     afficher_detail_qualite(
         st.session_state["vg_detail_focus"],
         df_contrats_kpi=df_contrats_kpi,
@@ -1449,88 +1658,57 @@ if st.session_state.get("vg_detail_focus"):
         df_global=df_global,
     )
 
-# =====================================================
-# ANALYSE QUALITÉ
-# =====================================================
+    with st.expander("Vue consolidée de toutes les anomalies", expanded=False):
+        col_quality_graph, col_quality_table = st.columns([1, 1.15])
+        with col_quality_graph:
+            st.markdown('<div class="vg-mini-title">Anomalies principales</div>', unsafe_allow_html=True)
+            df_q_graph = construire_graph_qualite(df_qualite_resume, df_qualite)
+            afficher_barres_horizontales(
+                df_q_graph,
+                "Anomalie",
+                "Objets distincts",
+                color=C_VIOLET,
+                height_base=320,
+            )
 
-st.divider()
-section(
-    "Qualité des données",
-    "Un résumé court des anomalies. Les détails restent accessibles via les boutons et la recherche.",
-)
+        with col_quality_table:
+            st.markdown('<div class="vg-mini-title">Résumé qualité</div>', unsafe_allow_html=True)
+            if df_qualite_resume.empty:
+                st.info("Aucun résumé qualité disponible.")
+            else:
+                resume = df_qualite_resume.copy()
+                cols = [
+                    c for c in [
+                        "anomalie_type",
+                        "objet_type",
+                        "gravite",
+                        "nb_objets_distincts",
+                        "nb_lignes_detail",
+                    ] if c in resume.columns
+                ]
+                resume = resume[cols]
+                if "nb_objets_distincts" in resume.columns:
+                    resume = resume.sort_values("nb_objets_distincts", ascending=False)
+                resume = resume.rename(
+                    columns={
+                        "anomalie_type": "Type anomalie",
+                        "objet_type": "Type objet",
+                        "gravite": "Gravité",
+                        "nb_objets_distincts": "Objets distincts",
+                        "nb_lignes_detail": "Lignes détail",
+                    }
+                )
+                st.dataframe(resume, use_container_width=True, hide_index=True, height=320)
 
-col_quality_graph, col_quality_table = st.columns([1, 1])
-with col_quality_graph:
-    st.markdown('<div class="vg-mini-title">Anomalies principales</div>', unsafe_allow_html=True)
-    df_q_graph = construire_graph_qualite(df_qualite_resume, df_qualite)
-    afficher_barres_horizontales(df_q_graph, "Anomalie", "Objets distincts", color=C_VIOLET, height_base=320)
-
-with col_quality_table:
-    st.markdown('<div class="vg-mini-title">Résumé qualité</div>', unsafe_allow_html=True)
-    if df_qualite_resume.empty:
-        st.info("Aucun résumé qualité disponible.")
-    else:
-        resume = df_qualite_resume.copy()
-        cols = [c for c in ["anomalie_type", "objet_type", "gravite", "nb_objets_distincts", "nb_lignes_detail"] if c in resume.columns]
-        resume = resume[cols].sort_values(cols[-2] if "nb_objets_distincts" in cols else cols[0], ascending=False)
-        resume = resume.rename(
-            columns={
-                "anomalie_type": "Type anomalie",
-                "objet_type": "Type objet",
-                "gravite": "Gravité",
-                "nb_objets_distincts": "Objets distincts",
-                "nb_lignes_detail": "Lignes détail",
-            }
+        recherche_anomalie = st.text_input(
+            "Rechercher dans toutes les anomalies",
+            placeholder="Référence, type, description, société, agence...",
+            key="quality_search_all",
         )
-        st.dataframe(resume, use_container_width=True, hide_index=True, height=320)
+        table_qualite = filtrer_table_recherche(preparer_qualite_table(df_qualite), recherche_anomalie)
+        st.dataframe(table_qualite, use_container_width=True, hide_index=True, height=460)
+        dataframe_download("Télécharger les anomalies", table_qualite, "anomalies_patrimoine.csv")
 
-# =====================================================
-# RECHERCHE RAPIDE
-# =====================================================
-
-st.divider()
-section(
-    "Recherche rapide",
-    "Trouver un contrat, un programme / ESI ou une anomalie sans parcourir toute la page.",
-)
-
-search_col1, search_col2 = st.columns([1, 2.2])
-with search_col1:
-    search_type = st.radio(
-        "Chercher dans",
-        ["Contrats", "Programmes / ESI", "Anomalies"],
-        horizontal=False,
-        key="vg_search_type",
-    )
-
-with search_col2:
-    recherche = st.text_input(
-        "Recherche",
-        placeholder="Référence, libellé, prestataire, métier, société, agence...",
-        key="vg_search_input",
-    )
-
-if search_type == "Contrats":
-    base_table = preparer_contrats_table(df_contrats_kpi.drop_duplicates(["contract_reference", "esi_reference"]))
-    filename = "recherche_contrats.csv"
-elif search_type == "Programmes / ESI":
-    base_table = preparer_esi_table(df_esi_context)
-    filename = "recherche_esi.csv"
-else:
-    base_table = preparer_qualite_table(df_qualite)
-    filename = "recherche_anomalies.csv"
-
-resultats = filtrer_table_recherche(base_table, recherche)
-
-st.caption(f"{fmt_nombre(len(resultats))} résultat(s).")
-
-if resultats.empty:
-    st.info("Aucun résultat trouvé.")
-else:
-    st.dataframe(resultats.head(600), use_container_width=True, hide_index=True, height=520)
-    if len(resultats) > 600:
-        st.caption(f"Affichage limité à 600 lignes sur {fmt_nombre(len(resultats))}.")
-    dataframe_download("Télécharger les résultats", resultats, filename)
 
 # =====================================================
 # FOOTER TECHNIQUE DISCRET
