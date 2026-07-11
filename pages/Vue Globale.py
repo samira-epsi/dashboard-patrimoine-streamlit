@@ -37,18 +37,21 @@ SQL_TIMEOUT_MS = 20000
 # PALETTE CHARTE 3F
 # =====================================================
 
-C_NAVY = "#173B69"
-C_NAVY_DEEP = "#0F2647"
-C_RED = "#E5114D"
-C_VIOLET = "#432ABD"
-C_TEAL = "#008080"
-C_BLUE = "#0074FF"
-C_BLUE_LIGHT = "#80CDFF"
-C_YELLOW = "#FFDC55"
-C_PINK = "#FFB7E3"
+C_NAVY = "#173B69"          # couleur secondaire structurante
+C_NAVY_DEEP = "#102A4C"
+C_RED = "#E5114D"           # rouge signature 3F
+C_RED_DARK = "#C51D32"
+C_BURGUNDY = "#981B35"
+C_PINK = "#F06A83"
+C_PINK_SOFT = "#FFF1F4"
+C_BLUE = "#315B89"
+C_BLUE_LIGHT = "#DDE8F4"
+C_TEAL = "#A63852"
+C_VIOLET = "#7E2941"
+C_YELLOW = "#F4C95D"
 
-C_GRID = "#EDF0F5"
-C_INK = "#16233B"
+C_GRID = "#F0E7EA"
+C_INK = "#172033"
 
 
 # =====================================================
@@ -71,22 +74,23 @@ def inject_style():
         <style>
         :root {
             --navy: #173B69;
-            --navy-deep: #0F2647;
+            --navy-deep: #102A4C;
             --red: #E5114D;
-            --violet: #432ABD;
-            --teal: #008080;
-            --blue: #0074FF;
-            --blue-light: #80CDFF;
-            --yellow: #FFDC55;
-            --pink: #FFB7E3;
+            --red-dark: #C51D32;
+            --burgundy: #981B35;
+            --pink: #F06A83;
+            --pink-soft: #FFF1F4;
+            --blue: #315B89;
+            --blue-light: #DDE8F4;
+            --yellow: #F4C95D;
 
-            --ink: #16233B;
-            --ink-soft: #51617A;
-            --ink-mute: #8493A8;
-            --line: #E6EAF1;
-            --line-soft: #EEF1F6;
+            --ink: #172033;
+            --ink-soft: #5F6675;
+            --ink-mute: #8A7480;
+            --line: #EADDE1;
+            --line-soft: #F3E9EC;
             --surface: #FFFFFF;
-            --canvas: #F4F6FA;
+            --canvas: #FBF7F8;
         }
 
         html, body, [class*="css"], .stApp, button, input, textarea, select {
@@ -116,9 +120,9 @@ def inject_style():
             overflow: hidden;
             padding: 30px 34px;
             border-radius: 20px;
-            background: linear-gradient(118deg, #173B69 0%, #1E4A82 58%, #0F2647 100%);
-            box-shadow: 0 1px 2px rgba(23,59,105,0.10),
-                        0 22px 44px -20px rgba(23,59,105,0.55);
+            background: linear-gradient(120deg, #B81836 0%, #E5114D 55%, #F06A83 100%);
+            box-shadow: 0 1px 2px rgba(197,29,50,0.10),
+                        0 22px 44px -20px rgba(197,29,50,0.48);
             margin-bottom: 22px;
         }
         .vg-hero:before {
@@ -151,7 +155,7 @@ def inject_style():
         .vg-hero-eyebrow:before {
             content: "";
             width: 22px; height: 2px;
-            background: var(--red);
+            background: rgba(255,255,255,0.92);
             border-radius: 99px;
         }
         .vg-hero-title {
@@ -176,8 +180,8 @@ def inject_style():
         .vg-info {
             padding: 12px 16px;
             border-radius: 12px;
-            background: #EFF3F9;
-            border: 1px solid #E1E9F3;
+            background: var(--pink-soft);
+            border: 1px solid #F3CAD4;
             color: var(--ink-soft);
             font-size: 12.5px;
             font-weight: 500;
@@ -189,7 +193,7 @@ def inject_style():
         .vg-section-title {
             font-size: 20px;
             font-weight: 800;
-            color: var(--navy);
+            color: var(--burgundy);
             letter-spacing: -0.3px;
             margin-top: 2px;
             margin-bottom: 3px;
@@ -203,7 +207,7 @@ def inject_style():
             max-width: 920px;
         }
         .vg-mini-title {
-            color: var(--navy);
+            color: var(--burgundy);
             font-size: 14px;
             font-weight: 700;
             margin: 2px 0 10px 0;
@@ -316,8 +320,8 @@ def inject_style():
             background: var(--surface) !important;
         }
         div[data-testid="stDataFrame"] [role="columnheader"] {
-            background: #F5F7FB !important;
-            color: var(--navy) !important;
+            background: #FFF5F7 !important;
+            color: var(--burgundy) !important;
             font-weight: 700 !important;
         }
 
@@ -327,28 +331,28 @@ def inject_style():
             font-weight: 600 !important;
             border: 1px solid var(--line) !important;
             background: var(--surface) !important;
-            color: var(--navy) !important;
+            color: var(--burgundy) !important;
             transition: all .15s ease !important;
         }
         .stButton button:hover {
-            border-color: var(--navy) !important;
-            background: #F5F7FB !important;
+            border-color: var(--red) !important;
+            background: var(--pink-soft) !important;
         }
         .stDownloadButton button {
             border-radius: 10px !important;
             font-weight: 600 !important;
-            border: 1px solid var(--navy) !important;
-            background: var(--navy) !important;
+            border: 1px solid var(--red) !important;
+            background: var(--red) !important;
             color: #FFFFFF !important;
         }
         .stDownloadButton button:hover {
-            background: var(--navy-deep) !important;
+            background: var(--red-dark) !important;
         }
 
         /* ---------- NAVIGATION EN BOUTONS ---------- */
         div[role="radiogroup"] {
             gap: 8px !important;
-            background: #E9EDF4;
+            background: #F8E9ED;
             padding: 5px;
             border-radius: 13px;
             width: fit-content;
@@ -361,11 +365,11 @@ def inject_style():
             transition: background .15s ease, box-shadow .15s ease;
         }
         div[role="radiogroup"] label:has(input:checked) {
-            background: #FFFFFF !important;
-            box-shadow: 0 2px 8px rgba(15,38,71,0.12);
+            background: linear-gradient(135deg, #E5114D 0%, #C51D32 100%) !important;
+            box-shadow: 0 5px 14px rgba(197,29,50,0.22);
         }
         div[role="radiogroup"] label:has(input:checked) p {
-            color: var(--navy) !important;
+            color: #FFFFFF !important;
             font-weight: 800 !important;
         }
         div[role="radiogroup"] label > div:first-child {
@@ -377,6 +381,7 @@ def inject_style():
             border: 1px solid var(--line) !important;
             border-radius: 14px !important;
             background: var(--surface) !important;
+            box-shadow: 0 10px 28px -24px rgba(152,27,53,0.28);
             overflow: hidden;
         }
 
@@ -854,7 +859,7 @@ def global_value(df_global: pd.DataFrame, col: str, default=0):
 # COMPOSANTS VISUELS
 # =====================================================
 
-def kpi_card(label, value, pill, help_text, accent=C_NAVY):
+def kpi_card(label, value, pill, help_text, accent=C_RED):
     st.markdown(
         f"""
         <div class="vg-card" style="--accent:{_safe(accent)};">
@@ -965,7 +970,7 @@ def afficher_couverture(df_couverture: pd.DataFrame):
             insidetextfont=dict(color="white"),
             customdata=df["Détail"],
             hovertemplate="<b>%{y}</b><br>Taux : %{x:.1f} %<br>Détail : %{customdata}<extra></extra>",
-            marker=dict(color=C_NAVY),
+            marker=dict(color=C_RED),
         )
     )
     _layout_plotly(fig, 300)
@@ -1407,11 +1412,11 @@ if vue_active == "Vue globale":
     with c1:
         kpi_card("Contrats", contrats_value, contrats_pill, contrats_help, accent=C_NAVY)
     with c2:
-        kpi_card("Programmes / ESI", programmes_value, programmes_pill, programmes_help, accent=C_BLUE)
+        kpi_card("Programmes / ESI", programmes_value, programmes_pill, programmes_help, accent=C_NAVY)
     with c3:
-        kpi_card("Logements", logements_value, logements_pill, logements_help, accent=C_TEAL)
+        kpi_card("Logements", logements_value, logements_pill, logements_help, accent=C_PINK)
     with c4:
-        kpi_card("Équipements", equipements_value, equipements_pill, equipements_help, accent=C_VIOLET)
+        kpi_card("Équipements", equipements_value, equipements_pill, equipements_help, accent=C_BURGUNDY)
 
     st.markdown("<br>", unsafe_allow_html=True)
     col_statut, col_metier = st.columns([0.82, 1.35])
@@ -1435,7 +1440,7 @@ if vue_active == "Vue globale":
                         labels=["Actifs", "Inactifs"],
                         values=[nb_actifs, nb_inactifs],
                         hole=0.68,
-                        marker=dict(colors=[C_TEAL, "#D9DEE8"]),
+                        marker=dict(colors=[C_RED, "#F2DDE3"]),
                         textinfo="label+value",
                         hovertemplate="<b>%{label}</b><br>%{value} contrat(s)<extra></extra>",
                     )
@@ -1493,7 +1498,7 @@ elif vue_active == "Couverture":
 
     c1, c2, c3, c4 = st.columns(4)
     with c1:
-        kpi_card("ESI couverts", esi_couverts, fmt_pourcentage(taux_esi), "Au moins un contrat actif.", accent=C_TEAL)
+        kpi_card("ESI couverts", esi_couverts, fmt_pourcentage(taux_esi), "Au moins un contrat actif.", accent=C_RED)
     with c2:
         kpi_card("ESI sans contrat actif", esi_sans, "À traiter", "Aucun contrat actif rattaché.", accent=C_RED)
     with c3:
