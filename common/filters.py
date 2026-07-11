@@ -643,6 +643,63 @@ def nettoyer_session_state(key: str, options: list):
     ]
 
 
+def construire_options_contrat(df: pd.DataFrame):
+    """
+    Retourne :
+    - la liste des références contrat ;
+    - un dictionnaire référence -> libellé.
+    """
+
+    if "contract_reference" not in df.columns:
+        return [], {}
+
+    colonnes = ["contract_reference"]
+
+    if "contract_label" in df.columns:
+        colonnes.append("contract_label")
+
+    temp = df[colonnes].copy()
+
+    temp = temp[temp["contract_reference"].notna()]
+    temp["contract_reference"] = (
+        temp["contract_reference"]
+        .astype(str)
+        .str.strip()
+    )
+
+    temp = temp[
+        (temp["contract_reference"] != "")
+        & (temp["contract_reference"] != "nan")
+        & (temp["contract_reference"] != "None")
+    ]
+
+    if "contract_label" not in temp.columns:
+        temp["contract_label"] = ""
+
+    temp["contract_label"] = (
+        temp["contract_label"]
+        .fillna("")
+        .astype(str)
+        .str.strip()
+    )
+
+    temp = (
+        temp
+        .drop_duplicates(subset=["contract_reference"])
+        .sort_values("contract_reference")
+    )
+
+    options = temp["contract_reference"].tolist()
+    labels = dict(
+        zip(
+            temp["contract_reference"],
+            temp["contract_label"],
+        )
+    )
+
+    return options, labels
+
+
 def construire_options_programme(df: pd.DataFrame):
     if "esi_reference" not in df.columns:
         return [], {}
@@ -740,6 +797,7 @@ def render_filtres_patrimoine(
 
     if reset_keys is None:
         reset_keys = [
+            "filtre_contrat",
             "filtre_societe",
             "filtre_agence",
             "filtre_groupe",
@@ -754,8 +812,8 @@ def render_filtres_patrimoine(
         <div class="filters-header">
             <div class="filters-title">Filtres patrimoine</div>
             <div class="filters-subtitle">
-                Affinez le périmètre par société, agence,
-                programme / ESI, métier et prestataire.
+                Affinez le périmètre par contrat, société,
+                agence, programme / ESI, métier et prestataire.
             </div>
         </div>
         """,
@@ -771,7 +829,67 @@ def render_filtres_patrimoine(
             st.session_state[key] = []
         st.rerun()
 
-    base_geo = df_esi.copy()
+    # =====================================================
+    # CONTRAT
+    # =====================================================
+
+    base_contrats = df_contrats.copy()
+
+    contrat_options, contrat_labels = construire_options_contrat(
+        base_contrats
+    )
+    nettoyer_session_state(
+        "filtre_contrat",
+        contrat_options,
+    )
+
+    selected_contrats = render_multiselect(
+        label="Contrat",
+        options=contrat_options,
+        key="filtre_contrat",
+        placeholder="Tous les contrats",
+        format_func=lambda ref: (
+            f"{ref} — {contrat_labels.get(ref, '')}"
+            if contrat_labels.get(ref, "")
+            else str(ref)
+        ),
+    )
+
+    # Le contrat devient le filtre parent :
+    # il réduit les lignes contrat x ESI puis les options patrimoniales.
+    if selected_contrats:
+        df_contrats_parent = filtrer_df(
+            base_contrats,
+            {
+                "contract_reference": selected_contrats,
+            },
+        )
+
+        if "esi_reference" in df_contrats_parent.columns:
+            esi_autorises = (
+                df_contrats_parent["esi_reference"]
+                .dropna()
+                .astype(str)
+                .str.strip()
+            )
+
+            esi_autorises = esi_autorises[
+                (esi_autorises != "")
+                & (esi_autorises != "nan")
+                & (esi_autorises != "None")
+            ].unique().tolist()
+
+            base_geo = df_esi[
+                df_esi["esi_reference"]
+                .astype(str)
+                .isin(esi_autorises)
+            ].copy()
+        else:
+            base_geo = df_esi.iloc[0:0].copy()
+
+    else:
+        df_contrats_parent = base_contrats.copy()
+        base_geo = df_esi.copy()
 
     # -------------------------------
     # Société
@@ -883,7 +1001,10 @@ def render_filtres_patrimoine(
     }
 
     df_esi_filtre = filtrer_df(df_esi, filtres_geo)
-    df_contrats_geo = filtrer_df(df_contrats, filtres_geo)
+    df_contrats_geo = filtrer_df(
+        df_contrats_parent,
+        filtres_geo,
+    )
 
     # -------------------------------
     # Métier
@@ -932,6 +1053,7 @@ def render_filtres_patrimoine(
     # -------------------------------
 
     filtres_contrats = {
+        "contract_reference": selected_contrats,
         "societe": selected_societes,
         "agence": selected_agences,
         "groupe": selected_groupes,
@@ -942,14 +1064,18 @@ def render_filtres_patrimoine(
     }
 
     df_contrats_filtre = filtrer_df(
-        df_contrats,
+        df_contrats_parent,
         filtres_contrats,
     )
 
     # Si métier ou prestataire est sélectionné,
     # on réduit aussi les ESI au périmètre contractuel restant.
 
-    if selected_metiers or selected_prestataires:
+    if (
+        selected_contrats
+        or selected_metiers
+        or selected_prestataires
+    ):
         if "esi_reference" in df_contrats_filtre.columns:
             esi_restants = (
                 df_contrats_filtre["esi_reference"]
@@ -971,6 +1097,7 @@ def render_filtres_patrimoine(
             ]
 
     filtres_selectionnes = {
+        "contrat": selected_contrats,
         "societe": selected_societes,
         "agence": selected_agences,
         "groupe": selected_groupes,
