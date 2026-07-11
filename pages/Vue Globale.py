@@ -416,6 +416,220 @@ def inject_style():
         unsafe_allow_html=True,
     )
 
+    st.markdown(
+        r"""
+        <style>
+        :root {
+            --navy: #173B69;
+            --navy-deep: #102A4C;
+            --red: #E5114D;
+            --pink-soft: #FFF1F6;
+            --blue-soft: #EEF6FB;
+            --canvas: #F6F8FB;
+            --surface: #FFFFFF;
+            --line: #DCE4EC;
+            --line-soft: #E9EEF3;
+            --ink: #17243A;
+            --ink-soft: #5E6E82;
+            --ink-mute: #8996A8;
+        }
+
+        .stApp {
+            background: var(--canvas) !important;
+        }
+
+        .block-container {
+            padding-top: 1.25rem !important;
+            padding-left: 2rem !important;
+            padding-right: 2rem !important;
+            max-width: 1520px !important;
+        }
+
+        .vg-hero {
+            position: relative;
+            overflow: hidden;
+            padding: 28px 34px !important;
+            margin-bottom: 18px !important;
+            background: var(--navy) !important;
+            border: 1px solid var(--navy) !important;
+            border-radius: 20px !important;
+            box-shadow: 0 12px 30px -24px rgba(16, 42, 76, 0.65) !important;
+        }
+
+        .vg-hero::before {
+            content: "";
+            position: absolute;
+            left: 0;
+            top: 0;
+            right: 0;
+            height: 5px;
+            background: var(--red) !important;
+        }
+
+        .vg-hero::after {
+            content: "" !important;
+            display: block !important;
+            position: absolute;
+            width: 150px;
+            height: 150px;
+            right: -70px;
+            bottom: -90px;
+            border-radius: 50%;
+            background: rgba(255, 183, 227, 0.14) !important;
+        }
+
+        .vg-hero-eyebrow {
+            color: rgba(255, 255, 255, 0.72) !important;
+            margin-bottom: 11px !important;
+        }
+
+        .vg-hero-eyebrow::before {
+            width: 8px !important;
+            height: 8px !important;
+            border-radius: 50% !important;
+            background: #FFB7E3 !important;
+        }
+
+        .vg-hero-title {
+            color: #FFFFFF !important;
+            font-size: 34px !important;
+            margin-bottom: 8px !important;
+        }
+
+        .vg-hero-subtitle {
+            color: rgba(255, 255, 255, 0.80) !important;
+            max-width: 900px !important;
+        }
+
+        div[role="radiogroup"] {
+            gap: 8px !important;
+        }
+
+        div[role="radiogroup"] label {
+            min-height: 46px !important;
+            padding: 8px 17px !important;
+            background: #FFFFFF !important;
+            color: var(--ink) !important;
+            border: 1px solid var(--line) !important;
+            border-radius: 12px !important;
+            box-shadow: none !important;
+        }
+
+        div[role="radiogroup"] label:hover {
+            background: var(--blue-soft) !important;
+            border-color: #BFCFDC !important;
+            transform: none !important;
+        }
+
+        div[role="radiogroup"] label:has(input:checked) {
+            background: var(--navy) !important;
+            color: #FFFFFF !important;
+            border-color: var(--navy) !important;
+            box-shadow: none !important;
+        }
+
+        div[role="radiogroup"] label:has(input:checked) p,
+        div[role="radiogroup"] label:has(input:checked) span {
+            color: #FFFFFF !important;
+        }
+
+        .stButton button {
+            min-height: 44px !important;
+            color: var(--navy) !important;
+            background: #FFFFFF !important;
+            border: 1px solid var(--line) !important;
+            border-radius: 12px !important;
+            box-shadow: none !important;
+        }
+
+        .stButton button:hover {
+            color: var(--navy-deep) !important;
+            background: var(--blue-soft) !important;
+            border-color: #BCCBD8 !important;
+            transform: none !important;
+        }
+
+        .vg-section-title {
+            color: var(--navy) !important;
+        }
+
+        .vg-section-title::before {
+            width: 5px !important;
+            height: 21px !important;
+            background: var(--red) !important;
+        }
+
+        .vg-info {
+            background: var(--blue-soft) !important;
+            border: 1px solid #D9E7F0 !important;
+            color: var(--ink-soft) !important;
+            box-shadow: none !important;
+        }
+
+        .vg-card {
+            min-height: 148px !important;
+            padding: 18px 19px 17px 19px !important;
+            background: #FFFFFF !important;
+            border: 1px solid var(--line) !important;
+            border-radius: 16px !important;
+            box-shadow: 0 8px 20px -18px rgba(23, 59, 105, 0.30) !important;
+            transition: border-color .15s ease, box-shadow .15s ease !important;
+        }
+
+        .vg-card:hover {
+            transform: none !important;
+            border-color: #C2CFDA !important;
+            box-shadow: 0 10px 24px -18px rgba(23, 59, 105, 0.34) !important;
+        }
+
+        .vg-card-value {
+            color: var(--ink) !important;
+            font-size: 32px !important;
+        }
+
+        .vg-alert-card {
+            min-height: 112px !important;
+            background: #FFFFFF !important;
+            border: 1px solid var(--line) !important;
+            border-left: 4px solid var(--red) !important;
+            border-radius: 14px !important;
+            box-shadow: 0 7px 18px -17px rgba(23, 59, 105, 0.28) !important;
+        }
+
+        details {
+            background: #FFFFFF !important;
+            border: 1px solid var(--line) !important;
+            border-radius: 14px !important;
+            box-shadow: none !important;
+        }
+
+        div[data-testid="stPlotlyChart"],
+        div[data-testid="stDataFrame"] {
+            background: #FFFFFF !important;
+            border: 1px solid var(--line) !important;
+            border-radius: 16px !important;
+            box-shadow: 0 8px 20px -18px rgba(23, 59, 105, 0.28) !important;
+        }
+
+        @media screen and (max-width: 900px) {
+            .vg-hero {
+                padding: 24px 22px !important;
+            }
+
+            .vg-hero-title {
+                font-size: 29px !important;
+            }
+
+            .block-container {
+                padding-left: 1rem !important;
+                padding-right: 1rem !important;
+            }
+        }
+        </style>
+""",
+        unsafe_allow_html=True,
+    )
+
 
 def hero(title: str, subtitle: str):
     st.markdown(
@@ -771,6 +985,7 @@ def afficher_filtre_statut_contrat():
         "Statut des contrats",
         ["Tous les contrats", "Contrats actifs", "Contrats inactifs"],
         horizontal=True,
+        label_visibility="collapsed",
         key="vg_filtre_statut_contrat",
     )
 
@@ -1344,14 +1559,12 @@ df_esi_filtre, df_contrats_filtre, filtres_selectionnes = render_filtres_patrimo
 )
 
 # Filtre complémentaire compact dans la zone principale.
-status_col, note_col = st.columns([1.45, 3.55], vertical_alignment="center")
-with status_col:
-    statut_selectionne = afficher_filtre_statut_contrat()
-with note_col:
-    st.caption(
-        "Les totaux source restent fixes dans la vue globale. "
-        "La couverture et les détails suivent les filtres sélectionnés."
-    )
+st.markdown('<div class="vg-mini-title">Statut des contrats</div>', unsafe_allow_html=True)
+statut_selectionne = afficher_filtre_statut_contrat()
+st.caption(
+    "Les totaux source restent fixes dans la vue globale. "
+    "La couverture et les détails suivent les filtres sélectionnés."
+)
 
 # Calculs communs à toutes les vues.
 df_contrats_kpi = filtrer_contrats_par_statut(df_contrats_filtre, statut_selectionne)
