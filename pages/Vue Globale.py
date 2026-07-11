@@ -631,6 +631,212 @@ def inject_style():
     )
 
 
+
+    st.markdown(
+        r"""
+        <style>
+        :root {
+            --3f-red: #E5114D;
+            --3f-pink-soft: #FFF1F6;
+            --3f-blue-light: #80CDFF;
+            --text-main: #1B2430;
+            --text-soft: #667085;
+            --text-muted: #8A94A6;
+            --surface: #FFFFFF;
+            --canvas: #FAFAFB;
+            --border: #E7E3E8;
+        }
+
+        .stApp {
+            background: var(--canvas) !important;
+        }
+
+        .block-container {
+            max-width: 1520px !important;
+            padding-top: 1.25rem !important;
+            padding-left: 2rem !important;
+            padding-right: 2rem !important;
+        }
+
+        .vg-hero {
+            position: relative;
+            overflow: hidden;
+            padding: 28px 34px !important;
+            margin-bottom: 18px !important;
+            background: var(--3f-pink-soft) !important;
+            border: 1px solid #E8D8E1 !important;
+            border-radius: 20px !important;
+            box-shadow: 0 10px 26px -22px rgba(27, 36, 48, 0.24) !important;
+        }
+
+        .vg-hero::before {
+            content: "";
+            position: absolute;
+            left: 0;
+            top: 0;
+            right: 0;
+            height: 5px;
+            background: var(--3f-red) !important;
+        }
+
+        .vg-hero::after {
+            content: "" !important;
+            display: block !important;
+            position: absolute;
+            width: 135px;
+            height: 135px;
+            right: -70px;
+            bottom: -75px;
+            border-radius: 50%;
+            background: rgba(128, 205, 255, 0.18) !important;
+        }
+
+        .vg-hero-eyebrow {
+            color: #A33A61 !important;
+        }
+
+        .vg-hero-eyebrow::before {
+            width: 8px !important;
+            height: 8px !important;
+            border-radius: 50% !important;
+            background: var(--3f-red) !important;
+        }
+
+        .vg-hero-title {
+            color: var(--text-main) !important;
+            font-size: 34px !important;
+        }
+
+        .vg-hero-subtitle {
+            color: var(--text-soft) !important;
+        }
+
+        div[role="radiogroup"] {
+            gap: 8px !important;
+        }
+
+        div[role="radiogroup"] label {
+            min-height: 46px !important;
+            padding: 8px 17px !important;
+            background: #FFFFFF !important;
+            color: var(--text-main) !important;
+            border: 1px solid var(--border) !important;
+            border-radius: 12px !important;
+            box-shadow: none !important;
+        }
+
+        div[role="radiogroup"] label:hover {
+            background: #FFF7FA !important;
+            border-color: #E5C9D6 !important;
+            transform: none !important;
+        }
+
+        div[role="radiogroup"] label:has(input:checked) {
+            background: var(--3f-red) !important;
+            color: #FFFFFF !important;
+            border-color: var(--3f-red) !important;
+            box-shadow: none !important;
+        }
+
+        div[role="radiogroup"] label:has(input:checked) p,
+        div[role="radiogroup"] label:has(input:checked) span {
+            color: #FFFFFF !important;
+        }
+
+        .stButton button {
+            min-height: 44px !important;
+            color: #9D174D !important;
+            background: #FFFFFF !important;
+            border: 1px solid var(--border) !important;
+            border-radius: 12px !important;
+            box-shadow: none !important;
+        }
+
+        .stButton button:hover {
+            color: var(--3f-red) !important;
+            background: #FFF7FA !important;
+            border-color: #E7C8D6 !important;
+            transform: none !important;
+        }
+
+        .vg-section-title {
+            color: var(--text-main) !important;
+        }
+
+        .vg-section-title::before {
+            background: var(--3f-red) !important;
+        }
+
+        .vg-section-subtitle {
+            color: var(--text-soft) !important;
+        }
+
+        .vg-info {
+            background: #FFF7FA !important;
+            border: 1px solid #EEDCE5 !important;
+            color: var(--text-soft) !important;
+            box-shadow: none !important;
+        }
+
+        .vg-card {
+            background: #FFFFFF !important;
+            border: 1px solid var(--border) !important;
+            border-radius: 16px !important;
+            box-shadow: 0 8px 20px -18px rgba(27, 36, 48, 0.22) !important;
+        }
+
+        .vg-card:hover {
+            transform: none !important;
+            border-color: #DCCED5 !important;
+            box-shadow: 0 10px 24px -18px rgba(27, 36, 48, 0.28) !important;
+        }
+
+        .vg-card-value {
+            color: var(--text-main) !important;
+        }
+
+        .vg-alert-card {
+            background: #FFFFFF !important;
+            border: 1px solid var(--border) !important;
+            border-left: 4px solid var(--3f-red) !important;
+            border-radius: 14px !important;
+            box-shadow: 0 7px 18px -17px rgba(27, 36, 48, 0.22) !important;
+        }
+
+        details {
+            background: #FFFFFF !important;
+            border: 1px solid var(--border) !important;
+            border-radius: 14px !important;
+            box-shadow: none !important;
+        }
+
+        div[data-testid="stPlotlyChart"],
+        div[data-testid="stDataFrame"] {
+            background: #FFFFFF !important;
+            border: 1px solid var(--border) !important;
+            border-radius: 16px !important;
+            box-shadow: 0 8px 20px -18px rgba(27, 36, 48, 0.22) !important;
+        }
+
+        @media screen and (max-width: 900px) {
+            .vg-hero {
+                padding: 24px 22px !important;
+            }
+
+            .vg-hero-title {
+                font-size: 29px !important;
+            }
+
+            .block-container {
+                padding-left: 1rem !important;
+                padding-right: 1rem !important;
+            }
+        }
+        </style>
+        """,
+        unsafe_allow_html=True,
+    )
+
 def hero(title: str, subtitle: str):
     st.markdown(
         f"""
