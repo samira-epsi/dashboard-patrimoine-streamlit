@@ -1492,6 +1492,51 @@ def inject_style():
         unsafe_allow_html=True,
     )
 
+
+    st.markdown(
+        r"""
+        <style>
+        .vg-search-active {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+
+            margin-top: 7px;
+            margin-bottom: 10px;
+            padding: 7px 10px;
+
+            color: #A3184A;
+            background: #FFF1F6;
+
+            border: 1px solid #E7C8D6;
+            border-radius: 999px;
+
+            font-size: 11px;
+            font-weight: 700;
+        }
+
+        .vg-search-active-dot {
+            width: 7px;
+            height: 7px;
+            border-radius: 50%;
+            background: #E5114D;
+        }
+
+        .st-key-effacer_recherche_contrat button {
+            min-height: 36px !important;
+            padding-left: 13px !important;
+            padding-right: 13px !important;
+            color: #A3184A !important;
+            background: #FFFFFF !important;
+            border: 1px solid #E7C8D6 !important;
+            border-radius: 10px !important;
+            box-shadow: none !important;
+        }
+        </style>
+        """,
+        unsafe_allow_html=True,
+    )
+
 def hero(title: str, subtitle: str):
     st.markdown(
         f"""
@@ -2633,7 +2678,32 @@ if vue_active == "Vue globale":
             "Rechercher un contrat",
             placeholder="Référence, libellé, prestataire, métier...",
             key="global_search_contract",
+            help=(
+                "Cette recherche filtre aussi les KPI, graphiques, "
+                "filtres patrimoniaux et programmes couverts."
+            ),
         )
+
+        if recherche_contrat:
+            st.markdown(
+                (
+                    '<div class="vg-search-active">'
+                    '<span class="vg-search-active-dot"></span>'
+                    '<span>'
+                    'Recherche appliquée à tout le tableau de bord'
+                    '</span>'
+                    '</div>'
+                ),
+                unsafe_allow_html=True,
+            )
+
+            if st.button(
+                "Effacer la recherche",
+                key="effacer_recherche_contrat",
+                width="content",
+            ):
+                st.session_state["global_search_contract"] = ""
+                st.rerun()
 
         mode_col, colonnes_col = st.columns(
             [1.25, 2.75],
