@@ -848,20 +848,90 @@ def render_filtres_patrimoine(
         options=contrat_options,
         key="filtre_contrat",
         placeholder="Tous les contrats",
-        format_func=lambda ref: (
-            f"{ref} — {contrat_labels.get(ref, '')}"
-            if contrat_labels.get(ref, "")
-            else str(ref)
-        ),
     )
+
+    # La recherche saisie dans le tableau devient aussi un filtre global.
+    recherche_tableau = (
+        st.session_state
+        .get("global_search_contract", "")
+    )
+
+    recherche_tableau = (
+        str(recherche_tableau)
+        .strip()
+        .lower()
+    )
+
+    contrats_recherche = []
+
+    if recherche_tableau:
+        colonnes_recherche = [
+            colonne
+            for colonne in [
+                "contract_reference",
+                "contract_label",
+                "third_party_label",
+                "contract_topic",
+            ]
+            if colonne in base_contrats.columns
+        ]
+
+        if colonnes_recherche:
+            masque_recherche = pd.Series(
+                False,
+                index=base_contrats.index,
+            )
+
+            for colonne in colonnes_recherche:
+                masque_recherche = (
+                    masque_recherche
+                    | base_contrats[colonne]
+                    .fillna("")
+                    .astype(str)
+                    .str.lower()
+                    .str.contains(
+                        recherche_tableau,
+                        regex=False,
+                    )
+                )
+
+            contrats_recherche = (
+                base_contrats.loc[
+                    masque_recherche,
+                    "contract_reference",
+                ]
+                .dropna()
+                .astype(str)
+                .str.strip()
+            )
+
+            contrats_recherche = contrats_recherche[
+                (contrats_recherche != "")
+                & (contrats_recherche != "nan")
+                & (contrats_recherche != "None")
+            ].unique().tolist()
+
+    # Fusion des deux sources de filtrage contrat :
+    # - sélection dans la sidebar ;
+    # - recherche dans le tableau.
+    if selected_contrats and contrats_recherche:
+        contrats_actifs = [
+            ref
+            for ref in selected_contrats
+            if ref in contrats_recherche
+        ]
+    elif selected_contrats:
+        contrats_actifs = selected_contrats
+    else:
+        contrats_actifs = contrats_recherche
 
     # Le contrat devient le filtre parent :
     # il réduit les lignes contrat x ESI puis les options patrimoniales.
-    if selected_contrats:
+    if contrats_actifs:
         df_contrats_parent = filtrer_df(
             base_contrats,
             {
-                "contract_reference": selected_contrats,
+                "contract_reference": contrats_actifs,
             },
         )
 
@@ -1053,7 +1123,7 @@ def render_filtres_patrimoine(
     # -------------------------------
 
     filtres_contrats = {
-        "contract_reference": selected_contrats,
+        "contract_reference": contrats_actifs,
         "societe": selected_societes,
         "agence": selected_agences,
         "groupe": selected_groupes,
@@ -1072,7 +1142,7 @@ def render_filtres_patrimoine(
     # on réduit aussi les ESI au périmètre contractuel restant.
 
     if (
-        selected_contrats
+        contrats_actifs
         or selected_metiers
         or selected_prestataires
     ):
@@ -1097,7 +1167,8 @@ def render_filtres_patrimoine(
             ]
 
     filtres_selectionnes = {
-        "contrat": selected_contrats,
+        "contrat": contrats_actifs,
+        "recherche_contrat": recherche_tableau,
         "societe": selected_societes,
         "agence": selected_agences,
         "groupe": selected_groupes,
