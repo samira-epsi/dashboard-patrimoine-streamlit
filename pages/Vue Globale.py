@@ -1036,6 +1036,98 @@ def inject_style():
         unsafe_allow_html=True,
     )
 
+
+    st.markdown(
+        r"""
+        <style>
+        /* =====================================================
+           CORRECTION DES ONGLETS PRINCIPAUX
+        ===================================================== */
+
+        .st-key-dashboard_tabs div[role="radiogroup"] label {
+            color: #667085 !important;
+            background: transparent !important;
+        }
+
+        .st-key-dashboard_tabs div[role="radiogroup"] label * {
+            color: inherit !important;
+        }
+
+        .st-key-dashboard_tabs div[role="radiogroup"] label:has(input:checked),
+        .st-key-dashboard_tabs div[role="radiogroup"] label:has(input:checked) *,
+        .st-key-dashboard_tabs div[role="radiogroup"] label:has(input:checked) p,
+        .st-key-dashboard_tabs div[role="radiogroup"] label:has(input:checked) span {
+            color: #E5114D !important;
+            background: transparent !important;
+        }
+
+        /* Cache uniquement le rond radio des onglets principaux. */
+        .st-key-dashboard_tabs div[role="radiogroup"] label input[type="radio"] {
+            display: none !important;
+        }
+
+        .st-key-dashboard_tabs div[role="radiogroup"] label
+        div[data-baseweb="radio"] > div:first-child {
+            display: none !important;
+        }
+
+        .st-key-dashboard_tabs div[role="radiogroup"] label:has(input:checked)::after {
+            background: #E5114D !important;
+        }
+
+        /* =====================================================
+           CORRECTION DES COLONNES
+        ===================================================== */
+
+        /*
+        Le flex appliqué à toutes les colonnes déformait les conteneurs
+        Plotly et provoquait une barre de défilement dans le donut.
+        */
+        div[data-testid="column"] {
+            display: block !important;
+        }
+
+        div[data-testid="column"] > div {
+            width: 100% !important;
+        }
+
+        /* =====================================================
+           CENTRAGE DES GRAPHIQUES
+        ===================================================== */
+
+        div[data-testid="stPlotlyChart"] {
+            width: 100% !important;
+            overflow: hidden !important;
+            display: flex !important;
+            align-items: center !important;
+            justify-content: center !important;
+        }
+
+        div[data-testid="stPlotlyChart"] > div {
+            width: 100% !important;
+        }
+
+        div[data-testid="stPlotlyChart"] .js-plotly-plot,
+        div[data-testid="stPlotlyChart"] .plot-container,
+        div[data-testid="stPlotlyChart"] .svg-container {
+            margin-left: auto !important;
+            margin-right: auto !important;
+        }
+
+        div[data-testid="stPlotlyChart"] .plot-container {
+            overflow: hidden !important;
+        }
+
+        /* Même hauteur visuelle pour les deux panneaux de graphiques. */
+        .st-key-global_graph_status,
+        .st-key-global_graph_metier {
+            min-height: 470px !important;
+        }
+        </style>
+        """,
+        unsafe_allow_html=True,
+    )
+
 def hero(title: str, subtitle: str):
     st.markdown(
         f"""
@@ -1664,7 +1756,7 @@ def afficher_barres_horizontales(df: pd.DataFrame, label_col: str, value_col: st
     _layout_plotly(fig, height)
     fig.update_layout(
         bargap=0.36,
-        margin=dict(l=10, r=52, t=10, b=18),
+        margin=dict(l=18, r=46, t=14, b=24),
         xaxis=dict(range=[0, max_value * 1.18], gridcolor=C_GRID, zeroline=False, title=None),
         yaxis=dict(title=None, automargin=True),
     )
@@ -2064,43 +2156,96 @@ if vue_active == "Vue globale":
     col_statut, col_metier = st.columns([0.82, 1.35])
 
     with col_statut:
-        st.markdown('<div class="vg-mini-title">Statut des contrats</div>', unsafe_allow_html=True)
-        contrats_uniques = df_contrats_kpi.drop_duplicates("contract_reference").copy()
-        nb_actifs = int((contrats_uniques["contract_status_clean"] == "active").sum())
-        nb_inactifs = int((contrats_uniques["contract_status_clean"] != "active").sum())
+        with st.container(key="global_graph_status"):
+            st.markdown(
+                '<div class="vg-mini-title">Statut des contrats</div>',
+                unsafe_allow_html=True,
+            )
 
-        if go is None:
-            st.dataframe(
-                pd.DataFrame({"Statut": ["Actifs", "Inactifs"], "Contrats": [nb_actifs, nb_inactifs]}),
-                use_container_width=True,
-                hide_index=True,
+            contrats_uniques = (
+                df_contrats_kpi
+                .drop_duplicates("contract_reference")
+                .copy()
             )
-        else:
-            fig = go.Figure(
-                data=[
-                    go.Pie(
-                        labels=["Actifs", "Inactifs"],
-                        values=[nb_actifs, nb_inactifs],
-                        hole=0.68,
-                        marker=dict(colors=[C_RED, "#F2DDE3"]),
-                        textinfo="label+value",
-                        hovertemplate="<b>%{label}</b><br>%{value} contrat(s)<extra></extra>",
-                    )
-                ]
+            nb_actifs = int(
+                (contrats_uniques["contract_status_clean"] == "active").sum()
             )
-            _layout_plotly(fig, 300)
-            fig.update_layout(margin=dict(l=8, r=8, t=8, b=8), showlegend=False)
-            st.plotly_chart(fig, use_container_width=True, config={"displayModeBar": False})
+            nb_inactifs = int(
+                (contrats_uniques["contract_status_clean"] != "active").sum()
+            )
+
+            if go is None:
+                st.dataframe(
+                    pd.DataFrame(
+                        {
+                            "Statut": ["Actifs", "Inactifs"],
+                            "Contrats": [nb_actifs, nb_inactifs],
+                        }
+                    ),
+                    use_container_width=True,
+                    hide_index=True,
+                )
+            else:
+                fig = go.Figure(
+                    data=[
+                        go.Pie(
+                            labels=["Actifs", "Inactifs"],
+                            values=[nb_actifs, nb_inactifs],
+                            hole=0.66,
+                            marker=dict(
+                                colors=[C_RED, "#F2DDE3"],
+                                line=dict(color="#FFFFFF", width=2),
+                            ),
+                            textinfo="label+value",
+                            textposition="inside",
+                            insidetextorientation="horizontal",
+                            hovertemplate=(
+                                "<b>%{label}</b><br>"
+                                "%{value} contrat(s)<extra></extra>"
+                            ),
+                            domain=dict(
+                                x=[0.08, 0.92],
+                                y=[0.06, 0.94],
+                            ),
+                            sort=False,
+                        )
+                    ]
+                )
+
+                _layout_plotly(fig, 420)
+
+                fig.update_layout(
+                    margin=dict(l=18, r=18, t=12, b=12),
+                    showlegend=False,
+                    uniformtext_minsize=11,
+                    uniformtext_mode="hide",
+                )
+
+                st.plotly_chart(
+                    fig,
+                    use_container_width=True,
+                    config={
+                        "displayModeBar": False,
+                        "responsive": True,
+                    },
+                )
 
     with col_metier:
-        st.markdown('<div class="vg-mini-title">Répartition des contrats par métier</div>', unsafe_allow_html=True)
-        afficher_barres_horizontales(
-            construire_graph_metier(df_contrats_kpi, top_n=10),
-            "Métier",
-            "Contrats",
-            color=C_RED,
-            height_base=300,
-        )
+        with st.container(key="global_graph_metier"):
+            st.markdown(
+                '<div class="vg-mini-title">'
+                'Répartition des contrats par métier'
+                '</div>',
+                unsafe_allow_html=True,
+            )
+
+            afficher_barres_horizontales(
+                construire_graph_metier(df_contrats_kpi, top_n=10),
+                "Métier",
+                "Contrats",
+                color=C_RED,
+                height_base=420,
+            )
 
     with st.expander("Consulter la liste des contrats", expanded=False):
         recherche_contrat = st.text_input(
