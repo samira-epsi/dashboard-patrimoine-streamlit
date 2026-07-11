@@ -1388,6 +1388,110 @@ def inject_style():
         unsafe_allow_html=True,
     )
 
+
+    st.markdown(
+        r"""
+        <style>
+        /* Pagination alignée */
+        .vg-pagination-current {
+            display: grid !important;
+            grid-template-columns: 1fr auto 1fr !important;
+            align-items: center !important;
+            width: 100% !important;
+            min-height: 48px !important;
+            height: 48px !important;
+            padding: 6px 14px !important;
+            background: #FFF7FA !important;
+            border: 1px solid #EEDCE5 !important;
+            border-radius: 12px !important;
+            box-sizing: border-box !important;
+        }
+
+        .vg-pagination-label {
+            justify-self: end !important;
+            margin-right: 9px !important;
+            color: #667085 !important;
+            font-size: 12px !important;
+            font-weight: 700 !important;
+        }
+
+        .vg-pagination-current strong {
+            display: inline-flex !important;
+            align-items: center !important;
+            justify-content: center !important;
+            min-width: 38px !important;
+            height: 34px !important;
+            padding: 0 10px !important;
+            color: #FFFFFF !important;
+            background: #E5114D !important;
+            border-radius: 9px !important;
+            font-size: 14px !important;
+            font-weight: 800 !important;
+            line-height: 1 !important;
+        }
+
+        .vg-pagination-total {
+            justify-self: start !important;
+            margin-left: 9px !important;
+            color: #667085 !important;
+            font-size: 12px !important;
+            font-weight: 700 !important;
+        }
+
+        .st-key-page_precedente_uniques button,
+        .st-key-page_precedente_rattachements button,
+        .st-key-page_suivante_uniques button,
+        .st-key-page_suivante_rattachements button {
+            min-height: 48px !important;
+            height: 48px !important;
+            color: #A3184A !important;
+            background: #FFFFFF !important;
+            border: 1px solid #E7DDE2 !important;
+            border-radius: 12px !important;
+            box-shadow: none !important;
+            font-size: 13px !important;
+            font-weight: 700 !important;
+        }
+
+        .st-key-page_precedente_uniques button:hover,
+        .st-key-page_precedente_rattachements button:hover,
+        .st-key-page_suivante_uniques button:hover,
+        .st-key-page_suivante_rattachements button:hover {
+            color: #E5114D !important;
+            background: #FFF7FA !important;
+            border-color: #DDBCCB !important;
+            transform: none !important;
+        }
+
+        .st-key-page_precedente_uniques button:disabled,
+        .st-key-page_precedente_rattachements button:disabled,
+        .st-key-page_suivante_uniques button:disabled,
+        .st-key-page_suivante_rattachements button:disabled {
+            color: #B9C0CA !important;
+            background: #F7F7F8 !important;
+            border-color: #ECEDEF !important;
+            opacity: 1 !important;
+        }
+
+        div[data-testid="stHorizontalBlock"]:has(.vg-pagination-current) {
+            align-items: stretch !important;
+        }
+
+        div[data-testid="stHorizontalBlock"]:has(.vg-pagination-current)
+        div[data-testid="column"] {
+            display: flex !important;
+            align-items: stretch !important;
+        }
+
+        div[data-testid="stHorizontalBlock"]:has(.vg-pagination-current)
+        div[data-testid="column"] > div {
+            width: 100% !important;
+        }
+        </style>
+        """,
+        unsafe_allow_html=True,
+    )
+
 def hero(title: str, subtitle: str):
     st.markdown(
         f"""
@@ -2865,7 +2969,7 @@ if vue_active == "Vue globale":
 
             with pagination_gauche:
                 if st.button(
-                    "Précédent",
+                    "‹  Précédent",
                     key=f"page_precedente_{cle_mode}",
                     width="stretch",
                     disabled=page_selectionnee <= 1,
@@ -2879,9 +2983,9 @@ if vue_active == "Vue globale":
                 st.markdown(
                     (
                         '<div class="vg-pagination-current">'
-                        f'<span>Page</span>'
+                        '<span class="vg-pagination-label">Page</span>'
                         f'<strong>{page_selectionnee}</strong>'
-                        f'<span>sur {nb_pages}</span>'
+                        f'<span class="vg-pagination-total">sur {nb_pages}</span>'
                         '</div>'
                     ),
                     unsafe_allow_html=True,
@@ -2889,7 +2993,7 @@ if vue_active == "Vue globale":
 
             with pagination_droite:
                 if st.button(
-                    "Suivant",
+                    "Suivant  ›",
                     key=f"page_suivante_{cle_mode}",
                     width="stretch",
                     disabled=page_selectionnee >= nb_pages,
