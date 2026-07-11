@@ -1128,6 +1128,116 @@ def inject_style():
         unsafe_allow_html=True,
     )
 
+
+    st.markdown(
+        r"""
+        <style>
+        /* =====================================================
+           TABLEAU DES CONTRATS
+        ===================================================== */
+
+        .vg-table-summary {
+            display: flex;
+            align-items: center;
+            gap: 18px;
+
+            margin: 8px 0 14px 0;
+            padding: 12px 15px;
+
+            background: #FFF7FA;
+            border: 1px solid #EEDCE5;
+            border-radius: 12px;
+        }
+
+        .vg-table-summary-item {
+            display: flex;
+            align-items: baseline;
+            gap: 7px;
+        }
+
+        .vg-table-summary-value {
+            color: #E5114D;
+            font-size: 20px;
+            font-weight: 800;
+            line-height: 1;
+        }
+
+        .vg-table-summary-label {
+            color: #667085;
+            font-size: 12px;
+            font-weight: 650;
+        }
+
+        .vg-table-summary-separator {
+            width: 1px;
+            height: 26px;
+            background: #E7D9E0;
+        }
+
+        .vg-table-summary-mode {
+            margin-left: auto;
+            padding: 5px 10px;
+
+            color: #A3184A;
+            background: #FFFFFF;
+
+            border: 1px solid #E7C8D6;
+            border-radius: 999px;
+
+            font-size: 11px;
+            font-weight: 700;
+        }
+
+        /* Les deux contrôles restent propres sans ressembler aux onglets. */
+        div[data-testid="stExpander"] div[role="radiogroup"] {
+            width: 100% !important;
+            gap: 5px !important;
+            padding: 5px !important;
+
+            background: #F7F5F7 !important;
+            border: 1px solid #E7E3E8 !important;
+            border-radius: 12px !important;
+        }
+
+        div[data-testid="stExpander"] div[role="radiogroup"] label {
+            min-height: 41px !important;
+            padding: 8px 12px !important;
+
+            background: #FFFFFF !important;
+            color: #1B2430 !important;
+
+            border: 1px solid transparent !important;
+            border-radius: 9px !important;
+        }
+
+        div[data-testid="stExpander"] div[role="radiogroup"] label:has(input:checked) {
+            background: #FFF1F6 !important;
+            color: #A3184A !important;
+            border-color: #E7C8D6 !important;
+        }
+
+        div[data-testid="stExpander"] div[role="radiogroup"] label:has(input:checked) p,
+        div[data-testid="stExpander"] div[role="radiogroup"] label:has(input:checked) span {
+            color: #A3184A !important;
+        }
+
+        @media screen and (max-width: 900px) {
+            .vg-table-summary {
+                align-items: flex-start;
+                flex-wrap: wrap;
+                gap: 10px 14px;
+            }
+
+            .vg-table-summary-mode {
+                width: fit-content;
+                margin-left: 0;
+            }
+        }
+        </style>
+        """,
+        unsafe_allow_html=True,
+    )
+
 def hero(title: str, subtitle: str):
     st.markdown(
         f"""
@@ -2253,12 +2363,216 @@ if vue_active == "Vue globale":
             placeholder="Référence, libellé, prestataire, métier...",
             key="global_search_contract",
         )
-        table_contrats = preparer_contrats_table(
-            df_contrats_kpi.drop_duplicates(["contract_reference", "esi_reference"])
+
+        mode_col, colonnes_col = st.columns(
+            [1.25, 2.75],
+            vertical_alignment="top",
         )
-        table_contrats = filtrer_table_recherche(table_contrats, recherche_contrat)
-        st.dataframe(table_contrats, use_container_width=True, hide_index=True, height=430)
-        dataframe_download("Télécharger la liste", table_contrats, "contrats_patrimoine.csv")
+
+        with mode_col:
+            mode_tableau = st.radio(
+                "Niveau d’affichage",
+                [
+                    "Contrats uniques",
+                    "Contrats et rattachements",
+                ],
+                horizontal=False,
+                key="global_contract_table_mode",
+                help=(
+                    "Contrats uniques : une ligne par contrat. "
+                    "Contrats et rattachements : une ligne par contrat et programme couvert."
+                ),
+            )
+
+        if mode_tableau == "Contrats uniques":
+            source_tableau = (
+                df_contrats_kpi
+                .sort_values(
+                    by=[
+                        col
+                        for col in [
+                            "contract_reference",
+                            "esi_reference",
+                        ]
+                        if col in df_contrats_kpi.columns
+                    ],
+                    na_position="last",
+                )
+                .drop_duplicates("contract_reference")
+            )
+        else:
+            cles_dedoublonnage = [
+                col
+                for col in [
+                    "contract_reference",
+                    "esi_reference",
+                ]
+                if col in df_contrats_kpi.columns
+            ]
+
+            source_tableau = (
+                df_contrats_kpi.drop_duplicates(cles_dedoublonnage)
+                if cles_dedoublonnage
+                else df_contrats_kpi.copy()
+            )
+
+        table_contrats_complete = preparer_contrats_table(source_tableau)
+        table_contrats_complete = filtrer_table_recherche(
+            table_contrats_complete,
+            recherche_contrat,
+        )
+
+        colonnes_contrat = [
+            "Référence contrat",
+            "Libellé contrat",
+            "Prestataire",
+            "Date de début",
+            "Date de fin",
+            "Métier",
+            "Statut",
+        ]
+
+        colonnes_rattachement = [
+            "Société",
+            "Agence",
+            "Groupe",
+            "Secteur",
+            "Référence ESI",
+            "Libellé ESI",
+        ]
+
+        colonnes_disponibles = [
+            col
+            for col in (
+                colonnes_contrat + colonnes_rattachement
+            )
+            if col in table_contrats_complete.columns
+        ]
+
+        if mode_tableau == "Contrats uniques":
+            colonnes_par_defaut = [
+                col
+                for col in colonnes_contrat
+                if col in colonnes_disponibles
+            ]
+        else:
+            colonnes_par_defaut = [
+                col
+                for col in (
+                    colonnes_contrat
+                    + [
+                        "Référence ESI",
+                        "Libellé ESI",
+                    ]
+                )
+                if col in colonnes_disponibles
+            ]
+
+        with colonnes_col:
+            colonnes_affichees = st.multiselect(
+                "Colonnes affichées",
+                options=colonnes_disponibles,
+                default=colonnes_par_defaut,
+                key=f"global_contract_columns_{mode_tableau}",
+                placeholder="Choisir les colonnes",
+            )
+
+            st.caption(
+                "Ajoute ou retire les informations selon ton besoin. "
+                "Le téléchargement reprend uniquement les colonnes affichées."
+            )
+
+        if not colonnes_affichees:
+            st.warning("Sélectionne au moins une colonne à afficher.")
+            table_contrats_affichee = pd.DataFrame()
+        else:
+            table_contrats_affichee = table_contrats_complete[
+                colonnes_affichees
+            ].copy()
+
+        if "Référence contrat" in table_contrats_complete.columns:
+            nb_contrats_resultat = int(
+                table_contrats_complete["Référence contrat"]
+                .replace("", pd.NA)
+                .dropna()
+                .nunique()
+            )
+        else:
+            nb_contrats_resultat = len(table_contrats_complete)
+
+        nb_lignes_resultat = len(table_contrats_complete)
+
+        st.markdown(
+            f"""
+            <div class="vg-table-summary">
+                <div class="vg-table-summary-item">
+                    <span class="vg-table-summary-value">
+                        {format_nombre(nb_contrats_resultat)}
+                    </span>
+                    <span class="vg-table-summary-label">
+                        contrat{"s" if nb_contrats_resultat != 1 else ""} trouvé{"s" if nb_contrats_resultat != 1 else ""}
+                    </span>
+                </div>
+                <div class="vg-table-summary-separator"></div>
+                <div class="vg-table-summary-item">
+                    <span class="vg-table-summary-value">
+                        {format_nombre(nb_lignes_resultat)}
+                    </span>
+                    <span class="vg-table-summary-label">
+                        ligne{"s" if nb_lignes_resultat != 1 else ""} affichée{"s" if nb_lignes_resultat != 1 else ""}
+                    </span>
+                </div>
+                <div class="vg-table-summary-mode">
+                    {mode_tableau}
+                </div>
+            </div>
+            """,
+            unsafe_allow_html=True,
+        )
+
+        if table_contrats_affichee.empty:
+            st.info("Aucun résultat ne correspond aux filtres et à la recherche.")
+        else:
+            st.dataframe(
+                table_contrats_affichee,
+                use_container_width=True,
+                hide_index=True,
+                height=430,
+                column_config={
+                    "Référence contrat": st.column_config.TextColumn(
+                        "Référence contrat",
+                        width="medium",
+                    ),
+                    "Libellé contrat": st.column_config.TextColumn(
+                        "Libellé contrat",
+                        width="large",
+                    ),
+                    "Prestataire": st.column_config.TextColumn(
+                        "Prestataire",
+                        width="medium",
+                    ),
+                    "Référence ESI": st.column_config.TextColumn(
+                        "Référence ESI",
+                        width="small",
+                    ),
+                    "Libellé ESI": st.column_config.TextColumn(
+                        "Libellé ESI",
+                        width="large",
+                    ),
+                },
+            )
+
+            nom_export = (
+                "contrats_uniques.csv"
+                if mode_tableau == "Contrats uniques"
+                else "contrats_et_rattachements.csv"
+            )
+
+            dataframe_download(
+                "Télécharger la liste affichée",
+                table_contrats_affichee,
+                nom_export,
+            )
 
 
 # =====================================================
