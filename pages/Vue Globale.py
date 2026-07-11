@@ -1325,6 +1325,69 @@ def inject_style():
         unsafe_allow_html=True,
     )
 
+
+    st.markdown(
+        r"""
+        <style>
+        /* =====================================================
+           PAGINATION DU TABLEAU
+        ===================================================== */
+
+        .vg-pagination-current {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 7px;
+
+            min-height: 42px;
+            padding: 7px 14px;
+
+            color: #667085;
+            background: #FFF7FA;
+
+            border: 1px solid #EEDCE5;
+            border-radius: 11px;
+
+            font-size: 12px;
+            font-weight: 650;
+        }
+
+        .vg-pagination-current strong {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+
+            min-width: 30px;
+            height: 28px;
+            padding: 0 8px;
+
+            color: #FFFFFF;
+            background: #E5114D;
+
+            border-radius: 8px;
+            font-size: 13px;
+            font-weight: 800;
+        }
+
+        .vg-table-summary {
+            overflow: hidden;
+        }
+
+        .vg-table-summary-mode {
+            white-space: nowrap;
+        }
+
+        @media screen and (max-width: 800px) {
+            .vg-pagination-current {
+                padding-left: 8px;
+                padding-right: 8px;
+            }
+        }
+        </style>
+        """,
+        unsafe_allow_html=True,
+    )
+
 def hero(title: str, subtitle: str):
     st.markdown(
         f"""
@@ -2462,434 +2525,472 @@ if vue_active == "Vue globale":
             )
 
     with st.expander("Consulter la liste des contrats", expanded=False):
-        charger_tableau = st.toggle(
-            "Charger le tableau",
-            value=False,
-            key="charger_tableau_contrats",
-            help=(
-                "Le tableau est chargé uniquement lorsque cette option est activée "
-                "afin de préserver les performances de l’application."
-            ),
+        recherche_contrat = st.text_input(
+            "Rechercher un contrat",
+            placeholder="Référence, libellé, prestataire, métier...",
+            key="global_search_contract",
         )
 
-        if not charger_tableau:
-            st.caption(
-                "Active « Charger le tableau » pour consulter les contrats. "
-                "Les filtres et les graphiques restent ainsi rapides."
+        mode_col, colonnes_col = st.columns(
+            [1.25, 2.75],
+            vertical_alignment="top",
+        )
+
+        with mode_col:
+            mode_tableau = st.radio(
+                "Niveau d’affichage",
+                [
+                    "Contrats uniques",
+                    "Contrats et rattachements",
+                ],
+                horizontal=False,
+                key="global_contract_table_mode",
+                help=(
+                    "Contrats uniques : une ligne par contrat. "
+                    "Contrats et rattachements : une ligne par contrat "
+                    "et programme couvert."
+                ),
+            )
+
+        if mode_tableau == "Contrats uniques":
+            colonnes_tri = [
+                col
+                for col in [
+                    "contract_reference",
+                    "esi_reference",
+                ]
+                if col in df_contrats_kpi.columns
+            ]
+
+            source_tableau = df_contrats_kpi
+
+            if colonnes_tri:
+                source_tableau = source_tableau.sort_values(
+                    by=colonnes_tri,
+                    na_position="last",
+                )
+
+            source_tableau = source_tableau.drop_duplicates(
+                "contract_reference"
             )
 
         else:
-            recherche_contrat = st.text_input(
-                "Rechercher un contrat",
-                placeholder="Référence, libellé, prestataire, métier...",
-                key="global_search_contract",
-            )
-
-            mode_col, colonnes_col = st.columns(
-                [1.25, 2.75],
-                vertical_alignment="top",
-            )
-
-            with mode_col:
-                mode_tableau = st.radio(
-                    "Niveau d’affichage",
-                    [
-                        "Contrats uniques",
-                        "Contrats et rattachements",
-                    ],
-                    horizontal=False,
-                    key="global_contract_table_mode",
-                    help=(
-                        "Contrats uniques : une ligne par contrat. "
-                        "Contrats et rattachements : une ligne par contrat "
-                        "et programme couvert."
-                    ),
-                )
-
-            if mode_tableau == "Contrats uniques":
-                colonnes_tri = [
-                    col
-                    for col in [
-                        "contract_reference",
-                        "esi_reference",
-                    ]
-                    if col in df_contrats_kpi.columns
+            cles_dedoublonnage = [
+                col
+                for col in [
+                    "contract_reference",
+                    "esi_reference",
                 ]
-
-                source_tableau = df_contrats_kpi
-
-                if colonnes_tri:
-                    source_tableau = source_tableau.sort_values(
-                        by=colonnes_tri,
-                        na_position="last",
-                    )
-
-                source_tableau = source_tableau.drop_duplicates(
-                    "contract_reference"
-                )
-
-            else:
-                cles_dedoublonnage = [
-                    col
-                    for col in [
-                        "contract_reference",
-                        "esi_reference",
-                    ]
-                    if col in df_contrats_kpi.columns
-                ]
-
-                source_tableau = (
-                    df_contrats_kpi.drop_duplicates(
-                        cles_dedoublonnage
-                    )
-                    if cles_dedoublonnage
-                    else df_contrats_kpi
-                )
-
-            table_contrats_complete = preparer_contrats_table(
-                source_tableau
-            )
-
-            table_contrats_complete = filtrer_table_recherche(
-                table_contrats_complete,
-                recherche_contrat,
-            )
-
-            colonnes_contrat = [
-                "Référence contrat",
-                "Libellé contrat",
-                "Prestataire",
-                "Date de début",
-                "Date de fin",
-                "Métier",
-                "Statut",
+                if col in df_contrats_kpi.columns
             ]
 
-            colonnes_rattachement = [
-                "Société",
-                "Agence",
-                "Groupe",
-                "Secteur",
-                "Référence ESI",
-                "Libellé ESI",
-            ]
+            source_tableau = (
+                df_contrats_kpi.drop_duplicates(
+                    cles_dedoublonnage
+                )
+                if cles_dedoublonnage
+                else df_contrats_kpi
+            )
 
-            colonnes_disponibles = [
+        table_contrats_complete = preparer_contrats_table(
+            source_tableau
+        )
+
+        table_contrats_complete = filtrer_table_recherche(
+            table_contrats_complete,
+            recherche_contrat,
+        )
+
+        colonnes_contrat = [
+            "Référence contrat",
+            "Libellé contrat",
+            "Prestataire",
+            "Date de début",
+            "Date de fin",
+            "Métier",
+            "Statut",
+        ]
+
+        colonnes_rattachement = [
+            "Société",
+            "Agence",
+            "Groupe",
+            "Secteur",
+            "Référence ESI",
+            "Libellé ESI",
+        ]
+
+        colonnes_disponibles = [
+            col
+            for col in (
+                colonnes_contrat
+                + colonnes_rattachement
+            )
+            if col in table_contrats_complete.columns
+        ]
+
+        if mode_tableau == "Contrats uniques":
+            colonnes_par_defaut = [
+                col
+                for col in colonnes_contrat
+                if col in colonnes_disponibles
+            ]
+        else:
+            colonnes_par_defaut = [
                 col
                 for col in (
                     colonnes_contrat
-                    + colonnes_rattachement
+                    + [
+                        "Référence ESI",
+                        "Libellé ESI",
+                    ]
                 )
-                if col in table_contrats_complete.columns
+                if col in colonnes_disponibles
             ]
 
-            if mode_tableau == "Contrats uniques":
-                colonnes_par_defaut = [
-                    col
-                    for col in colonnes_contrat
-                    if col in colonnes_disponibles
-                ]
-            else:
-                colonnes_par_defaut = [
-                    col
-                    for col in (
-                        colonnes_contrat
-                        + [
-                            "Référence ESI",
-                            "Libellé ESI",
-                        ]
-                    )
-                    if col in colonnes_disponibles
-                ]
-
-            with colonnes_col:
-                st.markdown(
-                    '<div class="vg-column-title">Colonnes affichées</div>',
-                    unsafe_allow_html=True,
-                )
-
-                cle_mode = (
-                    "uniques"
-                    if mode_tableau == "Contrats uniques"
-                    else "rattachements"
-                )
-
-                def cle_checkbox_colonne(colonne: str) -> str:
-                    cle_simple = (
-                        colonne
-                        .lower()
-                        .replace(" ", "_")
-                        .replace("é", "e")
-                        .replace("è", "e")
-                        .replace("ê", "e")
-                        .replace("à", "a")
-                        .replace("'", "")
-                        .replace("/", "_")
-                    )
-                    return f"colonne_{cle_mode}_{cle_simple}"
-
-                for colonne in colonnes_disponibles:
-                    cle_case = cle_checkbox_colonne(colonne)
-
-                    if cle_case not in st.session_state:
-                        st.session_state[cle_case] = (
-                            colonne in colonnes_par_defaut
-                        )
-
-                with st.popover(
-                    "Choisir les colonnes",
-                    width="stretch",
-                ):
-                    with st.form(
-                        key=f"form_colonnes_{cle_mode}",
-                        clear_on_submit=False,
-                    ):
-                        bouton_tout, bouton_reset = st.columns(2)
-
-                        with bouton_tout:
-                            tout_selectionner = (
-                                st.form_submit_button(
-                                    "Tout sélectionner",
-                                    width="stretch",
-                                )
-                            )
-
-                        with bouton_reset:
-                            reinitialiser = (
-                                st.form_submit_button(
-                                    "Réinitialiser",
-                                    width="stretch",
-                                )
-                            )
-
-                        if tout_selectionner:
-                            for colonne in colonnes_disponibles:
-                                st.session_state[
-                                    cle_checkbox_colonne(colonne)
-                                ] = True
-
-                        if reinitialiser:
-                            for colonne in colonnes_disponibles:
-                                st.session_state[
-                                    cle_checkbox_colonne(colonne)
-                                ] = (
-                                    colonne in colonnes_par_defaut
-                                )
-
-                        st.markdown(
-                            '<div class="vg-columns-separator"></div>',
-                            unsafe_allow_html=True,
-                        )
-
-                        for colonne in colonnes_disponibles:
-                            st.checkbox(
-                                colonne,
-                                key=cle_checkbox_colonne(colonne),
-                            )
-
-                        st.form_submit_button(
-                            "Appliquer",
-                            width="stretch",
-                            type="primary",
-                        )
-
-                colonnes_affichees = [
-                    colonne
-                    for colonne in colonnes_disponibles
-                    if st.session_state.get(
-                        cle_checkbox_colonne(colonne),
-                        False,
-                    )
-                ]
-
-                st.caption(
-                    (
-                        f"{len(colonnes_affichees)} colonne(s) "
-                        "sélectionnée(s)."
-                    )
-                    if colonnes_affichees
-                    else "Aucune colonne sélectionnée."
-                )
-
-            if "Référence contrat" in table_contrats_complete.columns:
-                nb_contrats_resultat = int(
-                    table_contrats_complete[
-                        "Référence contrat"
-                    ]
-                    .replace("", pd.NA)
-                    .dropna()
-                    .nunique()
-                )
-            else:
-                nb_contrats_resultat = len(
-                    table_contrats_complete
-                )
-
-            nb_lignes_resultat = len(
-                table_contrats_complete
-            )
-
+        with colonnes_col:
             st.markdown(
-                f"""
-                <div class="vg-table-summary">
-                    <div class="vg-table-summary-item">
-                        <span class="vg-table-summary-value">
-                            {format_nombre(nb_contrats_resultat)}
-                        </span>
-                        <span class="vg-table-summary-label">
-                            contrat{"s" if nb_contrats_resultat != 1 else ""}
-                            trouvé{"s" if nb_contrats_resultat != 1 else ""}
-                        </span>
-                    </div>
-
-                    <div class="vg-table-summary-separator"></div>
-
-                    <div class="vg-table-summary-item">
-                        <span class="vg-table-summary-value">
-                            {format_nombre(nb_lignes_resultat)}
-                        </span>
-                        <span class="vg-table-summary-label">
-                            ligne{"s" if nb_lignes_resultat != 1 else ""}
-                            trouvée{"s" if nb_lignes_resultat != 1 else ""}
-                        </span>
-                    </div>
-
-                    <div class="vg-table-summary-mode">
-                        {mode_tableau}
-                    </div>
-                </div>
-                """,
+                '<div class="vg-column-title">Colonnes affichées</div>',
                 unsafe_allow_html=True,
             )
 
-            if not colonnes_affichees:
-                st.warning(
-                    "Sélectionne au moins une colonne à afficher."
+            cle_mode = (
+                "uniques"
+                if mode_tableau == "Contrats uniques"
+                else "rattachements"
+            )
+
+            def cle_checkbox_colonne(colonne: str) -> str:
+                cle_simple = (
+                    colonne
+                    .lower()
+                    .replace(" ", "_")
+                    .replace("é", "e")
+                    .replace("è", "e")
+                    .replace("ê", "e")
+                    .replace("à", "a")
+                    .replace("'", "")
+                    .replace("/", "_")
+                )
+                return f"colonne_{cle_mode}_{cle_simple}"
+
+            for colonne in colonnes_disponibles:
+                cle_case = cle_checkbox_colonne(colonne)
+
+                if cle_case not in st.session_state:
+                    st.session_state[cle_case] = (
+                        colonne in colonnes_par_defaut
+                    )
+
+            with st.popover(
+                "Choisir les colonnes",
+                width="stretch",
+            ):
+                with st.form(
+                    key=f"form_colonnes_{cle_mode}",
+                    clear_on_submit=False,
+                ):
+                    bouton_tout, bouton_reset = st.columns(2)
+
+                    with bouton_tout:
+                        tout_selectionner = (
+                            st.form_submit_button(
+                                "Tout sélectionner",
+                                width="stretch",
+                            )
+                        )
+
+                    with bouton_reset:
+                        reinitialiser = (
+                            st.form_submit_button(
+                                "Réinitialiser",
+                                width="stretch",
+                            )
+                        )
+
+                    if tout_selectionner:
+                        for colonne in colonnes_disponibles:
+                            st.session_state[
+                                cle_checkbox_colonne(colonne)
+                            ] = True
+
+                    if reinitialiser:
+                        for colonne in colonnes_disponibles:
+                            st.session_state[
+                                cle_checkbox_colonne(colonne)
+                            ] = (
+                                colonne in colonnes_par_defaut
+                            )
+
+                    st.markdown(
+                        '<div class="vg-columns-separator"></div>',
+                        unsafe_allow_html=True,
+                    )
+
+                    for colonne in colonnes_disponibles:
+                        st.checkbox(
+                            colonne,
+                            key=cle_checkbox_colonne(colonne),
+                        )
+
+                    st.form_submit_button(
+                        "Appliquer",
+                        width="stretch",
+                        type="primary",
+                    )
+
+            colonnes_affichees = [
+                colonne
+                for colonne in colonnes_disponibles
+                if st.session_state.get(
+                    cle_checkbox_colonne(colonne),
+                    False,
+                )
+            ]
+
+            st.caption(
+                (
+                    f"{len(colonnes_affichees)} colonne(s) "
+                    "sélectionnée(s)."
+                )
+                if colonnes_affichees
+                else "Aucune colonne sélectionnée."
+            )
+
+        if "Référence contrat" in table_contrats_complete.columns:
+            nb_contrats_resultat = int(
+                table_contrats_complete[
+                    "Référence contrat"
+                ]
+                .replace("", pd.NA)
+                .dropna()
+                .nunique()
+            )
+        else:
+            nb_contrats_resultat = len(
+                table_contrats_complete
+            )
+
+        nb_lignes_resultat = len(
+            table_contrats_complete
+        )
+
+        libelle_contrats = (
+            "contrat trouvé"
+            if nb_contrats_resultat == 1
+            else "contrats trouvés"
+        )
+        libelle_lignes = (
+            "ligne trouvée"
+            if nb_lignes_resultat == 1
+            else "lignes trouvées"
+        )
+
+        resume_html = (
+            '<div class="vg-table-summary">'
+            '<div class="vg-table-summary-item">'
+            f'<span class="vg-table-summary-value">'
+            f'{format_nombre(nb_contrats_resultat)}'
+            '</span>'
+            f'<span class="vg-table-summary-label">'
+            f'{libelle_contrats}'
+            '</span>'
+            '</div>'
+            '<div class="vg-table-summary-separator"></div>'
+            '<div class="vg-table-summary-item">'
+            f'<span class="vg-table-summary-value">'
+            f'{format_nombre(nb_lignes_resultat)}'
+            '</span>'
+            f'<span class="vg-table-summary-label">'
+            f'{libelle_lignes}'
+            '</span>'
+            '</div>'
+            f'<div class="vg-table-summary-mode">'
+            f'{mode_tableau}'
+            '</div>'
+            '</div>'
+        )
+
+        st.markdown(
+            resume_html,
+            unsafe_allow_html=True,
+        )
+
+        if not colonnes_affichees:
+            st.warning(
+                "Sélectionne au moins une colonne à afficher."
+            )
+
+        elif table_contrats_complete.empty:
+            st.info(
+                "Aucun résultat ne correspond aux filtres "
+                "et à la recherche."
+            )
+
+        else:
+            TAILLE_PAGE = 500
+            nb_pages = max(
+                1,
+                (
+                    nb_lignes_resultat
+                    + TAILLE_PAGE
+                    - 1
+                )
+                // TAILLE_PAGE,
+            )
+
+            cle_page = f"page_table_contrats_{cle_mode}"
+
+            if cle_page not in st.session_state:
+                st.session_state[cle_page] = 1
+
+            st.session_state[cle_page] = max(
+                1,
+                min(
+                    int(st.session_state[cle_page]),
+                    nb_pages,
+                ),
+            )
+
+            page_selectionnee = int(
+                st.session_state[cle_page]
+            )
+
+            pagination_gauche, pagination_centre, pagination_droite = (
+                st.columns(
+                    [1, 1.4, 1],
+                    vertical_alignment="center",
+                )
+            )
+
+            with pagination_gauche:
+                if st.button(
+                    "Précédent",
+                    key=f"page_precedente_{cle_mode}",
+                    width="stretch",
+                    disabled=page_selectionnee <= 1,
+                ):
+                    st.session_state[cle_page] = (
+                        page_selectionnee - 1
+                    )
+                    st.rerun()
+
+            with pagination_centre:
+                st.markdown(
+                    (
+                        '<div class="vg-pagination-current">'
+                        f'<span>Page</span>'
+                        f'<strong>{page_selectionnee}</strong>'
+                        f'<span>sur {nb_pages}</span>'
+                        '</div>'
+                    ),
+                    unsafe_allow_html=True,
                 )
 
-            elif table_contrats_complete.empty:
-                st.info(
-                    "Aucun résultat ne correspond aux filtres "
-                    "et à la recherche."
-                )
+            with pagination_droite:
+                if st.button(
+                    "Suivant",
+                    key=f"page_suivante_{cle_mode}",
+                    width="stretch",
+                    disabled=page_selectionnee >= nb_pages,
+                ):
+                    st.session_state[cle_page] = (
+                        page_selectionnee + 1
+                    )
+                    st.rerun()
+
+            debut = (
+                page_selectionnee - 1
+            ) * TAILLE_PAGE
+            fin = debut + TAILLE_PAGE
+
+            table_page = (
+                table_contrats_complete
+                .iloc[debut:fin][colonnes_affichees]
+                .copy()
+            )
+
+            for colonne in table_page.columns:
+                serie = table_page[colonne]
+
+                if pd.api.types.is_datetime64_any_dtype(
+                    serie
+                ):
+                    table_page[colonne] = (
+                        pd.to_datetime(
+                            serie,
+                            errors="coerce",
+                        )
+                        .dt.strftime("%d/%m/%Y")
+                        .fillna("")
+                    )
+                else:
+                    table_page[colonne] = (
+                        serie
+                        .where(serie.notna(), "")
+                        .astype(str)
+                    )
+
+            st.caption(
+                f"Page {page_selectionnee} sur "
+                f"{nb_pages} · lignes "
+                f"{format_nombre(debut + 1)} à "
+                f"{format_nombre(min(fin, nb_lignes_resultat))}"
+            )
+
+            st.dataframe(
+                table_page,
+                width="stretch",
+                hide_index=True,
+                height=430,
+            )
+
+            nom_export = (
+                "contrats_uniques_complets.csv"
+                if mode_tableau == "Contrats uniques"
+                else "contrats_rattachements_complets.csv"
+            )
+
+            cle_export = f"export_complet_{cle_mode}"
+
+            if cle_export not in st.session_state:
+                st.session_state[cle_export] = False
+
+            if not st.session_state[cle_export]:
+                if st.button(
+                    "Préparer le téléchargement complet",
+                    width="stretch",
+                    key=f"preparer_export_{cle_mode}",
+                ):
+                    st.session_state[cle_export] = True
+                    st.rerun()
 
             else:
-                TAILLE_PAGE = 500
-                nb_pages = max(
-                    1,
-                    (
-                        nb_lignes_resultat
-                        + TAILLE_PAGE
-                        - 1
-                    )
-                    // TAILLE_PAGE,
-                )
-
-                page_selectionnee = st.number_input(
-                    "Page",
-                    min_value=1,
-                    max_value=nb_pages,
-                    value=1,
-                    step=1,
-                    key=(
-                        f"page_table_contrats_"
-                        f"{cle_mode}"
-                    ),
-                )
-
-                debut = (
-                    int(page_selectionnee) - 1
-                ) * TAILLE_PAGE
-                fin = debut + TAILLE_PAGE
-
-                table_page = (
-                    table_contrats_complete
-                    .iloc[debut:fin][colonnes_affichees]
+                table_export_complete = (
+                    table_contrats_complete[
+                        colonnes_affichees
+                    ]
                     .copy()
                 )
 
-                for colonne in table_page.columns:
-                    serie = table_page[colonne]
-
-                    if pd.api.types.is_datetime64_any_dtype(
-                        serie
-                    ):
-                        table_page[colonne] = (
-                            pd.to_datetime(
-                                serie,
-                                errors="coerce",
-                            )
-                            .dt.strftime("%d/%m/%Y")
-                            .fillna("")
-                        )
-                    else:
-                        table_page[colonne] = (
-                            serie
-                            .where(serie.notna(), "")
-                            .astype(str)
-                        )
-
                 st.caption(
-                    f"Page {int(page_selectionnee)} sur "
-                    f"{nb_pages} · lignes "
-                    f"{format_nombre(debut + 1)} à "
-                    f"{format_nombre(min(fin, nb_lignes_resultat))}"
+                    f"Le fichier contient toutes les lignes filtrées : "
+                    f"{format_nombre(len(table_export_complete))} ligne(s)."
                 )
 
-                st.dataframe(
-                    table_page,
+                dataframe_download(
+                    "Télécharger toutes les lignes",
+                    table_export_complete,
+                    nom_export,
+                )
+
+                if st.button(
+                    "Annuler la préparation",
                     width="stretch",
-                    hide_index=True,
-                    height=430,
-                )
-
-                nom_export = (
-                    "contrats_uniques_complets.csv"
-                    if mode_tableau == "Contrats uniques"
-                    else "contrats_rattachements_complets.csv"
-                )
-
-                cle_export = f"export_complet_{cle_mode}"
-
-                if cle_export not in st.session_state:
+                    key=f"annuler_export_{cle_mode}",
+                ):
                     st.session_state[cle_export] = False
-
-                if not st.session_state[cle_export]:
-                    if st.button(
-                        "Préparer le téléchargement complet",
-                        width="stretch",
-                        key=f"preparer_export_{cle_mode}",
-                    ):
-                        st.session_state[cle_export] = True
-                        st.rerun()
-
-                else:
-                    table_export_complete = (
-                        table_contrats_complete[
-                            colonnes_affichees
-                        ]
-                        .copy()
-                    )
-
-                    st.caption(
-                        f"Le fichier contient toutes les lignes filtrées : "
-                        f"{format_nombre(len(table_export_complete))} ligne(s)."
-                    )
-
-                    dataframe_download(
-                        "Télécharger toutes les lignes",
-                        table_export_complete,
-                        nom_export,
-                    )
-
-                    if st.button(
-                        "Annuler la préparation",
-                        width="stretch",
-                        key=f"annuler_export_{cle_mode}",
-                    ):
-                        st.session_state[cle_export] = False
-                        st.rerun()
-
+                    st.rerun()
 
 # =====================================================
 # VUE 2 — COUVERTURE
