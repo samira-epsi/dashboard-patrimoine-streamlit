@@ -1388,6 +1388,195 @@ def inject_style():
         unsafe_allow_html=True,
     )
 
+
+    st.markdown(
+        r"""
+        <style>
+        /* TABLEAU DES CONTRATS — VERSION PLUS SOIGNÉE */
+
+        div[data-testid="stExpander"] {
+            border: 1px solid #E9DDE3 !important;
+            border-radius: 18px !important;
+            background: #FFFFFF !important;
+            box-shadow: 0 10px 28px -24px rgba(27, 36, 48, 0.28) !important;
+        }
+
+        div[data-testid="stExpander"] summary {
+            min-height: 58px !important;
+            padding: 15px 20px !important;
+            color: #1B2430 !important;
+            background: #FFFDFE !important;
+            border-bottom: 1px solid #F1E8EC !important;
+            font-size: 16px !important;
+            font-weight: 750 !important;
+        }
+
+        div[data-testid="stExpanderDetails"] {
+            padding: 18px 22px 22px 22px !important;
+        }
+
+        div[data-testid="stExpander"] .stTextInput input {
+            min-height: 50px !important;
+            padding-left: 16px !important;
+            background: #FBFAFB !important;
+            border: 1px solid #E7E1E5 !important;
+            border-radius: 14px !important;
+            color: #1B2430 !important;
+            box-shadow: none !important;
+        }
+
+        div[data-testid="stExpander"] .stTextInput input:focus {
+            background: #FFFFFF !important;
+            border-color: #E5114D !important;
+            box-shadow: 0 0 0 3px rgba(229, 17, 77, 0.08) !important;
+        }
+
+        div[data-testid="stExpander"] div[role="radiogroup"] {
+            display: flex !important;
+            width: 100% !important;
+            gap: 8px !important;
+            padding: 5px !important;
+            background: #F2EEF1 !important;
+            border: 0 !important;
+            border-radius: 12px !important;
+        }
+
+        div[data-testid="stExpander"] div[role="radiogroup"] label {
+            flex: 1 !important;
+            min-height: 44px !important;
+            justify-content: center !important;
+            padding: 9px 12px !important;
+            background: transparent !important;
+            color: #667085 !important;
+            border: 0 !important;
+            border-radius: 9px !important;
+            box-shadow: none !important;
+            text-align: center !important;
+        }
+
+        div[data-testid="stExpander"] div[role="radiogroup"] label:hover {
+            background: rgba(255,255,255,.68) !important;
+            color: #1B2430 !important;
+        }
+
+        div[data-testid="stExpander"] div[role="radiogroup"] label:has(input:checked) {
+            background: #FFFFFF !important;
+            color: #B0164B !important;
+            border: 1px solid #E7C8D6 !important;
+            box-shadow: 0 5px 14px -10px rgba(229, 17, 77, 0.42) !important;
+        }
+
+        div[data-testid="stExpander"] div[role="radiogroup"] label:has(input:checked) p,
+        div[data-testid="stExpander"] div[role="radiogroup"] label:has(input:checked) span {
+            color: #B0164B !important;
+            font-weight: 750 !important;
+        }
+
+        div[data-testid="stPopover"] button {
+            min-height: 50px !important;
+            color: #B0164B !important;
+            background: #FFFFFF !important;
+            border: 1px solid #E7DDE2 !important;
+            border-radius: 12px !important;
+            box-shadow: none !important;
+        }
+
+        .vg-table-summary {
+            display: grid !important;
+            grid-template-columns: 1fr 1fr auto !important;
+            gap: 12px !important;
+            margin: 18px 0 16px 0 !important;
+            padding: 0 !important;
+            background: transparent !important;
+            border: 0 !important;
+        }
+
+        .vg-table-summary-item {
+            display: flex !important;
+            align-items: center !important;
+            gap: 10px !important;
+            min-height: 66px !important;
+            padding: 13px 16px !important;
+            background: #FFF7FA !important;
+            border: 1px solid #EEDCE5 !important;
+            border-radius: 14px !important;
+        }
+
+        .vg-table-summary-value {
+            color: #E5114D !important;
+            font-size: 24px !important;
+            font-weight: 850 !important;
+            line-height: 1 !important;
+        }
+
+        .vg-table-summary-separator {
+            display: none !important;
+        }
+
+        .vg-table-summary-mode {
+            display: flex !important;
+            align-items: center !important;
+            justify-content: center !important;
+            min-height: 66px !important;
+            padding: 10px 16px !important;
+            color: #A3184A !important;
+            background: #FFFFFF !important;
+            border: 1px solid #E7C8D6 !important;
+            border-radius: 14px !important;
+            font-size: 11.5px !important;
+            font-weight: 750 !important;
+            white-space: nowrap !important;
+        }
+
+        .vg-pagination-current {
+            min-height: 46px !important;
+            background: #FFF7FA !important;
+            border: 1px solid #EEDCE5 !important;
+            border-radius: 12px !important;
+        }
+
+        .vg-pagination-current strong {
+            min-width: 32px !important;
+            height: 30px !important;
+            background: #E5114D !important;
+            border-radius: 8px !important;
+        }
+
+        div[data-testid="stExpander"] .stButton button {
+            min-height: 46px !important;
+            color: #B0164B !important;
+            background: #FFFFFF !important;
+            border: 1px solid #E6DCE1 !important;
+            border-radius: 12px !important;
+            box-shadow: none !important;
+        }
+
+        div[data-testid="stExpander"] .stButton button:hover {
+            background: #FFF7FA !important;
+            border-color: #D9B8C7 !important;
+        }
+
+        div[data-testid="stExpander"] [data-testid="stDataFrame"] {
+            margin-top: 8px !important;
+            border: 1px solid #E8E1E5 !important;
+            border-radius: 14px !important;
+            box-shadow: 0 8px 20px -20px rgba(27, 36, 48, 0.24) !important;
+        }
+
+        @media screen and (max-width: 900px) {
+            .vg-table-summary {
+                grid-template-columns: 1fr !important;
+            }
+
+            .vg-table-summary-mode {
+                justify-content: flex-start !important;
+            }
+        }
+        </style>
+        """,
+        unsafe_allow_html=True,
+    )
+
 def hero(title: str, subtitle: str):
     st.markdown(
         f"""
@@ -2532,7 +2721,7 @@ if vue_active == "Vue globale":
         )
 
         mode_col, colonnes_col = st.columns(
-            [1.25, 2.75],
+            [1.7, 1.3],
             vertical_alignment="top",
         )
 
@@ -2543,7 +2732,7 @@ if vue_active == "Vue globale":
                     "Contrats uniques",
                     "Contrats et rattachements",
                 ],
-                horizontal=False,
+                horizontal=True,
                 key="global_contract_table_mode",
                 help=(
                     "Contrats uniques : une ligne par contrat. "
