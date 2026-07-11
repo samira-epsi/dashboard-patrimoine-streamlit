@@ -1294,6 +1294,37 @@ def inject_style():
         unsafe_allow_html=True,
     )
 
+
+    st.markdown(
+        r"""
+        <style>
+        div[data-testid="stPopoverBody"] form {
+            margin: 0 !important;
+        }
+
+        div[data-testid="stPopoverBody"] form
+        [data-testid="stFormSubmitButton"] button {
+            min-height: 40px !important;
+            border-radius: 10px !important;
+        }
+
+        div[data-testid="stPopoverBody"] form
+        [data-testid="stFormSubmitButton"] button[kind="primary"] {
+            color: #FFFFFF !important;
+            background: #E5114D !important;
+            border-color: #E5114D !important;
+        }
+
+        div[data-testid="stPopoverBody"] form
+        [data-testid="stFormSubmitButton"] button[kind="primary"]:hover {
+            background: #C90F43 !important;
+            border-color: #C90F43 !important;
+        }
+        </style>
+        """,
+        unsafe_allow_html=True,
+    )
+
 def hero(title: str, subtitle: str):
     st.markdown(
         f"""
@@ -2563,43 +2594,55 @@ if vue_active == "Vue globale":
                 "Choisir les colonnes",
                 use_container_width=True,
             ):
-                boutons_col_1, boutons_col_2 = st.columns(2)
+                with st.form(
+                    key=f"form_colonnes_{cle_mode}",
+                    clear_on_submit=False,
+                ):
+                    boutons_col_1, boutons_col_2 = st.columns(2)
 
-                with boutons_col_1:
-                    if st.button(
-                        "Tout sélectionner",
-                        use_container_width=True,
-                        key=f"tout_selectionner_{cle_mode}",
-                    ):
+                    with boutons_col_1:
+                        tout_selectionner = st.form_submit_button(
+                            "Tout sélectionner",
+                            use_container_width=True,
+                        )
+
+                    with boutons_col_2:
+                        reinitialiser = st.form_submit_button(
+                            "Réinitialiser",
+                            use_container_width=True,
+                        )
+
+                    # Les deux actions sont traitées avant la création
+                    # des checkboxes pour éviter les conflits de session_state.
+                    if tout_selectionner:
                         for colonne in colonnes_disponibles:
                             st.session_state[
                                 cle_checkbox_colonne(colonne)
                             ] = True
-                        st.rerun()
 
-                with boutons_col_2:
-                    if st.button(
-                        "Réinitialiser",
-                        use_container_width=True,
-                        key=f"reinitialiser_colonnes_{cle_mode}",
-                    ):
+                    if reinitialiser:
                         for colonne in colonnes_disponibles:
                             st.session_state[
                                 cle_checkbox_colonne(colonne)
                             ] = (
                                 colonne in colonnes_par_defaut
                             )
-                        st.rerun()
 
-                st.markdown(
-                    '<div class="vg-columns-separator"></div>',
-                    unsafe_allow_html=True,
-                )
+                    st.markdown(
+                        '<div class="vg-columns-separator"></div>',
+                        unsafe_allow_html=True,
+                    )
 
-                for colonne in colonnes_disponibles:
-                    st.checkbox(
-                        colonne,
-                        key=cle_checkbox_colonne(colonne),
+                    for colonne in colonnes_disponibles:
+                        st.checkbox(
+                            colonne,
+                            key=cle_checkbox_colonne(colonne),
+                        )
+
+                    st.form_submit_button(
+                        "Appliquer",
+                        use_container_width=True,
+                        type="primary",
                     )
 
             colonnes_affichees = [
