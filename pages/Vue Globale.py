@@ -160,11 +160,13 @@ def inject_style():
             text-transform: uppercase;
             margin-bottom: 12px;
         }
-        .vg-hero-eyebrow:before {
+        .vg-hero-eyebrow::before {
             content: "";
-            width: 22px; height: 2px;
-            background: var(--red);
-            border-radius: 99px;
+            width: 8px;
+            height: 8px;
+            background: #E5114D;
+            border-radius: 50%;
+            flex-shrink: 0;
         }
         .vg-hero-title {
             position: relative; z-index: 1;
