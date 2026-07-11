@@ -837,6 +837,205 @@ def inject_style():
         unsafe_allow_html=True,
     )
 
+
+    st.markdown(
+        r"""
+        <style>
+        /* =====================================================
+           ALIGNEMENT GÉNÉRAL
+        ===================================================== */
+
+        .block-container {
+            padding-top: 1.15rem !important;
+        }
+
+        .vg-hero {
+            margin-top: 0 !important;
+            margin-bottom: 14px !important;
+        }
+
+        /* =====================================================
+           NAVIGATION PRINCIPALE = ONGLETS
+        ===================================================== */
+
+        .st-key-dashboard_tabs {
+            margin-top: 0 !important;
+            margin-bottom: 20px !important;
+            border-bottom: 1px solid #E7E3E8;
+        }
+
+        .st-key-dashboard_tabs div[role="radiogroup"] {
+            display: flex !important;
+            align-items: flex-end !important;
+            gap: 28px !important;
+            padding: 0 4px !important;
+            background: transparent !important;
+            border: 0 !important;
+        }
+
+        .st-key-dashboard_tabs div[role="radiogroup"] label {
+            position: relative !important;
+            min-height: 48px !important;
+            padding: 13px 2px 12px 2px !important;
+
+            color: #667085 !important;
+            background: transparent !important;
+
+            border: 0 !important;
+            border-radius: 0 !important;
+            box-shadow: none !important;
+
+            font-weight: 650 !important;
+            transition: color .15s ease !important;
+        }
+
+        .st-key-dashboard_tabs div[role="radiogroup"] label:hover {
+            color: #1B2430 !important;
+            background: transparent !important;
+            border: 0 !important;
+        }
+
+        .st-key-dashboard_tabs div[role="radiogroup"] label:has(input:checked) {
+            color: #E5114D !important;
+            background: transparent !important;
+            border: 0 !important;
+            box-shadow: none !important;
+        }
+
+        .st-key-dashboard_tabs div[role="radiogroup"] label:has(input:checked)::after {
+            content: "";
+            position: absolute;
+            left: 0;
+            right: 0;
+            bottom: -1px;
+            height: 3px;
+            border-radius: 3px 3px 0 0;
+            background: #E5114D;
+        }
+
+        .st-key-dashboard_tabs div[role="radiogroup"] label p,
+        .st-key-dashboard_tabs div[role="radiogroup"] label span {
+            color: inherit !important;
+            font-weight: inherit !important;
+        }
+
+        /* Cache le cercle radio uniquement pour les onglets principaux. */
+        .st-key-dashboard_tabs div[role="radiogroup"] label > div:first-child {
+            display: none !important;
+        }
+
+        /* =====================================================
+           BOUTON ACTUALISER ALIGNÉ AUX ONGLETS
+        ===================================================== */
+
+        .st-key-dashboard_refresh button {
+            min-height: 42px !important;
+            margin-bottom: 20px !important;
+        }
+
+        /* =====================================================
+           FILTRE STATUT = CONTRÔLE COMPACT
+        ===================================================== */
+
+        .st-key-contract_status_filter {
+            max-width: 760px;
+            margin-top: 0 !important;
+            margin-bottom: 20px !important;
+        }
+
+        .st-key-contract_status_filter .vg-mini-title {
+            margin-bottom: 8px !important;
+        }
+
+        .st-key-contract_status_filter div[role="radiogroup"] {
+            width: fit-content !important;
+            gap: 4px !important;
+            padding: 5px !important;
+            background: #F5F6F8 !important;
+            border: 1px solid #E7E3E8 !important;
+            border-radius: 12px !important;
+        }
+
+        .st-key-contract_status_filter div[role="radiogroup"] label {
+            min-height: 42px !important;
+            padding: 8px 15px !important;
+            border-radius: 9px !important;
+        }
+
+        .st-key-contract_status_filter [data-testid="stCaptionContainer"] {
+            margin-top: 7px !important;
+        }
+
+        /* =====================================================
+           CARTES ALIGNÉES ET DE MÊME HAUTEUR
+        ===================================================== */
+
+        .vg-card {
+            height: 190px !important;
+            min-height: 190px !important;
+            box-sizing: border-box !important;
+            display: flex !important;
+            flex-direction: column !important;
+        }
+
+        .vg-card-help {
+            margin-top: auto !important;
+        }
+
+        .vg-alert-card {
+            height: 148px !important;
+            min-height: 148px !important;
+            box-sizing: border-box !important;
+        }
+
+        /* Les colonnes Streamlit d'une même ligne s'étirent pareil. */
+        div[data-testid="stHorizontalBlock"] {
+            align-items: stretch !important;
+        }
+
+        div[data-testid="column"] {
+            display: flex !important;
+            flex-direction: column !important;
+        }
+
+        div[data-testid="column"] > div {
+            width: 100% !important;
+        }
+
+        /* =====================================================
+           ESPACEMENTS PLUS SYMÉTRIQUES
+        ===================================================== */
+
+        .vg-section {
+            margin-top: 8px !important;
+        }
+
+        .vg-section-title {
+            margin-top: 0 !important;
+        }
+
+        @media screen and (max-width: 900px) {
+            .st-key-dashboard_tabs div[role="radiogroup"] {
+                gap: 16px !important;
+                overflow-x: auto !important;
+                flex-wrap: nowrap !important;
+            }
+
+            .st-key-dashboard_tabs div[role="radiogroup"] label {
+                white-space: nowrap !important;
+            }
+
+            .vg-card,
+            .vg-alert-card {
+                height: auto !important;
+                min-height: 148px !important;
+            }
+        }
+        </style>
+        """,
+        unsafe_allow_html=True,
+    )
+
 def hero(title: str, subtitle: str):
     st.markdown(
         f"""
@@ -1732,17 +1931,24 @@ if not ok:
     st.stop()
 
 # Navigation principale : une seule vue visible à la fois.
-nav_col, refresh_col = st.columns([5, 1])
+nav_col, refresh_col = st.columns([5, 1], vertical_alignment="bottom")
+
 with nav_col:
-    vue_active = st.radio(
-        "Navigation",
-        ["Vue globale", "Couverture", "Qualité et anomalies"],
-        horizontal=True,
-        label_visibility="collapsed",
-        key="dashboard_vue_active",
-    )
+    with st.container(key="dashboard_tabs"):
+        vue_active = st.radio(
+            "Navigation",
+            ["Vue globale", "Couverture", "Qualité et anomalies"],
+            horizontal=True,
+            label_visibility="collapsed",
+            key="dashboard_vue_active",
+        )
+
 with refresh_col:
-    if st.button("Actualiser", use_container_width=True, key="dashboard_refresh"):
+    if st.button(
+        "Actualiser",
+        use_container_width=True,
+        key="dashboard_refresh",
+    ):
         st.cache_data.clear()
         st.rerun()
 
@@ -1765,12 +1971,16 @@ df_esi_filtre, df_contrats_filtre, filtres_selectionnes = render_filtres_patrimo
 )
 
 # Filtre complémentaire compact dans la zone principale.
-st.markdown('<div class="vg-mini-title">Statut des contrats</div>', unsafe_allow_html=True)
-statut_selectionne = afficher_filtre_statut_contrat()
-st.caption(
-    "Les totaux source restent fixes dans la vue globale. "
-    "La couverture et les détails suivent les filtres sélectionnés."
-)
+with st.container(key="contract_status_filter"):
+    st.markdown(
+        '<div class="vg-mini-title">Statut des contrats</div>',
+        unsafe_allow_html=True,
+    )
+    statut_selectionne = afficher_filtre_statut_contrat()
+    st.caption(
+        "Les totaux source restent fixes dans la vue globale. "
+        "La couverture et les détails suivent les filtres sélectionnés."
+    )
 
 # Calculs communs à toutes les vues.
 df_contrats_kpi = filtrer_contrats_par_statut(df_contrats_filtre, statut_selectionne)
