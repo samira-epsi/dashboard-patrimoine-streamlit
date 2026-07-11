@@ -37,13 +37,7 @@ def inject_filters_style():
         ================================================== */
 
         [data-testid="stSidebar"] {{
-            background:
-                linear-gradient(
-                    180deg,
-                    #FFF8FC 0%,
-                    #F7FBFF 52%,
-                    #F2F7FC 100%
-                ) !important;
+            background: #F7F9FC !important;
             border-right: 1px solid {C_BORDER} !important;
         }}
 
@@ -61,19 +55,12 @@ def inject_filters_style():
             margin: 12px 0 20px 0;
             padding: 22px 22px 20px 22px;
 
-            background:
-                linear-gradient(
-                    135deg,
-                    {C_3F_PINK} 0%,
-                    #F7C5E5 42%,
-                    {C_3F_BLUE_LIGHT} 100%
-                );
+            background: #EEF5FA;
 
             border: 1px solid rgba(23, 59, 105, 0.10);
             border-radius: 18px;
 
-            box-shadow:
-                0 14px 32px -24px rgba(23, 59, 105, 0.42);
+            box-shadow: 0 8px 20px -18px rgba(23, 59, 105, 0.24);
         }}
 
         .filters-header::before {{
@@ -83,24 +70,11 @@ def inject_filters_style():
             left: 0;
             width: 100%;
             height: 5px;
-            background:
-                linear-gradient(
-                    90deg,
-                    {C_3F_RED} 0%,
-                    {C_3F_VIOLET} 52%,
-                    {C_3F_BLUE} 100%
-                );
+            background: {C_3F_RED};
         }}
 
         .filters-header::after {{
-            content: "";
-            position: absolute;
-            width: 130px;
-            height: 130px;
-            right: -52px;
-            top: -54px;
-            border-radius: 999px;
-            background: rgba(255, 255, 255, 0.30);
+            display: none;
         }}
 
         .filters-title {{
@@ -159,15 +133,15 @@ def inject_filters_style():
         }}
 
         [data-testid="stSidebar"] div[data-baseweb="select"] > div:hover {{
-            border-color: {C_3F_BLUE_LIGHT} !important;
+            border-color: #AEBECD !important;
             background: {C_WHITE} !important;
-            transform: translateY(-1px);
+            transform: none;
         }}
 
         [data-testid="stSidebar"] div[data-baseweb="select"] > div:focus-within {{
-            border-color: {C_3F_VIOLET} !important;
+            border-color: {C_3F_NAVY} !important;
             box-shadow:
-                0 0 0 3px rgba(67, 42, 189, 0.10),
+                0 0 0 3px rgba(23, 59, 105, 0.08),
                 0 10px 20px -18px rgba(23, 59, 105, 0.45) !important;
         }}
 
@@ -187,12 +161,7 @@ def inject_filters_style():
         /* Valeurs sélectionnées */
 
         [data-testid="stSidebar"] span[data-baseweb="tag"] {{
-            background:
-                linear-gradient(
-                    135deg,
-                    rgba(255, 183, 227, 0.68),
-                    rgba(128, 205, 255, 0.42)
-                ) !important;
+            background: #EAF2F8 !important;
 
             color: {C_3F_NAVY} !important;
             border: 1px solid rgba(67, 42, 189, 0.16) !important;
@@ -201,7 +170,7 @@ def inject_filters_style():
         }}
 
         [data-testid="stSidebar"] span[data-baseweb="tag"] svg {{
-            fill: {C_3F_VIOLET} !important;
+            fill: {C_3F_NAVY} !important;
         }}
 
         /* Chevron */
@@ -230,17 +199,12 @@ def inject_filters_style():
         }}
 
         div[data-baseweb="popover"] li:hover {{
-            background:
-                linear-gradient(
-                    90deg,
-                    rgba(255, 183, 227, 0.34),
-                    rgba(128, 205, 255, 0.30)
-                ) !important;
+            background: #F1F5F8 !important;
         }}
 
         div[data-baseweb="popover"] li[aria-selected="true"] {{
-            background: rgba(128, 205, 255, 0.30) !important;
-            color: {C_3F_VIOLET} !important;
+            background: #EAF2F8 !important;
+            color: {C_3F_NAVY} !important;
             font-weight: 700 !important;
         }}
 
@@ -265,7 +229,7 @@ def inject_filters_style():
             height: 6px;
             margin-right: 7px;
             border-radius: 999px;
-            background: {C_3F_BLUE_LIGHT};
+            background: {C_3F_NAVY};
             vertical-align: middle;
         }}
 
@@ -278,12 +242,7 @@ def inject_filters_style():
             margin-bottom: 16px !important;
 
             color: {C_3F_NAVY} !important;
-            background:
-                linear-gradient(
-                    135deg,
-                    rgba(255, 183, 227, 0.34),
-                    rgba(128, 205, 255, 0.28)
-                ) !important;
+            background: #FFFFFF !important;
 
             border: 1px solid rgba(23, 59, 105, 0.14) !important;
             border-radius: 14px !important;
@@ -291,8 +250,7 @@ def inject_filters_style():
             font-size: 13px !important;
             font-weight: 800 !important;
 
-            box-shadow:
-                0 10px 24px -20px rgba(23, 59, 105, 0.45) !important;
+            box-shadow: 0 6px 16px -16px rgba(23, 59, 105, 0.24) !important;
 
             transition:
                 transform 0.16s ease,
@@ -303,20 +261,15 @@ def inject_filters_style():
 
         [data-testid="stSidebar"] .stButton button:hover {{
             color: {C_WHITE} !important;
-            background:
-                linear-gradient(
-                    135deg,
-                    {C_3F_VIOLET} 0%,
-                    {C_3F_NAVY} 100%
-                ) !important;
+            background: {C_3F_NAVY} !important;
 
-            border-color: {C_3F_VIOLET} !important;
-            transform: translateY(-1px);
+            border-color: {C_3F_NAVY} !important;
+            transform: none;
         }}
 
         [data-testid="stSidebar"] .stButton button:focus {{
             box-shadow:
-                0 0 0 3px rgba(67, 42, 189, 0.12) !important;
+                0 0 0 3px rgba(23, 59, 105, 0.10) !important;
         }}
 
         /* ==================================================
