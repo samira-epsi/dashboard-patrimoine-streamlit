@@ -547,6 +547,53 @@ def inject_filters_style():
         unsafe_allow_html=True,
     )
 
+
+    st.markdown(
+        r"""
+        <style>
+        /* Le logo reste visible mais ne crée plus un grand vide. */
+        [data-testid="stSidebarHeader"] {
+            min-height: 78px !important;
+            padding-top: 14px !important;
+            padding-bottom: 8px !important;
+        }
+
+        [data-testid="stSidebarUserContent"] {
+            padding-top: 0 !important;
+        }
+
+        [data-testid="stSidebarContent"] {
+            padding-top: 0 !important;
+        }
+
+        .filters-header {
+            margin-top: 0 !important;
+            margin-bottom: 18px !important;
+            min-height: 178px !important;
+            box-sizing: border-box !important;
+
+            display: flex !important;
+            flex-direction: column !important;
+            justify-content: center !important;
+        }
+
+        [data-testid="stSidebar"] .stButton button {
+            min-height: 48px !important;
+        }
+
+        /* Même rythme vertical entre tous les filtres. */
+        .filter-meta {
+            margin-bottom: 15px !important;
+        }
+
+        [data-testid="stSidebar"] [data-testid="stWidgetLabel"] {
+            margin-bottom: 5px !important;
+        }
+        </style>
+        """,
+        unsafe_allow_html=True,
+    )
+
 # OUTILS
 # =====================================================
 
