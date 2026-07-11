@@ -71,6 +71,17 @@ def _safe(value) -> str:
     return html.escape(str(value))
 
 
+def format_nombre(value) -> str:
+    """
+    Formate un nombre avec une espace comme séparateur de milliers.
+    Exemple : 8546 -> 8 546
+    """
+    try:
+        return f"{int(value):,}".replace(",", " ")
+    except (TypeError, ValueError):
+        return "0"
+
+
 def inject_style():
     st.markdown(
         """
