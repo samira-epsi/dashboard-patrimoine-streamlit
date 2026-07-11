@@ -34,24 +34,27 @@ SQL_TIMEOUT_MS = 20000
 
 
 # =====================================================
-# PALETTE CHARTE 3F
+# PALETTE OFFICIELLE CHARTE 3F
+# Source : CHARTE_3F_V8.pdf, page 32
 # =====================================================
 
-C_NAVY = "#173B69"          # couleur secondaire structurante
-C_NAVY_DEEP = "#102A4C"
-C_RED = "#E5114D"           # rouge signature 3F
-C_RED_DARK = "#C51D32"
-C_BURGUNDY = "#981B35"
-C_PINK = "#F06A83"
-C_PINK_SOFT = "#FFF1F4"
-C_BLUE = "#315B89"
-C_BLUE_LIGHT = "#DDE8F4"
-C_TEAL = "#A63852"
-C_VIOLET = "#7E2941"
-C_YELLOW = "#F4C95D"
+C_RED = "#E5114D"           # rouge 3F
+C_NAVY = "#173B69"          # bleu foncé 3F
+C_VIOLET = "#432ABD"        # violet complémentaire
+C_YELLOW = "#FFDC55"        # jaune complémentaire
+C_TEAL = "#008080"          # vert / bleu complémentaire
+C_BLUE = "#0074FF"          # bleu vif complémentaire
+C_BLUE_LIGHT = "#80CDFF"    # bleu ciel complémentaire
+C_PINK = "#FFB7E3"          # rose complémentaire
 
-C_GRID = "#F0E7EA"
-C_INK = "#172033"
+# Déclinaisons d'interface dérivées de la palette officielle
+C_RED_DARK = "#BF0F40"
+C_NAVY_DEEP = "#102A4C"
+C_PINK_SOFT = "#FFF3FA"
+C_BLUE_SOFT = "#EFF9FF"
+C_CANVAS = "#F7FAFD"
+C_GRID = "#E8EEF5"
+C_INK = "#17243A"
 
 
 # =====================================================
@@ -76,21 +79,23 @@ def inject_style():
             --navy: #173B69;
             --navy-deep: #102A4C;
             --red: #E5114D;
-            --red-dark: #C51D32;
-            --burgundy: #981B35;
-            --pink: #F06A83;
-            --pink-soft: #FFF1F4;
-            --blue: #315B89;
-            --blue-light: #DDE8F4;
-            --yellow: #F4C95D;
+            --red-dark: #BF0F40;
+            --violet: #432ABD;
+            --blue: #0074FF;
+            --blue-light: #80CDFF;
+            --blue-soft: #EFF9FF;
+            --pink: #FFB7E3;
+            --pink-soft: #FFF3FA;
+            --teal: #008080;
+            --yellow: #FFDC55;
 
-            --ink: #172033;
-            --ink-soft: #5F6675;
-            --ink-mute: #8A7480;
-            --line: #EADDE1;
-            --line-soft: #F3E9EC;
+            --ink: #17243A;
+            --ink-soft: #52647B;
+            --ink-mute: #7A8AA0;
+            --line: #DCE7F1;
+            --line-soft: #EAF1F7;
             --surface: #FFFFFF;
-            --canvas: #FBF7F8;
+            --canvas: #F7FAFD;
         }
 
         html, body, [class*="css"], .stApp, button, input, textarea, select {
@@ -120,9 +125,12 @@ def inject_style():
             overflow: hidden;
             padding: 30px 34px;
             border-radius: 20px;
-            background: linear-gradient(120deg, #B81836 0%, #E5114D 55%, #F06A83 100%);
-            box-shadow: 0 1px 2px rgba(197,29,50,0.10),
-                        0 22px 44px -20px rgba(197,29,50,0.48);
+            background:
+                radial-gradient(circle at 88% 22%, rgba(255,255,255,0.52) 0 72px, transparent 73px),
+                radial-gradient(circle at 78% 115%, rgba(67,42,189,0.13) 0 150px, transparent 151px),
+                linear-gradient(118deg, #FFB7E3 0%, #D9DFFF 46%, #80CDFF 100%);
+            border: 1px solid rgba(23,59,105,0.10);
+            box-shadow: 0 24px 54px -28px rgba(23,59,105,0.42);
             margin-bottom: 22px;
         }
         .vg-hero:before {
@@ -130,7 +138,7 @@ def inject_style():
             position: absolute;
             left: 0; top: 0; right: 0;
             height: 4px;
-            background: var(--red);
+            background: linear-gradient(90deg, var(--red) 0%, var(--violet) 52%, var(--blue) 100%);
         }
         .vg-hero:after {
             content: "";
@@ -138,14 +146,14 @@ def inject_style():
             width: 360px; height: 360px;
             right: -140px; top: -190px;
             border-radius: 999px;
-            background: radial-gradient(circle, rgba(255,255,255,0.10) 0%, rgba(255,255,255,0) 70%);
+            background: radial-gradient(circle, rgba(255,255,255,0.26) 0%, rgba(255,255,255,0) 70%);
         }
         .vg-hero-eyebrow {
             position: relative; z-index: 1;
             display: inline-flex;
             align-items: center;
             gap: 7px;
-            color: rgba(255,255,255,0.72);
+            color: var(--navy);
             font-size: 11.5px;
             font-weight: 700;
             letter-spacing: 1.4px;
@@ -155,12 +163,12 @@ def inject_style():
         .vg-hero-eyebrow:before {
             content: "";
             width: 22px; height: 2px;
-            background: rgba(255,255,255,0.92);
+            background: var(--red);
             border-radius: 99px;
         }
         .vg-hero-title {
             position: relative; z-index: 1;
-            color: #FFFFFF;
+            color: var(--navy-deep);
             font-size: 34px;
             line-height: 1.08;
             letter-spacing: -0.6px;
@@ -169,7 +177,7 @@ def inject_style():
         }
         .vg-hero-subtitle {
             position: relative; z-index: 1;
-            color: rgba(255,255,255,0.82);
+            color: #334E70;
             font-size: 14.5px;
             line-height: 1.55;
             font-weight: 500;
@@ -180,8 +188,8 @@ def inject_style():
         .vg-info {
             padding: 12px 16px;
             border-radius: 12px;
-            background: var(--pink-soft);
-            border: 1px solid #F3CAD4;
+            background: linear-gradient(90deg, var(--blue-soft), var(--pink-soft));
+            border: 1px solid #DCEAF5;
             color: var(--ink-soft);
             font-size: 12.5px;
             font-weight: 500;
@@ -191,12 +199,22 @@ def inject_style():
 
         /* ---------- SECTIONS ---------- */
         .vg-section-title {
+            display: flex;
+            align-items: center;
+            gap: 10px;
             font-size: 20px;
             font-weight: 800;
-            color: var(--burgundy);
+            color: var(--navy);
             letter-spacing: -0.3px;
             margin-top: 2px;
             margin-bottom: 3px;
+        }
+        .vg-section-title:before {
+            content: "";
+            width: 7px;
+            height: 22px;
+            border-radius: 99px;
+            background: linear-gradient(180deg, var(--red), var(--violet));
         }
         .vg-section-subtitle {
             color: var(--ink-soft);
@@ -207,7 +225,7 @@ def inject_style():
             max-width: 920px;
         }
         .vg-mini-title {
-            color: var(--burgundy);
+            color: var(--navy);
             font-size: 14px;
             font-weight: 700;
             margin: 2px 0 10px 0;
@@ -220,8 +238,8 @@ def inject_style():
             padding: 20px 20px 18px 20px;
             background: var(--surface);
             border: 1px solid var(--line);
-            box-shadow: 0 1px 2px rgba(16,35,59,0.04),
-                        0 12px 28px -20px rgba(16,35,59,0.35);
+            box-shadow: 0 1px 2px rgba(23,59,105,0.04),
+                        0 16px 34px -24px rgba(23,59,105,0.30);
             position: relative;
             overflow: hidden;
             transition: transform .18s ease, box-shadow .18s ease;
@@ -278,7 +296,8 @@ def inject_style():
             padding: 16px 18px;
             background: var(--surface);
             border: 1px solid var(--line);
-            border-left: 3px solid var(--red);
+            border-left: 4px solid var(--red);
+            background: linear-gradient(145deg, #FFFFFF 0%, #FFF8FC 100%);
             box-shadow: 0 1px 2px rgba(16,35,59,0.04);
         }
         .vg-alert-title {
@@ -320,8 +339,8 @@ def inject_style():
             background: var(--surface) !important;
         }
         div[data-testid="stDataFrame"] [role="columnheader"] {
-            background: #FFF5F7 !important;
-            color: var(--burgundy) !important;
+            background: linear-gradient(90deg, #F1F9FF, #FFF3FA) !important;
+            color: var(--navy) !important;
             font-weight: 700 !important;
         }
 
@@ -331,12 +350,12 @@ def inject_style():
             font-weight: 600 !important;
             border: 1px solid var(--line) !important;
             background: var(--surface) !important;
-            color: var(--burgundy) !important;
+            color: var(--navy) !important;
             transition: all .15s ease !important;
         }
         .stButton button:hover {
             border-color: var(--red) !important;
-            background: var(--pink-soft) !important;
+            background: var(--blue-soft) !important;
         }
         .stDownloadButton button {
             border-radius: 10px !important;
@@ -352,7 +371,8 @@ def inject_style():
         /* ---------- NAVIGATION EN BOUTONS ---------- */
         div[role="radiogroup"] {
             gap: 8px !important;
-            background: #F8E9ED;
+            background: linear-gradient(90deg, #EEF8FF 0%, #FFF1F8 100%);
+            border: 1px solid #DCE8F2;
             padding: 5px;
             border-radius: 13px;
             width: fit-content;
@@ -365,8 +385,8 @@ def inject_style():
             transition: background .15s ease, box-shadow .15s ease;
         }
         div[role="radiogroup"] label:has(input:checked) {
-            background: linear-gradient(135deg, #E5114D 0%, #C51D32 100%) !important;
-            box-shadow: 0 5px 14px rgba(197,29,50,0.22);
+            background: linear-gradient(135deg, #173B69 0%, #432ABD 100%) !important;
+            box-shadow: 0 7px 18px rgba(23,59,105,0.24);
         }
         div[role="radiogroup"] label:has(input:checked) p {
             color: #FFFFFF !important;
@@ -381,7 +401,7 @@ def inject_style():
             border: 1px solid var(--line) !important;
             border-radius: 14px !important;
             background: var(--surface) !important;
-            box-shadow: 0 10px 28px -24px rgba(152,27,53,0.28);
+            box-shadow: 0 12px 30px -25px rgba(23,59,105,0.30);
             overflow: hidden;
         }
 
@@ -1416,7 +1436,7 @@ if vue_active == "Vue globale":
     with c3:
         kpi_card("Logements", logements_value, logements_pill, logements_help, accent=C_PINK)
     with c4:
-        kpi_card("Équipements", equipements_value, equipements_pill, equipements_help, accent=C_BURGUNDY)
+        kpi_card("Équipements", equipements_value, equipements_pill, equipements_help, accent=C_VIOLET)
 
     st.markdown("<br>", unsafe_allow_html=True)
     col_statut, col_metier = st.columns([0.82, 1.35])
