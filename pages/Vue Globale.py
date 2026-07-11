@@ -1249,6 +1249,40 @@ def inject_style():
         unsafe_allow_html=True,
     )
 
+
+    st.markdown(
+        r"""
+        <style>
+        .vg-column-title {
+            margin-bottom: 7px;
+            color: #1B2430;
+            font-size: 14px;
+            font-weight: 700;
+        }
+
+        div[data-testid="stPopover"] button {
+            min-height: 44px !important;
+            color: #A3184A !important;
+            background: #FFFFFF !important;
+            border: 1px solid #E1DCE2 !important;
+            border-radius: 11px !important;
+            box-shadow: none !important;
+        }
+
+        div[data-testid="stPopover"] button:hover {
+            color: #E5114D !important;
+            background: #FFF7FA !important;
+            border-color: #D7BEC9 !important;
+        }
+
+        div[data-testid="stPopoverBody"] {
+            min-width: 380px !important;
+        }
+        </style>
+        """,
+        unsafe_allow_html=True,
+    )
+
 def hero(title: str, subtitle: str):
     st.markdown(
         f"""
@@ -2480,18 +2514,134 @@ if vue_active == "Vue globale":
             ]
 
         with colonnes_col:
-            colonnes_affichees = st.multiselect(
-                "Colonnes affichées",
-                options=colonnes_disponibles,
-                default=colonnes_par_defaut,
-                key=f"global_contract_columns_{mode_tableau}",
-                placeholder="Choisir les colonnes",
+            st.markdown(
+                '<div class="vg-column-title">Colonnes affichées</div>',
+                unsafe_allow_html=True,
             )
 
-            st.caption(
-                "Ajoute ou retire les informations selon ton besoin. "
-                "Le téléchargement reprend uniquement les colonnes affichées."
+            cle_mode = (
+                "uniques"
+                if mode_tableau == "Contrats uniques"
+                else "rattachements"
             )
+            cle_colonnes = f"colonnes_table_contrats_{cle_mode}"
+
+            if cle_colonnes not in st.session_state:
+                st.session_state[cle_colonnes] = colonnes_par_defaut.copy()
+
+            # Nettoyage des anciennes valeurs qui ne sont plus disponibles.
+            st.session_state[cle_colonnes] = [
+                colonne
+                for colonne in st.session_state[cle_colonnes]
+                if colonne in colonnes_disponibles
+            ]
+
+            with st.popover(
+                "Choisir les colonnes",
+                use_container_width=True,
+            ):
+                st.markdown("#### Sélection des colonnes")
+
+                bouton_tout, bouton_contrat = st.columns(2)
+
+                with bouton_tout:
+                    if st.button(
+                        "Tout sélectionner",
+                        use_container_width=True,
+                        key=f"tout_selectionner_{cle_mode}",
+                    ):
+                        st.session_state[cle_colonnes] = (
+                            colonnes_disponibles.copy()
+                        )
+                        st.rerun()
+
+                with bouton_contrat:
+                    if st.button(
+                        "Colonnes contrat",
+                        use_container_width=True,
+                        key=f"colonnes_contrat_{cle_mode}",
+                    ):
+                        st.session_state[cle_colonnes] = [
+                            colonne
+                            for colonne in colonnes_contrat
+                            if colonne in colonnes_disponibles
+                        ]
+                        st.rerun()
+
+                bouton_rattachement, bouton_reset = st.columns(2)
+
+                with bouton_rattachement:
+                    if st.button(
+                        "Colonnes rattachement",
+                        use_container_width=True,
+                        key=f"colonnes_rattachement_{cle_mode}",
+                    ):
+                        st.session_state[cle_colonnes] = [
+                            colonne
+                            for colonne in (
+                                colonnes_contrat
+                                + colonnes_rattachement
+                            )
+                            if colonne in colonnes_disponibles
+                        ]
+                        st.rerun()
+
+                with bouton_reset:
+                    if st.button(
+                        "Réinitialiser",
+                        use_container_width=True,
+                        key=f"reinitialiser_colonnes_{cle_mode}",
+                    ):
+                        st.session_state[cle_colonnes] = (
+                            colonnes_par_defaut.copy()
+                        )
+                        st.rerun()
+
+                st.markdown("---")
+
+                for colonne in colonnes_disponibles:
+                    cle_checkbox = (
+                        f"colonne_visible_{cle_mode}_"
+                        f"{colonne}"
+                    )
+
+                    selectionnee = (
+                        colonne in st.session_state[cle_colonnes]
+                    )
+
+                    nouvelle_valeur = st.checkbox(
+                        colonne,
+                        value=selectionnee,
+                        key=cle_checkbox,
+                    )
+
+                    if (
+                        nouvelle_valeur
+                        and colonne not in st.session_state[cle_colonnes]
+                    ):
+                        st.session_state[cle_colonnes].append(colonne)
+
+                    elif (
+                        not nouvelle_valeur
+                        and colonne in st.session_state[cle_colonnes]
+                    ):
+                        st.session_state[cle_colonnes].remove(colonne)
+
+            colonnes_affichees = [
+                colonne
+                for colonne in colonnes_disponibles
+                if colonne in st.session_state[cle_colonnes]
+            ]
+
+            if colonnes_affichees:
+                st.caption(
+                    f"{len(colonnes_affichees)} colonne(s) sélectionnée(s). "
+                    "Le téléchargement reprend uniquement ces colonnes."
+                )
+            else:
+                st.caption(
+                    "Aucune colonne sélectionnée."
+                )
 
         if not colonnes_affichees:
             st.warning("Sélectionne au moins une colonne à afficher.")
@@ -2500,6 +2650,18 @@ if vue_active == "Vue globale":
             table_contrats_affichee = table_contrats_complete[
                 colonnes_affichees
             ].copy()
+
+            # Sécurise les types pour éviter les erreurs Arrow / Streamlit
+            # lorsque toutes les colonnes de rattachement sont affichées.
+            for colonne in table_contrats_affichee.columns:
+                table_contrats_affichee[colonne] = (
+                    table_contrats_affichee[colonne]
+                    .where(
+                        table_contrats_affichee[colonne].notna(),
+                        "",
+                    )
+                    .astype(str)
+                )
 
         if "Référence contrat" in table_contrats_complete.columns:
             nb_contrats_resultat = int(
