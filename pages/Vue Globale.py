@@ -1310,7 +1310,7 @@ def afficher_detail_qualite(focus, df_contrats_kpi, df_esi_context, df_qualite, 
 # =====================================================
 
 hero(
-    "Pilotage du patrimoine",
+    "Vue globale",
     "Une lecture en trois temps : réalité source, couverture exploitable, puis anomalies à corriger.",
 )
 
