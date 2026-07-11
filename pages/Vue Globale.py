@@ -123,14 +123,11 @@ def inject_style():
         .vg-hero {
             position: relative;
             overflow: hidden;
-            padding: 30px 34px;
+            padding: 24px 34px;
             border-radius: 20px;
-            background:
-                radial-gradient(circle at 88% 22%, rgba(255,255,255,0.52) 0 72px, transparent 73px),
-                radial-gradient(circle at 78% 115%, rgba(67,42,189,0.13) 0 150px, transparent 151px),
-                linear-gradient(118deg, #FFB7E3 0%, #D9DFFF 46%, #80CDFF 100%);
-            border: 1px solid rgba(23,59,105,0.10);
-            box-shadow: 0 24px 54px -28px rgba(23,59,105,0.42);
+            background: #FBEAF4;
+            border: 1px solid #E7D7E1;
+            box-shadow: 0 10px 28px -22px rgba(23,59,105,0.26);
             margin-bottom: 22px;
         }
         .vg-hero:before {
@@ -138,15 +135,10 @@ def inject_style():
             position: absolute;
             left: 0; top: 0; right: 0;
             height: 4px;
-            background: linear-gradient(90deg, var(--red) 0%, var(--violet) 52%, var(--blue) 100%);
+            background: var(--red);
         }
         .vg-hero:after {
-            content: "";
-            position: absolute;
-            width: 360px; height: 360px;
-            right: -140px; top: -190px;
-            border-radius: 999px;
-            background: radial-gradient(circle, rgba(255,255,255,0.26) 0%, rgba(255,255,255,0) 70%);
+            display: none;
         }
         .vg-hero-eyebrow {
             position: relative; z-index: 1;
@@ -160,18 +152,18 @@ def inject_style():
             text-transform: uppercase;
             margin-bottom: 12px;
         }
-        .vg-hero-eyebrow::before {
+        .vg-hero-eyebrow:before {
             content: "";
             width: 8px;
             height: 8px;
-            background: #E5114D;
+            background: var(--red);
             border-radius: 50%;
             flex-shrink: 0;
         }
         .vg-hero-title {
             position: relative; z-index: 1;
             color: var(--navy-deep);
-            font-size: 34px;
+            font-size: 32px;
             line-height: 1.08;
             letter-spacing: -0.6px;
             font-weight: 800;
@@ -190,7 +182,7 @@ def inject_style():
         .vg-info {
             padding: 12px 16px;
             border-radius: 12px;
-            background: linear-gradient(90deg, var(--blue-soft), var(--pink-soft));
+            background: #F4F8FB;
             border: 1px solid #DCEAF5;
             color: var(--ink-soft);
             font-size: 12.5px;
@@ -216,7 +208,7 @@ def inject_style():
             width: 7px;
             height: 22px;
             border-radius: 99px;
-            background: linear-gradient(180deg, var(--red), var(--violet));
+            background: var(--red);
         }
         .vg-section-subtitle {
             color: var(--ink-soft);
@@ -240,16 +232,14 @@ def inject_style():
             padding: 20px 20px 18px 20px;
             background: var(--surface);
             border: 1px solid var(--line);
-            box-shadow: 0 1px 2px rgba(23,59,105,0.04),
-                        0 16px 34px -24px rgba(23,59,105,0.30);
+            box-shadow: 0 6px 18px -16px rgba(23,59,105,0.22);
             position: relative;
             overflow: hidden;
-            transition: transform .18s ease, box-shadow .18s ease;
+            transition: border-color .15s ease, box-shadow .15s ease;
         }
         .vg-card:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 1px 2px rgba(16,35,59,0.05),
-                        0 18px 34px -20px rgba(16,35,59,0.42);
+            border-color: #C9D5E1;
+            box-shadow: 0 8px 22px -18px rgba(23,59,105,0.26);
         }
         .vg-card-accent {
             width: 32px; height: 4px;
@@ -299,7 +289,7 @@ def inject_style():
             background: var(--surface);
             border: 1px solid var(--line);
             border-left: 4px solid var(--red);
-            background: linear-gradient(145deg, #FFFFFF 0%, #FFF8FC 100%);
+            background: #FFFFFF;
             box-shadow: 0 1px 2px rgba(16,35,59,0.04);
         }
         .vg-alert-title {
@@ -341,7 +331,7 @@ def inject_style():
             background: var(--surface) !important;
         }
         div[data-testid="stDataFrame"] [role="columnheader"] {
-            background: linear-gradient(90deg, #F1F9FF, #FFF3FA) !important;
+            background: #F3F6F9 !important;
             color: var(--navy) !important;
             font-weight: 700 !important;
         }
@@ -356,8 +346,8 @@ def inject_style():
             transition: all .15s ease !important;
         }
         .stButton button:hover {
-            border-color: var(--red) !important;
-            background: var(--blue-soft) !important;
+            border-color: var(--navy) !important;
+            background: #F4F7FA !important;
         }
         .stDownloadButton button {
             border-radius: 10px !important;
@@ -373,7 +363,7 @@ def inject_style():
         /* ---------- NAVIGATION EN BOUTONS ---------- */
         div[role="radiogroup"] {
             gap: 8px !important;
-            background: linear-gradient(90deg, #EEF8FF 0%, #FFF1F8 100%);
+            background: #F2F5F8;
             border: 1px solid #DCE8F2;
             padding: 5px;
             border-radius: 13px;
@@ -387,8 +377,8 @@ def inject_style():
             transition: background .15s ease, box-shadow .15s ease;
         }
         div[role="radiogroup"] label:has(input:checked) {
-            background: linear-gradient(135deg, #173B69 0%, #432ABD 100%) !important;
-            box-shadow: 0 7px 18px rgba(23,59,105,0.24);
+            background: #173B69 !important;
+            box-shadow: none;
         }
         div[role="radiogroup"] label:has(input:checked) p {
             color: #FFFFFF !important;
@@ -403,7 +393,7 @@ def inject_style():
             border: 1px solid var(--line) !important;
             border-radius: 14px !important;
             background: var(--surface) !important;
-            box-shadow: 0 12px 30px -25px rgba(23,59,105,0.30);
+            box-shadow: 0 6px 18px -16px rgba(23,59,105,0.24);
             overflow: hidden;
         }
 
@@ -1310,7 +1300,7 @@ def afficher_detail_qualite(focus, df_contrats_kpi, df_esi_context, df_qualite, 
 # =====================================================
 
 hero(
-    "Vue globale",
+    "Pilotage du patrimoine",
     "Une lecture en trois temps : réalité source, couverture exploitable, puis anomalies à corriger.",
 )
 
@@ -1347,20 +1337,21 @@ if df_global.empty:
     st.error("La table dashboard.kpi_globale est vide.")
     st.stop()
 
-# Les filtres sont communs aux trois vues, mais restent repliés pour alléger la page.
-with st.expander("Filtres du périmètre", expanded=False):
-    info(
-        "Les totaux source restent fixes dans la vue globale. "
-        "Les indicateurs de couverture et les tableaux de détail suivent le périmètre sélectionné."
-    )
+# Les filtres patrimoine sont affichés dans la barre latérale.
+df_esi_filtre, df_contrats_filtre, filtres_selectionnes = render_filtres_patrimoine(
+    df_esi=df_esi,
+    df_contrats=df_contrats,
+)
 
-    df_esi_filtre, df_contrats_filtre, filtres_selectionnes = render_filtres_patrimoine(
-        df_esi=df_esi,
-        df_contrats=df_contrats,
-    )
-
-    st.markdown('<div class="vg-mini-title">Statut des contrats</div>', unsafe_allow_html=True)
+# Filtre complémentaire compact dans la zone principale.
+status_col, note_col = st.columns([1.45, 3.55], vertical_alignment="center")
+with status_col:
     statut_selectionne = afficher_filtre_statut_contrat()
+with note_col:
+    st.caption(
+        "Les totaux source restent fixes dans la vue globale. "
+        "La couverture et les détails suivent les filtres sélectionnés."
+    )
 
 # Calculs communs à toutes les vues.
 df_contrats_kpi = filtrer_contrats_par_statut(df_contrats_filtre, statut_selectionne)
