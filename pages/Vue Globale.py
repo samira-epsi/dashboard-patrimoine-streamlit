@@ -1276,7 +1276,18 @@ def inject_style():
         }
 
         div[data-testid="stPopoverBody"] {
-            min-width: 380px !important;
+            min-width: 360px !important;
+            max-width: 420px !important;
+        }
+
+        .vg-columns-separator {
+            height: 1px;
+            margin: 10px 0 8px 0;
+            background: #EEE7EB;
+        }
+
+        div[data-testid="stPopoverBody"] [data-testid="stCheckbox"] {
+            margin-bottom: 2px !important;
         }
         </style>
         """,
@@ -2524,124 +2535,92 @@ if vue_active == "Vue globale":
                 if mode_tableau == "Contrats uniques"
                 else "rattachements"
             )
-            cle_colonnes = f"colonnes_table_contrats_{cle_mode}"
 
-            if cle_colonnes not in st.session_state:
-                st.session_state[cle_colonnes] = colonnes_par_defaut.copy()
+            # Une clé indépendante par colonne et par mode d'affichage.
+            def cle_checkbox_colonne(colonne: str) -> str:
+                cle_simple = (
+                    colonne
+                    .lower()
+                    .replace(" ", "_")
+                    .replace("é", "e")
+                    .replace("è", "e")
+                    .replace("ê", "e")
+                    .replace("à", "a")
+                    .replace("'", "")
+                    .replace("/", "_")
+                )
+                return f"colonne_{cle_mode}_{cle_simple}"
 
-            # Nettoyage des anciennes valeurs qui ne sont plus disponibles.
-            st.session_state[cle_colonnes] = [
-                colonne
-                for colonne in st.session_state[cle_colonnes]
-                if colonne in colonnes_disponibles
-            ]
+            # Initialise les cases uniquement lors du premier affichage.
+            for colonne in colonnes_disponibles:
+                cle_case = cle_checkbox_colonne(colonne)
+                if cle_case not in st.session_state:
+                    st.session_state[cle_case] = (
+                        colonne in colonnes_par_defaut
+                    )
 
             with st.popover(
                 "Choisir les colonnes",
                 use_container_width=True,
             ):
-                st.markdown("#### Sélection des colonnes")
+                boutons_col_1, boutons_col_2 = st.columns(2)
 
-                bouton_tout, bouton_contrat = st.columns(2)
-
-                with bouton_tout:
+                with boutons_col_1:
                     if st.button(
                         "Tout sélectionner",
                         use_container_width=True,
                         key=f"tout_selectionner_{cle_mode}",
                     ):
-                        st.session_state[cle_colonnes] = (
-                            colonnes_disponibles.copy()
-                        )
+                        for colonne in colonnes_disponibles:
+                            st.session_state[
+                                cle_checkbox_colonne(colonne)
+                            ] = True
                         st.rerun()
 
-                with bouton_contrat:
-                    if st.button(
-                        "Colonnes contrat",
-                        use_container_width=True,
-                        key=f"colonnes_contrat_{cle_mode}",
-                    ):
-                        st.session_state[cle_colonnes] = [
-                            colonne
-                            for colonne in colonnes_contrat
-                            if colonne in colonnes_disponibles
-                        ]
-                        st.rerun()
-
-                bouton_rattachement, bouton_reset = st.columns(2)
-
-                with bouton_rattachement:
-                    if st.button(
-                        "Colonnes rattachement",
-                        use_container_width=True,
-                        key=f"colonnes_rattachement_{cle_mode}",
-                    ):
-                        st.session_state[cle_colonnes] = [
-                            colonne
-                            for colonne in (
-                                colonnes_contrat
-                                + colonnes_rattachement
-                            )
-                            if colonne in colonnes_disponibles
-                        ]
-                        st.rerun()
-
-                with bouton_reset:
+                with boutons_col_2:
                     if st.button(
                         "Réinitialiser",
                         use_container_width=True,
                         key=f"reinitialiser_colonnes_{cle_mode}",
                     ):
-                        st.session_state[cle_colonnes] = (
-                            colonnes_par_defaut.copy()
-                        )
+                        for colonne in colonnes_disponibles:
+                            st.session_state[
+                                cle_checkbox_colonne(colonne)
+                            ] = (
+                                colonne in colonnes_par_defaut
+                            )
                         st.rerun()
 
-                st.markdown("---")
+                st.markdown(
+                    '<div class="vg-columns-separator"></div>',
+                    unsafe_allow_html=True,
+                )
 
                 for colonne in colonnes_disponibles:
-                    cle_checkbox = (
-                        f"colonne_visible_{cle_mode}_"
-                        f"{colonne}"
-                    )
-
-                    selectionnee = (
-                        colonne in st.session_state[cle_colonnes]
-                    )
-
-                    nouvelle_valeur = st.checkbox(
+                    st.checkbox(
                         colonne,
-                        value=selectionnee,
-                        key=cle_checkbox,
+                        key=cle_checkbox_colonne(colonne),
                     )
-
-                    if (
-                        nouvelle_valeur
-                        and colonne not in st.session_state[cle_colonnes]
-                    ):
-                        st.session_state[cle_colonnes].append(colonne)
-
-                    elif (
-                        not nouvelle_valeur
-                        and colonne in st.session_state[cle_colonnes]
-                    ):
-                        st.session_state[cle_colonnes].remove(colonne)
 
             colonnes_affichees = [
                 colonne
                 for colonne in colonnes_disponibles
-                if colonne in st.session_state[cle_colonnes]
+                if st.session_state.get(
+                    cle_checkbox_colonne(colonne),
+                    False,
+                )
             ]
 
-            if colonnes_affichees:
-                st.caption(
-                    f"{len(colonnes_affichees)} colonne(s) sélectionnée(s). "
+            nb_colonnes = len(colonnes_affichees)
+
+            st.caption(
+                (
+                    f"{nb_colonnes} colonne(s) sélectionnée(s). "
                     "Le téléchargement reprend uniquement ces colonnes."
                 )
-            else:
-                st.caption(
-                    "Aucune colonne sélectionnée."
-                )
+                if nb_colonnes
+                else "Aucune colonne sélectionnée."
+            )
 
         if not colonnes_affichees:
             st.warning("Sélectionne au moins une colonne à afficher.")
