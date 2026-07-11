@@ -260,41 +260,32 @@ def apply_3f_page_style():
         }
 
         /* =====================================================
-           NAVIGATION STREAMLIT
+           APPLICATION MONOPAGE
         ===================================================== */
 
+        /*
+        Le logo défini avec st.logo() ou dans setup_page()
+        reste visible. Seul le menu automatique Streamlit
+        « app / Vue Globale » est masqué.
+        */
+
         [data-testid="stSidebarNav"] {
-            padding-top: 8px !important;
-            margin-bottom: 18px !important;
+            display: none !important;
         }
 
-        [data-testid="stSidebarNav"] span {
-            font-size: 18px !important;
-            font-weight: 950 !important;
-            letter-spacing: 0.2px !important;
-            color: var(--3f-red) !important;
+        [data-testid="stSidebarHeader"] {
+            min-height: 92px !important;
+            padding-top: 14px !important;
+            padding-left: 18px !important;
+            padding-right: 18px !important;
         }
 
-        [data-testid="stSidebarNav"] a {
-            font-size: 16px !important;
-            font-weight: 820 !important;
-            color: #1F2937 !important;
-            padding: 11px 12px !important;
-            border-radius: 14px !important;
-            transition: all 0.15s ease-in-out !important;
+        [data-testid="stSidebarHeader"] img {
+            object-fit: contain !important;
         }
 
-        [data-testid="stSidebarNav"] a[aria-current="page"] {
-            background: linear-gradient(135deg, #FDEBEC 0%, #FFF1F2 100%) !important;
-            color: var(--3f-red) !important;
-            font-weight: 950 !important;
-            box-shadow: 0 8px 18px rgba(181, 18, 27, 0.10);
-        }
-
-        [data-testid="stSidebarNav"] a:hover {
-            background: #FFF1F2 !important;
-            color: var(--3f-red) !important;
-            transform: translateX(2px);
+        [data-testid="stSidebarUserContent"] {
+            padding-top: 0.25rem !important;
         }
 
         /* =====================================================
