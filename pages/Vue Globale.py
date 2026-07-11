@@ -123,11 +123,11 @@ def inject_style():
         .vg-hero {
             position: relative;
             overflow: hidden;
-            padding: 24px 34px;
+            padding: 30px 34px;
             border-radius: 20px;
             background:
-                radial-gradient(circle at 88% 20%, rgba(255,255,255,0.30) 0 62px, transparent 63px),
-                radial-gradient(circle at 80% 120%, rgba(67,42,189,0.08) 0 135px, transparent 136px),
+                radial-gradient(circle at 88% 22%, rgba(255,255,255,0.52) 0 72px, transparent 73px),
+                radial-gradient(circle at 78% 115%, rgba(67,42,189,0.13) 0 150px, transparent 151px),
                 linear-gradient(118deg, #FFB7E3 0%, #D9DFFF 46%, #80CDFF 100%);
             border: 1px solid rgba(23,59,105,0.10);
             box-shadow: 0 24px 54px -28px rgba(23,59,105,0.42);
@@ -143,10 +143,10 @@ def inject_style():
         .vg-hero:after {
             content: "";
             position: absolute;
-            width: 300px; height: 300px;
-            right: -125px; top: -175px;
+            width: 360px; height: 360px;
+            right: -140px; top: -190px;
             border-radius: 999px;
-            background: radial-gradient(circle, rgba(255,255,255,0.14) 0%, rgba(255,255,255,0) 70%);
+            background: radial-gradient(circle, rgba(255,255,255,0.26) 0%, rgba(255,255,255,0) 70%);
         }
         .vg-hero-eyebrow {
             position: relative; z-index: 1;
@@ -169,7 +169,7 @@ def inject_style():
         .vg-hero-title {
             position: relative; z-index: 1;
             color: var(--navy-deep);
-            font-size: 32px;
+            font-size: 34px;
             line-height: 1.08;
             letter-spacing: -0.6px;
             font-weight: 800;
@@ -1345,21 +1345,20 @@ if df_global.empty:
     st.error("La table dashboard.kpi_globale est vide.")
     st.stop()
 
-# Les filtres patrimoine sont affichés dans la barre latérale.
-df_esi_filtre, df_contrats_filtre, filtres_selectionnes = render_filtres_patrimoine(
-    df_esi=df_esi,
-    df_contrats=df_contrats,
-)
-
-# Filtre complémentaire compact dans la zone principale.
-status_col, note_col = st.columns([1.45, 3.55], vertical_alignment="center")
-with status_col:
-    statut_selectionne = afficher_filtre_statut_contrat()
-with note_col:
-    st.caption(
+# Les filtres sont communs aux trois vues, mais restent repliés pour alléger la page.
+with st.expander("Filtres du périmètre", expanded=False):
+    info(
         "Les totaux source restent fixes dans la vue globale. "
-        "La couverture et les détails suivent les filtres sélectionnés."
+        "Les indicateurs de couverture et les tableaux de détail suivent le périmètre sélectionné."
     )
+
+    df_esi_filtre, df_contrats_filtre, filtres_selectionnes = render_filtres_patrimoine(
+        df_esi=df_esi,
+        df_contrats=df_contrats,
+    )
+
+    st.markdown('<div class="vg-mini-title">Statut des contrats</div>', unsafe_allow_html=True)
+    statut_selectionne = afficher_filtre_statut_contrat()
 
 # Calculs communs à toutes les vues.
 df_contrats_kpi = filtrer_contrats_par_statut(df_contrats_filtre, statut_selectionne)
