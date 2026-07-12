@@ -82,6 +82,11 @@ def format_nombre(value) -> str:
         return "0"
 
 
+def effacer_recherche_contrat():
+    """Vide proprement le champ de recherche avant le rerun Streamlit."""
+    st.session_state["global_search_contract"] = ""
+
+
 def inject_style():
     st.markdown(
         """
@@ -2697,13 +2702,12 @@ if vue_active == "Vue globale":
                 unsafe_allow_html=True,
             )
 
-            if st.button(
+            st.button(
                 "Effacer la recherche",
                 key="effacer_recherche_contrat",
                 width="content",
-            ):
-                st.session_state["global_search_contract"] = ""
-                st.rerun()
+                on_click=effacer_recherche_contrat,
+            )
 
         mode_col, colonnes_col = st.columns(
             [1.25, 2.75],
