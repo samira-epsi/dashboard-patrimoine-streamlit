@@ -767,6 +767,47 @@ def render_multiselect(label, options, key, placeholder, format_func=None):
 # FILTRES PATRIMOINE
 # =====================================================
 
+def reinitialiser_filtres_dashboard():
+    """
+    Réinitialise tous les filtres du dashboard, y compris
+    la recherche du tableau et les préférences d'affichage.
+    """
+
+    cles_exactes = {
+        "filtre_contrat",
+        "filtre_societe",
+        "filtre_agence",
+        "filtre_groupe",
+        "filtre_secteur",
+        "filtre_programme",
+        "filtre_metier",
+        "filtre_prestataire",
+        "global_search_contract",
+        "vg_filtre_statut_contrat",
+        "global_contract_table_mode",
+        "dashboard_vue_active",
+        "_derniere_recherche_contrat_synchro",
+    }
+
+    prefixes = (
+        "colonne_uniques_",
+        "colonne_rattachements_",
+        "page_table_contrats_",
+        "page_precedente_",
+        "page_suivante_",
+        "form_colonnes_",
+        "tout_selectionner_",
+        "reinitialiser_colonnes_",
+        "preparer_export_",
+        "annuler_export_",
+        "export_complet_",
+    )
+
+    for cle in list(st.session_state.keys()):
+        if cle in cles_exactes or cle.startswith(prefixes):
+            del st.session_state[cle]
+
+
 def render_filtres_patrimoine(
     df_esi: pd.DataFrame,
     df_contrats: pd.DataFrame,
@@ -820,14 +861,12 @@ def render_filtres_patrimoine(
         unsafe_allow_html=True,
     )
 
-    if st.sidebar.button(
+    st.sidebar.button(
         "Réinitialiser tous les filtres",
-        use_container_width=True,
+        width="stretch",
         key="btn_reset_filtres_patrimoine",
-    ):
-        for key in reset_keys:
-            st.session_state[key] = []
-        st.rerun()
+        on_click=reinitialiser_filtres_dashboard,
+    )
 
     # =====================================================
     # CONTRAT
@@ -838,29 +877,15 @@ def render_filtres_patrimoine(
     contrat_options, contrat_labels = construire_options_contrat(
         base_contrats
     )
-    nettoyer_session_state(
-        "filtre_contrat",
-        contrat_options,
-    )
 
-    selected_contrats = render_multiselect(
-        label="Contrat",
-        options=contrat_options,
-        key="filtre_contrat",
-        placeholder="Tous les contrats",
-    )
-
-    # La recherche saisie dans le tableau devient aussi un filtre global.
-    recherche_tableau = (
-        st.session_state
-        .get("global_search_contract", "")
-    )
-
-    recherche_tableau = (
-        str(recherche_tableau)
-        .strip()
-        .lower()
-    )
+    # La recherche du tableau est lue avant la création du multiselect.
+    # Cela permet de synchroniser visuellement le filtre Contrat.
+    recherche_tableau = str(
+        st.session_state.get(
+            "global_search_contract",
+            "",
+        )
+    ).strip().lower()
 
     contrats_recherche = []
 
@@ -911,16 +936,44 @@ def render_filtres_patrimoine(
                 & (contrats_recherche != "None")
             ].unique().tolist()
 
+    # Synchronise le multiselect uniquement lorsque la recherche change.
+    # On évite ainsi d'écraser une modification manuelle de la sidebar
+    # à chaque rerun.
+    derniere_recherche = st.session_state.get(
+        "_derniere_recherche_contrat_synchro",
+        None,
+    )
+
+    if recherche_tableau != derniere_recherche:
+        st.session_state["_derniere_recherche_contrat_synchro"] = (
+            recherche_tableau
+        )
+
+        if recherche_tableau:
+            st.session_state["filtre_contrat"] = [
+                reference
+                for reference in contrats_recherche
+                if reference in contrat_options
+            ]
+        else:
+            st.session_state["filtre_contrat"] = []
+
+    nettoyer_session_state(
+        "filtre_contrat",
+        contrat_options,
+    )
+
+    selected_contrats = render_multiselect(
+        label="Contrat",
+        options=contrat_options,
+        key="filtre_contrat",
+        placeholder="Tous les contrats",
+    )
+
     # Fusion des deux sources de filtrage contrat :
     # - sélection dans la sidebar ;
     # - recherche dans le tableau.
-    if selected_contrats and contrats_recherche:
-        contrats_actifs = [
-            ref
-            for ref in selected_contrats
-            if ref in contrats_recherche
-        ]
-    elif selected_contrats:
+    if selected_contrats:
         contrats_actifs = selected_contrats
     else:
         contrats_actifs = contrats_recherche
