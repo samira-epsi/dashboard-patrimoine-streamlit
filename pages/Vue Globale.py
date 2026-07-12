@@ -1542,6 +1542,35 @@ def inject_style():
         unsafe_allow_html=True,
     )
 
+
+    st.markdown(
+        r"""
+        <style>
+        /* Vue Couverture : cartes homogènes sur 5 colonnes */
+        @media screen and (min-width: 1100px) {
+            div[data-testid="stHorizontalBlock"]:has(
+                .vg-card
+            ) .vg-card {
+                min-height: 210px !important;
+                height: 210px !important;
+            }
+        }
+
+        /* Meilleure lecture du tableau couverture */
+        .vg-table-summary {
+            margin-top: 10px !important;
+            margin-bottom: 14px !important;
+        }
+
+        /* Segmented control de période */
+        [data-testid="stSegmentedControl"] {
+            margin-bottom: 12px !important;
+        }
+        </style>
+        """,
+        unsafe_allow_html=True,
+    )
+
 def hero(title: str, subtitle: str):
     st.markdown(
         f"""
@@ -2438,6 +2467,765 @@ def afficher_detail_qualite(focus, df_contrats_kpi, df_esi_context, df_qualite, 
             dataframe_download("Télécharger les ESI sans contrat actif", table, "esi_sans_contrat_actif.csv")
 
 
+
+# =====================================================
+# OUTILS — VUE COUVERTURE
+# =====================================================
+
+def contrats_actifs_couverture(df_contrats: pd.DataFrame) -> pd.DataFrame:
+    """
+    Retourne les rattachements contrat x ESI considérés actifs aujourd'hui.
+
+    La couverture est toujours calculée sur les contrats actifs,
+    indépendamment du filtre d'affichage actif / inactif de la vue globale.
+    """
+    if df_contrats.empty:
+        return df_contrats.copy()
+
+    df = df_contrats.copy()
+
+    if "contract_status_clean" in df.columns:
+        df = df[df["contract_status_clean"] == "active"].copy()
+    elif "contract_status" in df.columns:
+        statut = (
+            df["contract_status"]
+            .fillna("")
+            .astype(str)
+            .str.strip()
+            .str.lower()
+        )
+        df = df[statut.isin(["active", "actif", "actifs"])].copy()
+
+    if "esi_reference" in df.columns:
+        df["esi_reference"] = (
+            df["esi_reference"]
+            .fillna("")
+            .astype(str)
+            .str.strip()
+        )
+        df = df[
+            (df["esi_reference"] != "")
+            & (df["esi_reference"] != "nan")
+            & (df["esi_reference"] != "None")
+        ]
+
+    return df
+
+
+def calculer_synthese_couverture(
+    df_esi_base: pd.DataFrame,
+    df_contrats_actifs: pd.DataFrame,
+) -> dict:
+    """
+    Calcule les 5 indicateurs principaux de couverture.
+    """
+    esi = dedupliquer_esi(df_esi_base)
+
+    if esi.empty:
+        return {
+            "esi_total": 0,
+            "esi_couverts": 0,
+            "esi_sans": 0,
+            "taux_global": 0.0,
+            "esi_equipes": 0,
+            "esi_equipes_couverts": 0,
+            "esi_equipes_sans": 0,
+            "taux_equipes": 0.0,
+            "moyenne_contrats_couverts": 0.0,
+        }
+
+    refs_total = set(liste_refs_valides(esi, "esi_reference"))
+    refs_couverts = set(
+        liste_refs_valides(df_contrats_actifs, "esi_reference")
+    )
+    refs_couverts = refs_couverts.intersection(refs_total)
+
+    esi_total = len(refs_total)
+    esi_couverts = len(refs_couverts)
+    esi_sans = max(esi_total - esi_couverts, 0)
+    taux_global = (
+        round(esi_couverts / esi_total * 100, 1)
+        if esi_total
+        else 0.0
+    )
+
+    nb_equipements = serie_numerique(esi, "nb_equipements")
+    esi_equipes_df = esi[nb_equipements > 0].copy()
+    refs_equipes = set(
+        liste_refs_valides(esi_equipes_df, "esi_reference")
+    )
+    refs_equipes_couverts = refs_equipes.intersection(refs_couverts)
+
+    esi_equipes = len(refs_equipes)
+    esi_equipes_couverts = len(refs_equipes_couverts)
+    esi_equipes_sans = max(
+        esi_equipes - esi_equipes_couverts,
+        0,
+    )
+    taux_equipes = (
+        round(
+            esi_equipes_couverts / esi_equipes * 100,
+            1,
+        )
+        if esi_equipes
+        else 0.0
+    )
+
+    if (
+        not df_contrats_actifs.empty
+        and "contract_reference" in df_contrats_actifs.columns
+        and "esi_reference" in df_contrats_actifs.columns
+        and esi_couverts
+    ):
+        rattachements = (
+            df_contrats_actifs[
+                ["contract_reference", "esi_reference"]
+            ]
+            .dropna()
+            .drop_duplicates()
+        )
+
+        contrats_par_esi = (
+            rattachements
+            .groupby("esi_reference")["contract_reference"]
+            .nunique()
+        )
+
+        contrats_par_esi = contrats_par_esi[
+            contrats_par_esi.index.astype(str).isin(
+                refs_couverts
+            )
+        ]
+
+        moyenne = (
+            float(contrats_par_esi.mean())
+            if not contrats_par_esi.empty
+            else 0.0
+        )
+    else:
+        moyenne = 0.0
+
+    return {
+        "esi_total": esi_total,
+        "esi_couverts": esi_couverts,
+        "esi_sans": esi_sans,
+        "taux_global": taux_global,
+        "esi_equipes": esi_equipes,
+        "esi_equipes_couverts": esi_equipes_couverts,
+        "esi_equipes_sans": esi_equipes_sans,
+        "taux_equipes": taux_equipes,
+        "moyenne_contrats_couverts": moyenne,
+    }
+
+
+def construire_couverture_par_maille(
+    df_esi_base: pd.DataFrame,
+    df_contrats_actifs: pd.DataFrame,
+    maille: str,
+) -> pd.DataFrame:
+    """
+    Calcule le taux d'ESI couverts par société, agence, groupe ou secteur.
+    """
+    esi = dedupliquer_esi(df_esi_base)
+
+    if esi.empty or maille not in esi.columns:
+        return pd.DataFrame()
+
+    refs_couverts = set(
+        liste_refs_valides(df_contrats_actifs, "esi_reference")
+    )
+
+    work = esi.copy()
+    work[maille] = (
+        work[maille]
+        .fillna("Non renseigné")
+        .astype(str)
+        .str.strip()
+        .replace("", "Non renseigné")
+    )
+    work["Couvert"] = (
+        work["esi_reference"]
+        .astype(str)
+        .isin(refs_couverts)
+        .astype(int)
+    )
+
+    out = (
+        work.groupby(maille, as_index=False)
+        .agg(
+            ESI=("esi_reference", "nunique"),
+            Couverts=("Couvert", "sum"),
+        )
+    )
+
+    out["Non couverts"] = out["ESI"] - out["Couverts"]
+    out["Taux"] = (
+        out["Couverts"]
+        .div(out["ESI"].replace(0, pd.NA))
+        .mul(100)
+        .fillna(0)
+        .round(1)
+    )
+
+    return out.sort_values(
+        ["Taux", "ESI"],
+        ascending=[True, False],
+    )
+
+
+def construire_presence_contractuelle_par_metier(
+    df_esi_base: pd.DataFrame,
+    df_contrats_actifs: pd.DataFrame,
+    top_n: int = 12,
+) -> pd.DataFrame:
+    """
+    Mesure le nombre d'ESI disposant d'au moins un contrat actif
+    pour chaque métier.
+
+    Important : ce graphique mesure une présence contractuelle.
+    Le dénominateur exact des ESI réellement concernés par métier
+    nécessite une correspondance équipement -> métier.
+    """
+    if (
+        df_esi_base.empty
+        or df_contrats_actifs.empty
+        or "contract_topic" not in df_contrats_actifs.columns
+        or "esi_reference" not in df_contrats_actifs.columns
+    ):
+        return pd.DataFrame()
+
+    total_esi = len(
+        liste_refs_valides(df_esi_base, "esi_reference")
+    )
+
+    work = df_contrats_actifs.copy()
+    work["contract_topic"] = (
+        work["contract_topic"]
+        .fillna("Métier non renseigné")
+        .astype(str)
+        .str.strip()
+        .replace("", "Métier non renseigné")
+    )
+
+    out = (
+        work.groupby("contract_topic", as_index=False)
+        ["esi_reference"]
+        .nunique()
+        .rename(
+            columns={
+                "contract_topic": "Métier",
+                "esi_reference": "ESI couverts",
+            }
+        )
+    )
+
+    out["Part du patrimoine"] = (
+        out["ESI couverts"]
+        .div(total_esi if total_esi else 1)
+        .mul(100)
+        .round(1)
+    )
+
+    return (
+        out.sort_values("ESI couverts", ascending=False)
+        .head(top_n)
+        .sort_values("ESI couverts", ascending=True)
+    )
+
+
+def reconstruire_couverture_temporelle(
+    df_esi_base: pd.DataFrame,
+    df_contrats: pd.DataFrame,
+    nb_mois: int = 24,
+) -> pd.DataFrame:
+    """
+    Reconstruit l'état contractuel à chaque fin de mois à partir
+    des dates de début et de fin des contrats.
+
+    Il s'agit d'une reconstruction et non d'un snapshot historique.
+    """
+    esi = dedupliquer_esi(df_esi_base)
+    total_esi = len(
+        liste_refs_valides(esi, "esi_reference")
+    )
+
+    if (
+        total_esi == 0
+        or df_contrats.empty
+        or "esi_reference" not in df_contrats.columns
+        or "contract_reference" not in df_contrats.columns
+    ):
+        return pd.DataFrame()
+
+    work = df_contrats.copy()
+
+    if "contract_start_date" not in work.columns:
+        work["contract_start_date"] = pd.NaT
+
+    if "contract_end_date" not in work.columns:
+        work["contract_end_date"] = pd.NaT
+
+    work["contract_start_date"] = pd.to_datetime(
+        work["contract_start_date"],
+        errors="coerce",
+    )
+    work["contract_end_date"] = pd.to_datetime(
+        work["contract_end_date"],
+        errors="coerce",
+    )
+
+    work["esi_reference"] = (
+        work["esi_reference"]
+        .fillna("")
+        .astype(str)
+        .str.strip()
+    )
+    work["contract_reference"] = (
+        work["contract_reference"]
+        .fillna("")
+        .astype(str)
+        .str.strip()
+    )
+
+    work = work[
+        (work["esi_reference"] != "")
+        & (work["contract_reference"] != "")
+    ].drop_duplicates(
+        ["contract_reference", "esi_reference"]
+    )
+
+    if work.empty:
+        return pd.DataFrame()
+
+    fin = pd.Timestamp(aujourd_hui_france()).to_period("M").to_timestamp("M")
+    debut = (
+        fin - pd.DateOffset(months=max(nb_mois - 1, 0))
+    ).to_period("M").to_timestamp("M")
+
+    dates = pd.date_range(
+        start=debut,
+        end=fin,
+        freq="ME",
+    )
+
+    lignes = []
+
+    for date_fin_mois in dates:
+        masque_debut = (
+            work["contract_start_date"].isna()
+            | (work["contract_start_date"] <= date_fin_mois)
+        )
+        masque_fin = (
+            work["contract_end_date"].isna()
+            | (work["contract_end_date"] >= date_fin_mois)
+        )
+
+        actifs = work[masque_debut & masque_fin]
+
+        nb_esi_couverts = actifs["esi_reference"].nunique()
+        taux = (
+            nb_esi_couverts / total_esi * 100
+            if total_esi
+            else 0.0
+        )
+
+        if nb_esi_couverts:
+            contrats_par_esi = (
+                actifs.groupby("esi_reference")
+                ["contract_reference"]
+                .nunique()
+            )
+            moyenne = float(contrats_par_esi.mean())
+        else:
+            moyenne = 0.0
+
+        lignes.append(
+            {
+                "Mois": date_fin_mois,
+                "ESI couverts": int(nb_esi_couverts),
+                "ESI non couverts": int(
+                    max(total_esi - nb_esi_couverts, 0)
+                ),
+                "Taux de couverture": round(taux, 1),
+                "Contrats moyens par ESI couvert": round(
+                    moyenne,
+                    2,
+                ),
+            }
+        )
+
+    return pd.DataFrame(lignes)
+
+
+def construire_table_couverture_esi(
+    df_esi_base: pd.DataFrame,
+    df_contrats_actifs: pd.DataFrame,
+    metier_selectionne: str,
+) -> pd.DataFrame:
+    """
+    Construit un tableau actionnable au niveau ESI.
+
+    Sans table de correspondance équipement -> métier, le statut métier
+    reste volontairement formulé comme « à vérifier ».
+    """
+    esi = dedupliquer_esi(df_esi_base)
+
+    if esi.empty:
+        return pd.DataFrame()
+
+    contrats = df_contrats_actifs.copy()
+
+    if metier_selectionne != "Tous les métiers":
+        if "contract_topic" in contrats.columns:
+            contrats = contrats[
+                contrats["contract_topic"]
+                .fillna("")
+                .astype(str)
+                .eq(metier_selectionne)
+            ].copy()
+        else:
+            contrats = contrats.iloc[0:0].copy()
+
+    if contrats.empty:
+        agg = pd.DataFrame(
+            columns=[
+                "esi_reference",
+                "Contrats actifs correspondants",
+                "Références contrat",
+                "Prestataires",
+            ]
+        )
+    else:
+        if "third_party_label" not in contrats.columns:
+            contrats["third_party_label"] = ""
+
+        agg = (
+            contrats.groupby("esi_reference", as_index=False)
+            .agg(
+                **{
+                    "Contrats actifs correspondants": (
+                        "contract_reference",
+                        "nunique",
+                    ),
+                    "Références contrat": (
+                        "contract_reference",
+                        lambda s: ", ".join(
+                            sorted(
+                                {
+                                    str(v).strip()
+                                    for v in s
+                                    if pd.notna(v)
+                                    and str(v).strip()
+                                }
+                            )
+                        ),
+                    ),
+                    "Prestataires": (
+                        "third_party_label",
+                        lambda s: ", ".join(
+                            sorted(
+                                {
+                                    str(v).strip()
+                                    for v in s
+                                    if pd.notna(v)
+                                    and str(v).strip()
+                                }
+                            )
+                        ),
+                    ),
+                }
+            )
+        )
+
+    colonnes_esi = [
+        col
+        for col in [
+            "esi_reference",
+            "esi_label",
+            "societe",
+            "agence",
+            "groupe",
+            "secteur",
+            "nb_logements",
+            "nb_equipements",
+        ]
+        if col in esi.columns
+    ]
+
+    table = esi[colonnes_esi].copy()
+    table = table.merge(
+        agg,
+        on="esi_reference",
+        how="left",
+    )
+
+    table["Contrats actifs correspondants"] = (
+        pd.to_numeric(
+            table["Contrats actifs correspondants"],
+            errors="coerce",
+        )
+        .fillna(0)
+        .astype(int)
+    )
+    table["Références contrat"] = (
+        table["Références contrat"]
+        .fillna("")
+        .astype(str)
+    )
+    table["Prestataires"] = (
+        table["Prestataires"]
+        .fillna("")
+        .astype(str)
+    )
+
+    table["Équipements"] = serie_numerique(
+        table,
+        "nb_equipements",
+    ).astype(int)
+
+    nb_contrats = table["Contrats actifs correspondants"]
+
+    if metier_selectionne == "Tous les métiers":
+        table["Statut de couverture"] = "Non couvert"
+        table.loc[
+            nb_contrats > 0,
+            "Statut de couverture",
+        ] = "Couvert"
+        table.loc[
+            table["Équipements"] == 0,
+            "Statut de couverture",
+        ] = "Non équipé"
+    else:
+        table["Statut de couverture"] = (
+            "À vérifier – aucun contrat métier"
+        )
+        table.loc[
+            nb_contrats > 0,
+            "Statut de couverture",
+        ] = "Contrat métier présent"
+        table.loc[
+            table["Équipements"] == 0,
+            "Statut de couverture",
+        ] = "Non concerné – aucun équipement"
+
+    table["Métier analysé"] = metier_selectionne
+
+    table = table.rename(
+        columns={
+            "esi_reference": "Référence ESI",
+            "esi_label": "Libellé ESI",
+            "societe": "Société",
+            "agence": "Agence",
+            "groupe": "Groupe",
+            "secteur": "Secteur",
+            "nb_logements": "Logements",
+        }
+    )
+
+    ordre = [
+        "Société",
+        "Agence",
+        "Groupe",
+        "Secteur",
+        "Référence ESI",
+        "Libellé ESI",
+        "Métier analysé",
+        "Logements",
+        "Équipements",
+        "Contrats actifs correspondants",
+        "Références contrat",
+        "Prestataires",
+        "Statut de couverture",
+    ]
+
+    return table[
+        [col for col in ordre if col in table.columns]
+    ]
+
+
+def afficher_barres_couverture_maille(
+    df: pd.DataFrame,
+    libelle_maille: str,
+):
+    if df.empty:
+        st.info("Aucune donnée disponible pour cette maille.")
+        return
+
+    top = df.head(15).copy()
+
+    if go is None:
+        st.bar_chart(
+            top.set_index(libelle_maille)["Taux"],
+            width="stretch",
+        )
+        return
+
+    fig = go.Figure(
+        go.Bar(
+            x=top["Taux"],
+            y=top[libelle_maille],
+            orientation="h",
+            text=top["Taux"].map(
+                lambda x: f"{x:.1f} %"
+            ),
+            textposition="outside",
+            marker=dict(color=C_RED),
+            customdata=top[
+                ["Couverts", "ESI", "Non couverts"]
+            ],
+            hovertemplate=(
+                "<b>%{y}</b><br>"
+                "Taux : %{x:.1f} %<br>"
+                "Couverts : %{customdata[0]} / %{customdata[1]}<br>"
+                "Non couverts : %{customdata[2]}"
+                "<extra></extra>"
+            ),
+        )
+    )
+
+    _layout_plotly(fig, 430)
+    fig.update_layout(
+        xaxis=dict(
+            title="Taux de couverture (%)",
+            range=[0, 108],
+            gridcolor=C_GRID,
+        ),
+        yaxis=dict(
+            title=None,
+            automargin=True,
+        ),
+        margin=dict(l=12, r=55, t=10, b=45),
+    )
+
+    st.plotly_chart(
+        fig,
+        use_container_width=True,
+        config={"displayModeBar": False},
+    )
+
+
+def afficher_presence_metier(df: pd.DataFrame):
+    if df.empty:
+        st.info(
+            "Aucune présence contractuelle par métier disponible."
+        )
+        return
+
+    if go is None:
+        st.bar_chart(
+            df.set_index("Métier")["ESI couverts"],
+            width="stretch",
+        )
+        return
+
+    fig = go.Figure(
+        go.Bar(
+            x=df["ESI couverts"],
+            y=df["Métier"],
+            orientation="h",
+            text=df["ESI couverts"].map(fmt_nombre),
+            textposition="outside",
+            marker=dict(color=C_RED),
+            customdata=df["Part du patrimoine"],
+            hovertemplate=(
+                "<b>%{y}</b><br>"
+                "ESI avec contrat actif : %{x}<br>"
+                "Part du patrimoine : %{customdata:.1f} %"
+                "<extra></extra>"
+            ),
+        )
+    )
+
+    _layout_plotly(fig, 430)
+    fig.update_layout(
+        xaxis=dict(
+            title="ESI avec au moins un contrat actif",
+            gridcolor=C_GRID,
+        ),
+        yaxis=dict(
+            title=None,
+            automargin=True,
+        ),
+        margin=dict(l=12, r=50, t=10, b=45),
+    )
+
+    st.plotly_chart(
+        fig,
+        use_container_width=True,
+        config={"displayModeBar": False},
+    )
+
+
+def afficher_courbe_temporelle(
+    df: pd.DataFrame,
+    colonne: str,
+    titre_y: str,
+    couleur: str,
+    suffixe: str = "",
+):
+    if df.empty or colonne not in df.columns:
+        st.info("Historique insuffisant pour afficher cette évolution.")
+        return
+
+    if go is None:
+        st.line_chart(
+            df.set_index("Mois")[colonne],
+            width="stretch",
+        )
+        return
+
+    fig = go.Figure(
+        go.Scatter(
+            x=df["Mois"],
+            y=df[colonne],
+            mode="lines+markers",
+            line=dict(
+                color=couleur,
+                width=3,
+            ),
+            marker=dict(
+                size=6,
+                color="#FFFFFF",
+                line=dict(
+                    color=couleur,
+                    width=2,
+                ),
+            ),
+            fill="tozeroy",
+            fillcolor=(
+                "rgba(229,17,77,0.08)"
+                if couleur == C_RED
+                else "rgba(128,205,255,0.12)"
+            ),
+            hovertemplate=(
+                "<b>%{x|%b %Y}</b><br>"
+                f"{titre_y} : %{{y:.1f}}{suffixe}"
+                "<extra></extra>"
+            ),
+        )
+    )
+
+    _layout_plotly(fig, 340)
+    fig.update_layout(
+        xaxis=dict(
+            title=None,
+            gridcolor=C_GRID,
+            tickformat="%b %Y",
+        ),
+        yaxis=dict(
+            title=titre_y,
+            gridcolor=C_GRID,
+        ),
+        margin=dict(l=12, r=20, t=10, b=45),
+    )
+
+    st.plotly_chart(
+        fig,
+        use_container_width=True,
+        config={"displayModeBar": False},
+    )
+
+
 # =====================================================
 # PAGE
 # =====================================================
@@ -3177,123 +3965,475 @@ if vue_active == "Vue globale":
 elif vue_active == "Couverture":
     section(
         "Couverture du patrimoine",
-        "La couverture est calculée uniquement sur le patrimoine exploitable et sur les contrats actifs rattachés à un programme.",
+        (
+            "La couverture mesure les ESI disposant de contrats actifs, "
+            "puis rapproche cette présence contractuelle des équipements "
+            "réellement enregistrés dans le patrimoine."
+        ),
     )
 
-    df_couverture = construire_couverture(df_esi_base, df_esi_context, filtre_contrat_actif)
-    cov_map = df_couverture.set_index("Indicateur").to_dict("index") if not df_couverture.empty else {}
-
-    esi_total = int(cov_map.get("Programmes", {}).get("Total", 0))
-    esi_couverts = int(cov_map.get("Programmes", {}).get("Couverts", 0))
-    esi_sans = max(esi_total - esi_couverts, 0)
-    taux_esi = float(cov_map.get("Programmes", {}).get("Taux", 0))
-    moyenne_contrats = (
-        serie_numerique(df_esi_context, "nb_contrats_actifs").mean()
-        if not df_esi_context.empty else 0
+    # La couverture utilise toujours les contrats actifs.
+    df_contrats_couverture = contrats_actifs_couverture(
+        df_contrats_filtre
     )
 
-    c1, c2, c3, c4 = st.columns(4)
-    with c1:
-        kpi_card("ESI couverts", esi_couverts, fmt_pourcentage(taux_esi), "Au moins un contrat actif.", accent=C_RED)
-    with c2:
-        kpi_card("ESI sans contrat actif", esi_sans, "À traiter", "Aucun contrat actif rattaché.", accent=C_RED)
-    with c3:
+    synthese = calculer_synthese_couverture(
+        df_esi_base=df_esi_filtre,
+        df_contrats_actifs=df_contrats_couverture,
+    )
+
+    # -------------------------------------------------
+    # 1. CINQ INDICATEURS PRINCIPAUX
+    # -------------------------------------------------
+
+    k1, k2, k3, k4, k5 = st.columns(5)
+
+    with k1:
         kpi_card(
-            "Logements couverts",
-            cov_map.get("Logements", {}).get("Couverts", 0),
-            fmt_pourcentage(cov_map.get("Logements", {}).get("Taux", 0)),
-            "Logements situés dans des ESI couverts.",
-            accent=C_BLUE,
+            "Taux global d’ESI couverts",
+            synthese["esi_couverts"],
+            fmt_pourcentage(synthese["taux_global"]),
+            (
+                f'{fmt_nombre(synthese["esi_couverts"])} ESI couverts '
+                f'sur {fmt_nombre(synthese["esi_total"])}.'
+            ),
+            accent=C_RED,
         )
-    with c4:
+
+    with k2:
+        kpi_card(
+            "ESI sans contrat actif",
+            synthese["esi_sans"],
+            "À raccorder",
+            "ESI exploitables sans aucun contrat actif.",
+            accent=C_RED,
+        )
+
+    with k3:
+        kpi_card(
+            "ESI équipés avec contrat",
+            synthese["esi_equipes_couverts"],
+            fmt_pourcentage(synthese["taux_equipes"]),
+            (
+                f'{fmt_nombre(synthese["esi_equipes_couverts"])} sur '
+                f'{fmt_nombre(synthese["esi_equipes"])} ESI équipés.'
+            ),
+            accent=C_PINK,
+        )
+
+    with k4:
+        kpi_card(
+            "ESI équipés sans contrat",
+            synthese["esi_equipes_sans"],
+            "Besoin potentiel",
+            (
+                "ESI ayant au moins un équipement mais aucun "
+                "contrat actif enregistré."
+            ),
+            accent=C_YELLOW,
+        )
+
+    with k5:
         st.markdown(
             f"""
-            <div class="vg-card" style="--accent:{C_VIOLET};">
+            <div class="vg-card" style="--accent:{C_BLUE_LIGHT};">
                 <div class="vg-card-accent"></div>
-                <div class="vg-card-label">Contrats actifs moyens / ESI</div>
-                <div class="vg-card-value">{moyenne_contrats:.1f}</div>
-                <div class="vg-card-pill">Moyenne du périmètre</div>
-                <div class="vg-card-help">Nombre moyen de contrats actifs rattachés à chaque ESI affiché.</div>
+                <div class="vg-card-label">
+                    Contrats actifs moyens / ESI couvert
+                </div>
+                <div class="vg-card-value">
+                    {synthese["moyenne_contrats_couverts"]:.1f}
+                </div>
+                <div class="vg-card-pill">
+                    Moyenne du périmètre
+                </div>
+                <div class="vg-card-help">
+                    Calculée uniquement sur les ESI disposant
+                    d’au moins un contrat actif.
+                </div>
             </div>
             """,
             unsafe_allow_html=True,
         )
 
     st.markdown("<br>", unsafe_allow_html=True)
-    col_cov, col_repartition = st.columns([1, 1.15])
 
-    with col_cov:
-        st.markdown('<div class="vg-mini-title">Taux de couverture</div>', unsafe_allow_html=True)
-        afficher_couverture(df_couverture)
+    st.info(
+        (
+            "Lecture importante : le KPI « ESI équipés avec contrat » "
+            "vérifie aujourd’hui la présence d’au moins un équipement et "
+            "d’au moins un contrat actif. Pour confirmer qu’un contrat "
+            "Ascenseur correspond précisément à un équipement Ascenseur, "
+            "il faudra ajouter une table de correspondance "
+            "équipement → métier."
+        )
+    )
 
-    with col_repartition:
-        st.markdown('<div class="vg-mini-title">Répartition des ESI par nombre de contrats actifs</div>', unsafe_allow_html=True)
-        if df_esi_context.empty or "nb_contrats_actifs" not in df_esi_context.columns:
-            st.info("Aucune donnée disponible.")
-        else:
-            repartition = df_esi_context.copy()
-            repartition["nb_contrats_actifs"] = pd.to_numeric(
-                repartition["nb_contrats_actifs"], errors="coerce"
-            ).fillna(0).astype(int)
-            repartition["Classe"] = repartition["nb_contrats_actifs"].apply(
-                lambda x: "0" if x == 0 else "1" if x == 1 else "2" if x == 2 else "3" if x == 3 else "4 et +"
+    # -------------------------------------------------
+    # 2. COUVERTURE PAR MÉTIER ET PAR MAILLE
+    # -------------------------------------------------
+
+    section(
+        "Analyse de la couverture",
+        (
+            "À gauche : présence contractuelle par métier. "
+            "À droite : taux global d’ESI couverts par maille."
+        ),
+    )
+
+    col_metier, col_maille = st.columns([1, 1])
+
+    with col_metier:
+        st.markdown(
+            '<div class="vg-mini-title">'
+            'ESI disposant d’un contrat actif par métier'
+            '</div>',
+            unsafe_allow_html=True,
+        )
+
+        df_presence_metier = (
+            construire_presence_contractuelle_par_metier(
+                df_esi_base=df_esi_filtre,
+                df_contrats_actifs=df_contrats_couverture,
+                top_n=12,
             )
-            ordre = ["0", "1", "2", "3", "4 et +"]
-            repartition = (
-                repartition.groupby("Classe", as_index=False)["esi_reference"]
-                .nunique()
-                .rename(columns={"esi_reference": "ESI"})
-            )
-            repartition["Classe"] = pd.Categorical(repartition["Classe"], categories=ordre, ordered=True)
-            repartition = repartition.sort_values("Classe")
+        )
 
-            if go is None:
-                st.bar_chart(repartition.set_index("Classe")["ESI"], width="stretch")
-            else:
-                fig = go.Figure(
-                    go.Bar(
-                        x=repartition["Classe"].astype(str),
-                        y=repartition["ESI"],
-                        text=repartition["ESI"].apply(fmt_nombre),
-                        textposition="outside",
-                        marker=dict(color=C_NAVY),
-                        hovertemplate="<b>%{x} contrat(s)</b><br>%{y} ESI<extra></extra>",
-                    )
+        afficher_presence_metier(df_presence_metier)
+
+        st.caption(
+            (
+                "Ce graphique mesure la présence d’un contrat actif. "
+                "Il ne prétend pas encore mesurer le besoin équipement "
+                "exact de chaque métier."
+            )
+        )
+
+    with col_maille:
+        choix_maille = st.selectbox(
+            "Maille organisationnelle",
+            options=[
+                "Société",
+                "Agence",
+                "Groupe",
+                "Secteur",
+            ],
+            key="coverage_maille",
+        )
+
+        correspondance_mailles = {
+            "Société": "societe",
+            "Agence": "agence",
+            "Groupe": "groupe",
+            "Secteur": "secteur",
+        }
+
+        colonne_maille = correspondance_mailles[choix_maille]
+
+        st.markdown(
+            f'<div class="vg-mini-title">'
+            f'Couverture par {choix_maille.lower()}'
+            f'</div>',
+            unsafe_allow_html=True,
+        )
+
+        df_maille = construire_couverture_par_maille(
+            df_esi_base=df_esi_filtre,
+            df_contrats_actifs=df_contrats_couverture,
+            maille=colonne_maille,
+        )
+
+        if not df_maille.empty:
+            df_maille = df_maille.rename(
+                columns={
+                    colonne_maille: choix_maille,
+                }
+            )
+
+        afficher_barres_couverture_maille(
+            df_maille,
+            choix_maille,
+        )
+
+    # -------------------------------------------------
+    # 3. ÉVOLUTION DANS LE TEMPS
+    # -------------------------------------------------
+
+    section(
+        "Évolution dans le temps",
+        (
+            "Reconstruction mensuelle à partir des dates de début "
+            "et de fin des contrats."
+        ),
+    )
+
+    periode = st.segmented_control(
+        "Période analysée",
+        options=[
+            "12 mois",
+            "24 mois",
+            "36 mois",
+        ],
+        default="24 mois",
+        key="coverage_periode",
+    )
+
+    nb_mois = {
+        "12 mois": 12,
+        "24 mois": 24,
+        "36 mois": 36,
+    }.get(periode, 24)
+
+    historique = reconstruire_couverture_temporelle(
+        df_esi_base=df_esi_filtre,
+        df_contrats=df_contrats_filtre,
+        nb_mois=nb_mois,
+    )
+
+    if historique.empty:
+        st.info(
+            "Les dates disponibles ne permettent pas encore "
+            "de reconstruire une évolution temporelle."
+        )
+    else:
+        taux_moyen_periode = float(
+            historique["Taux de couverture"].mean()
+        )
+        moyenne_contrats_periode = float(
+            historique[
+                "Contrats moyens par ESI couvert"
+            ].mean()
+        )
+
+        evo1, evo2 = st.columns(2)
+
+        with evo1:
+            st.markdown(
+                '<div class="vg-mini-title">'
+                'Évolution du taux de couverture'
+                '</div>',
+                unsafe_allow_html=True,
+            )
+
+            st.markdown(
+                f"""
+                <div class="vg-info">
+                    Couverture moyenne sur la période :
+                    <strong>{taux_moyen_periode:.1f} %</strong>
+                </div>
+                """,
+                unsafe_allow_html=True,
+            )
+
+            afficher_courbe_temporelle(
+                historique,
+                colonne="Taux de couverture",
+                titre_y="Taux de couverture",
+                couleur=C_RED,
+                suffixe=" %",
+            )
+
+        with evo2:
+            st.markdown(
+                '<div class="vg-mini-title">'
+                'Évolution du nombre moyen de contrats par ESI'
+                '</div>',
+                unsafe_allow_html=True,
+            )
+
+            st.markdown(
+                f"""
+                <div class="vg-info">
+                    Moyenne sur la période :
+                    <strong>{moyenne_contrats_periode:.2f}</strong>
+                    contrat(s) par ESI couvert
+                </div>
+                """,
+                unsafe_allow_html=True,
+            )
+
+            afficher_courbe_temporelle(
+                historique,
+                colonne="Contrats moyens par ESI couvert",
+                titre_y="Contrats moyens / ESI",
+                couleur=C_BLUE,
+            )
+
+        with st.expander(
+            "Consulter les données mensuelles",
+            expanded=False,
+        ):
+            historique_affiche = historique.copy()
+            historique_affiche["Mois"] = (
+                historique_affiche["Mois"]
+                .dt.strftime("%m/%Y")
+            )
+
+            st.dataframe(
+                historique_affiche,
+                width="stretch",
+                hide_index=True,
+                height=360,
+            )
+
+            dataframe_download(
+                "Télécharger l’évolution mensuelle",
+                historique_affiche,
+                "evolution_couverture_mensuelle.csv",
+            )
+
+    # -------------------------------------------------
+    # 4. TABLEAU ACTIONNABLE
+    # -------------------------------------------------
+
+    section(
+        "Détail actionnable des ESI",
+        (
+            "Analyse de la présence contractuelle au niveau ESI, "
+            "avec possibilité de cibler un métier."
+        ),
+    )
+
+    metiers_disponibles = ["Tous les métiers"]
+
+    if (
+        not df_contrats_couverture.empty
+        and "contract_topic" in df_contrats_couverture.columns
+    ):
+        metiers_disponibles += sorted(
+            df_contrats_couverture["contract_topic"]
+            .dropna()
+            .astype(str)
+            .str.strip()
+            .loc[
+                lambda s: (
+                    (s != "")
+                    & (s != "nan")
+                    & (s != "None")
                 )
-                _layout_plotly(fig, 300)
-                fig.update_layout(
-                    xaxis_title="Nombre de contrats actifs",
-                    yaxis_title=None,
-                    margin=dict(l=8, r=20, t=10, b=45),
+            ]
+            .unique()
+            .tolist()
+        )
+
+    filtres_table_col1, filtres_table_col2 = st.columns(
+        [1.2, 2.8],
+        vertical_alignment="bottom",
+    )
+
+    with filtres_table_col1:
+        metier_analyse = st.selectbox(
+            "Métier analysé",
+            options=metiers_disponibles,
+            key="coverage_metier_analyse",
+        )
+
+    with filtres_table_col2:
+        recherche_couverture = st.text_input(
+            "Rechercher un ESI",
+            placeholder=(
+                "Référence, libellé, société, agence, groupe, secteur..."
+            ),
+            key="coverage_search_detail",
+        )
+
+    table_couverture = construire_table_couverture_esi(
+        df_esi_base=df_esi_filtre,
+        df_contrats_actifs=df_contrats_couverture,
+        metier_selectionne=metier_analyse,
+    )
+
+    table_couverture = filtrer_table_recherche(
+        table_couverture,
+        recherche_couverture,
+    )
+
+    statuts_disponibles = (
+        sorted(
+            table_couverture["Statut de couverture"]
+            .dropna()
+            .astype(str)
+            .unique()
+            .tolist()
+        )
+        if (
+            not table_couverture.empty
+            and "Statut de couverture" in table_couverture.columns
+        )
+        else []
+    )
+
+    statuts_choisis = st.multiselect(
+        "Statuts affichés",
+        options=statuts_disponibles,
+        default=statuts_disponibles,
+        key="coverage_statuts_detail",
+        placeholder="Tous les statuts",
+    )
+
+    if (
+        statuts_choisis
+        and "Statut de couverture" in table_couverture.columns
+    ):
+        table_couverture = table_couverture[
+            table_couverture[
+                "Statut de couverture"
+            ].isin(statuts_choisis)
+        ].copy()
+
+    nb_resultats = len(table_couverture)
+
+    st.markdown(
+        (
+            '<div class="vg-table-summary">'
+            '<div class="vg-table-summary-item">'
+            f'<span class="vg-table-summary-value">'
+            f'{fmt_nombre(nb_resultats)}'
+            '</span>'
+            '<span class="vg-table-summary-label">'
+            'ESI correspondant au périmètre'
+            '</span>'
+            '</div>'
+            f'<div class="vg-table-summary-mode">'
+            f'{_safe(metier_analyse)}'
+            '</div>'
+            '</div>'
+        ),
+        unsafe_allow_html=True,
+    )
+
+    if table_couverture.empty:
+        st.info(
+            "Aucun ESI ne correspond aux filtres sélectionnés."
+        )
+    else:
+        LIMITE_TABLE_COUVERTURE = 500
+        apercu_couverture = table_couverture.head(
+            LIMITE_TABLE_COUVERTURE
+        ).copy()
+
+        st.dataframe(
+            apercu_couverture,
+            width="stretch",
+            hide_index=True,
+            height=480,
+        )
+
+        if len(table_couverture) > LIMITE_TABLE_COUVERTURE:
+            st.caption(
+                (
+                    f"Aperçu limité aux "
+                    f"{LIMITE_TABLE_COUVERTURE} premières lignes "
+                    f"sur {fmt_nombre(len(table_couverture))}. "
+                    "L’export contient toutes les lignes."
                 )
-                st.plotly_chart(fig, use_container_width=True, config={"displayModeBar": False})
-
-    with st.expander("Consulter le détail des ESI", expanded=False):
-        col_search, col_only = st.columns([2.3, 1])
-        with col_search:
-            recherche_esi = st.text_input(
-                "Rechercher un ESI",
-                placeholder="Référence, libellé, société, agence, groupe...",
-                key="coverage_search_esi",
-            )
-        with col_only:
-            filtre_esi = st.selectbox(
-                "Afficher",
-                ["Tous les ESI", "ESI couverts", "ESI sans contrat actif", "Multi même métier"],
-                key="coverage_filter_esi",
             )
 
-        table_source = df_esi_context.copy()
-        if filtre_esi == "ESI couverts":
-            table_source = table_source[serie_numerique(table_source, "nb_contrats_actifs") > 0]
-        elif filtre_esi == "ESI sans contrat actif":
-            table_source = table_source[serie_numerique(table_source, "nb_contrats_actifs") == 0]
-        elif filtre_esi == "Multi même métier":
-            table_source = table_source[serie_numerique(table_source, "esi_multi_meme_metier") > 0]
-
-        table_esi = filtrer_table_recherche(preparer_esi_table(table_source), recherche_esi)
-        st.dataframe(table_esi, width="stretch", hide_index=True, height=460)
-        dataframe_download("Télécharger le détail", table_esi, "couverture_esi.csv")
+        dataframe_download(
+            "Télécharger le détail complet",
+            table_couverture,
+            "detail_couverture_esi.csv",
+        )
 
 
 # =====================================================
