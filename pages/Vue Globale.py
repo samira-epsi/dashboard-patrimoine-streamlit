@@ -2240,15 +2240,19 @@ if vue_active == "Vue globale":
     # Contrats actifs : chaque carte décrit uniquement le périmètre lié aux contrats actifs.
     elif statut_selectionne == "active":
         contrats_value = len(liste_refs_valides(df_contrats_kpi, "contract_reference"))
+        contrats_pill = "Statut actif"
         contrats_help = "Contrats actifs rattachés à au moins un ESI dans le périmètre."
 
         programmes_value = len(liste_refs_valides(df_esi_context, "esi_reference"))
+        programmes_pill = "Liés à un contrat actif"
         programmes_help = "ESI ayant au moins un contrat actif dans le périmètre."
 
         logements_value = int(serie_numerique(df_esi_context, "nb_logements").sum())
+        logements_pill = "Dans les ESI concernés"
         logements_help = "Logements situés dans les ESI liés aux contrats actifs."
 
         equipements_value = int(serie_numerique(df_esi_context, "nb_equipements").sum())
+        equipements_pill = "Dans les ESI concernés"
         equipements_help = "Équipements situés dans les ESI liés aux contrats actifs."
 
         contrats_label = "Contrats actifs"
