@@ -316,6 +316,16 @@ def inject_style():
             margin-top: auto;
         }
 
+        .vg-card.vg-card-compact {
+            height: 158px;
+            min-height: 158px;
+            justify-content: flex-start;
+        }
+
+        .vg-card.vg-card-compact .vg-card-value {
+            margin-bottom: 0;
+        }
+
         .vg-alert-card {
             height: 148px;
             min-height: 148px;
@@ -1386,15 +1396,34 @@ def global_value(df_global: pd.DataFrame, col: str, default=0):
 # =====================================================
 
 
-def kpi_card(label, value, pill, help_text, accent=C_RED):
+def kpi_card(
+    label,
+    value,
+    pill="",
+    help_text="",
+    accent=C_RED,
+    compact=False,
+):
+    classes = "vg-card vg-card-compact" if compact else "vg-card"
+    pill_html = (
+        f'<div class="vg-card-pill">{_safe(pill)}</div>'
+        if pill
+        else ""
+    )
+    help_html = (
+        f'<div class="vg-card-help">{_safe(help_text)}</div>'
+        if help_text
+        else ""
+    )
+
     st.markdown(
         f"""
-        <div class="vg-card" style="--accent:{_safe(accent)};">
+        <div class="{classes}" style="--accent:{_safe(accent)};">
             <div class="vg-card-accent"></div>
             <div class="vg-card-label">{_safe(label)}</div>
             <div class="vg-card-value">{_safe(fmt_nombre(value))}</div>
-            <div class="vg-card-pill">{_safe(pill)}</div>
-            <div class="vg-card-help">{_safe(help_text)}</div>
+            {pill_html}
+            {help_html}
         </div>
         """,
         unsafe_allow_html=True,
@@ -2187,12 +2216,12 @@ if vue_active == "Vue globale":
     if statut_selectionne == "active":
         section(
             "Vue globale",
-            "Les contrats actifs et le patrimoine des ESI auxquels ils sont rattachés.",
+            "Périmètre des contrats actifs et patrimoine associé.",
         )
     elif statut_selectionne == "inactive":
         section(
             "Vue globale",
-            "Les contrats inactifs et le patrimoine des ESI auxquels ils sont rattachés.",
+            "Périmètre des contrats inactifs et patrimoine associé.",
         )
     else:
         section(
@@ -2237,51 +2266,39 @@ if vue_active == "Vue globale":
         logements_label = "Logements"
         equipements_label = "Équipements"
 
-    # Contrats actifs : chaque carte décrit uniquement le périmètre lié aux contrats actifs.
+    # Contrats actifs : les titres suffisent à raconter la relation entre contrats et patrimoine.
     elif statut_selectionne == "active":
         contrats_value = len(liste_refs_valides(df_contrats_kpi, "contract_reference"))
-        contrats_pill = "Statut actif"
-        contrats_help = "Contrats actifs rattachés à au moins un ESI dans le périmètre."
-
         programmes_value = len(liste_refs_valides(df_esi_context, "esi_reference"))
-        programmes_pill = "Liés à un contrat actif"
-        programmes_help = "ESI ayant au moins un contrat actif dans le périmètre."
-
         logements_value = int(serie_numerique(df_esi_context, "nb_logements").sum())
-        logements_pill = "Dans les ESI concernés"
-        logements_help = "Logements situés dans les ESI liés aux contrats actifs."
-
         equipements_value = int(serie_numerique(df_esi_context, "nb_equipements").sum())
-        equipements_pill = "Dans les ESI concernés"
-        equipements_help = "Équipements situés dans les ESI liés aux contrats actifs."
 
         contrats_label = "Contrats actifs"
         programmes_label = "ESI concernés"
-        logements_label = "Logements concernés"
-        equipements_label = "Équipements concernés"
+        logements_label = "Logements rattachés"
+        equipements_label = "Équipements rattachés"
 
-    # Contrats inactifs : on décrit le patrimoine concerné, sans parler de couverture.
+        contrats_pill = contrats_help = ""
+        programmes_pill = programmes_help = ""
+        logements_pill = logements_help = ""
+        equipements_pill = equipements_help = ""
+
+    # Contrats inactifs : même lecture, sans introduire une notion de couverture.
     elif statut_selectionne == "inactive":
         contrats_value = len(liste_refs_valides(df_contrats_kpi, "contract_reference"))
-        contrats_pill = "Statut inactif"
-        contrats_help = "Contrats inactifs rattachés à au moins un ESI dans le périmètre."
-
         programmes_value = len(liste_refs_valides(df_esi_context, "esi_reference"))
-        programmes_pill = "Liés à un contrat inactif"
-        programmes_help = "ESI ayant au moins un contrat inactif dans le périmètre."
-
         logements_value = int(serie_numerique(df_esi_context, "nb_logements").sum())
-        logements_pill = "Dans les ESI concernés"
-        logements_help = "Logements situés dans les ESI liés aux contrats inactifs."
-
         equipements_value = int(serie_numerique(df_esi_context, "nb_equipements").sum())
-        equipements_pill = "Dans les ESI concernés"
-        equipements_help = "Équipements situés dans les ESI liés aux contrats inactifs."
 
         contrats_label = "Contrats inactifs"
         programmes_label = "ESI concernés"
-        logements_label = "Logements concernés"
-        equipements_label = "Équipements concernés"
+        logements_label = "Logements rattachés"
+        equipements_label = "Équipements rattachés"
+
+        contrats_pill = contrats_help = ""
+        programmes_pill = programmes_help = ""
+        logements_pill = logements_help = ""
+        equipements_pill = equipements_help = ""
 
     # Tous les contrats avec un filtre patrimoine ou métier/prestataire actif.
     else:
@@ -2307,6 +2324,8 @@ if vue_active == "Vue globale":
         logements_label = "Logements"
         equipements_label = "Équipements"
 
+    cartes_compactes = statut_selectionne in {"active", "inactive"}
+
     c1, c2, c3, c4 = st.columns(4)
     with c1:
         kpi_card(
@@ -2315,6 +2334,7 @@ if vue_active == "Vue globale":
             contrats_pill,
             contrats_help,
             accent=C_NAVY,
+            compact=cartes_compactes,
         )
     with c2:
         kpi_card(
@@ -2323,6 +2343,7 @@ if vue_active == "Vue globale":
             programmes_pill,
             programmes_help,
             accent=C_NAVY,
+            compact=cartes_compactes,
         )
     with c3:
         kpi_card(
@@ -2331,6 +2352,7 @@ if vue_active == "Vue globale":
             logements_pill,
             logements_help,
             accent=C_PINK,
+            compact=cartes_compactes,
         )
     with c4:
         kpi_card(
@@ -2339,13 +2361,18 @@ if vue_active == "Vue globale":
             equipements_pill,
             equipements_help,
             accent=C_VIOLET,
+            compact=cartes_compactes,
         )
 
     if statut_selectionne is not None:
+        statut_texte = "actifs" if statut_selectionne == "active" else "inactifs"
         info(
-            "À savoir : cette analyse porte uniquement sur les contrats rattachés à un ESI. "
-            "Les contrats sans rattachement ne sont pas pris en compte dans ces indicateurs. "
-            "Ils sont disponibles dans l’onglet Qualité et anomalies."
+            f"Les contrats {statut_texte} sélectionnés sont rattachés à "
+            f"{fmt_nombre(programmes_value)} ESI, représentant "
+            f"{fmt_nombre(logements_value)} logements et "
+            f"{fmt_nombre(equipements_value)} équipements. "
+            "Seuls les contrats rattachés à un ESI sont inclus ; les autres sont visibles dans "
+            "Qualité et anomalies."
         )
 
     st.markdown("<br>", unsafe_allow_html=True)
