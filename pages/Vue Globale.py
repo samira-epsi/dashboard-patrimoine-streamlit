@@ -596,6 +596,20 @@ def inject_style() -> None:
             }
         }
 
+
+        /* Traduction de l'instruction Streamlit sous les champs texte. */
+        [data-testid="InputInstructions"] {
+            font-size: 0 !important;
+        }
+
+        [data-testid="InputInstructions"]::after {
+            content: "Appuyez sur Entrée pour appliquer";
+            color: var(--ink-mute);
+            font-size: 12px;
+            font-weight: 500;
+            white-space: nowrap;
+        }
+
         @media screen and (max-width: 760px) {
             .vg-hero {
                 padding: 24px 20px;
@@ -616,27 +630,6 @@ def inject_style() -> None:
             .vg-table-summary-mode {
                 margin-left: 0;
             }
-        }
-        </style>
-        """,
-        unsafe_allow_html=True,
-    )
-
-
-    st.markdown(
-        r"""
-        <style>
-        /* Traduction de l’instruction native du champ de recherche */
-        .st-key-global_search_contract [data-testid="InputInstructions"] {
-            font-size: 0 !important;
-        }
-
-        .st-key-global_search_contract [data-testid="InputInstructions"]::after {
-            content: "Appuyez sur Entrée pour appliquer";
-            color: #8A94A6;
-            font-size: 12px;
-            font-weight: 500;
-            white-space: nowrap;
         }
         </style>
         """,
@@ -1051,7 +1044,7 @@ def layout_plotly(fig, height: int, showlegend: bool = False) -> None:
 
 
 def config_graphique_exportable(nom_fichier: str) -> dict:
-    """Affiche uniquement le bouton de téléchargement PNG de Plotly."""
+    """Affiche uniquement le bouton de téléchargement PNG dans Plotly."""
     return {
         "displayModeBar": True,
         "displaylogo": False,
@@ -1912,7 +1905,7 @@ def afficher_comparaison_organisation(df: pd.DataFrame, indicateur: str) -> None
         yaxis=dict(title=None, automargin=True),
         margin=dict(l=12, r=65, t=14, b=45),
     )
-    st.plotly_chart(fig, use_container_width=True, config=config_graphique_exportable("comparaison_organisationnelle"))
+    st.plotly_chart(fig, use_container_width=True, config=config_graphique_exportable("couverture_equipements"))
 
 
 def construire_couverture_metier(
@@ -2151,7 +2144,7 @@ def afficher_cycle_flux(df: pd.DataFrame, granularite: str) -> None:
         yaxis=dict(title="Nombre de contrats", gridcolor=C_GRID),
         margin=dict(l=12, r=22, t=44, b=45),
     )
-    st.plotly_chart(fig, use_container_width=True, config=config_graphique_exportable("evolution_contrats_crees_desactives"))
+    st.plotly_chart(fig, use_container_width=True, config=config_graphique_exportable("flux_contrats"))
 
 
 def afficher_cycle_stock(df: pd.DataFrame, granularite: str) -> None:
@@ -2188,7 +2181,7 @@ def afficher_cycle_stock(df: pd.DataFrame, granularite: str) -> None:
         yaxis=dict(title="Nombre de contrats", gridcolor=C_GRID),
         margin=dict(l=12, r=22, t=44, b=45),
     )
-    st.plotly_chart(fig, use_container_width=True, config=config_graphique_exportable("evolution_stock_contrats"))
+    st.plotly_chart(fig, use_container_width=True, config=config_graphique_exportable("stock_contrats"))
 
 
 # =====================================================
@@ -2268,14 +2261,21 @@ def afficher_barres_horizontales(
         st.info("Aucune donnée disponible.")
         return
 
-    graphe = df.copy().sort_values(value_col, ascending=False)
+    graphe = df.copy()
+
     if top_n is not None:
         graphe = graphe.head(top_n)
+
     graphe = graphe.sort_values(value_col, ascending=True)
 
     if go is None:
-        st.bar_chart(graphe.set_index(label_col)[value_col], width="stretch")
+        st.bar_chart(
+            graphe.set_index(label_col)[value_col],
+            width="stretch",
+        )
         return
+
+    max_value = max(float(graphe[value_col].max()), 1.0)
 
     fig = go.Figure(
         go.Bar(
@@ -2290,16 +2290,22 @@ def afficher_barres_horizontales(
         )
     )
 
-    layout_plotly(fig, max(390, 36 * len(graphe) + 100))
-    valeur_max = max(float(graphe[value_col].max()), 1.0)
+    layout_plotly(
+        fig,
+        max(420, 36 * len(graphe) + 110),
+    )
+
     fig.update_layout(
         xaxis=dict(
             title=None,
             gridcolor=C_GRID,
-            range=[0, valeur_max * 1.18],
+            range=[0, max_value * 1.18],
         ),
-        yaxis=dict(title=None, automargin=True),
-        margin=dict(l=12, r=60, t=14, b=35),
+        yaxis=dict(
+            title=None,
+            automargin=True,
+        ),
+        margin=dict(l=12, r=65, t=14, b=35),
     )
 
     st.plotly_chart(
@@ -3126,7 +3132,6 @@ else:
                     "Objets distincts",
                     C_VIOLET,
                     top_n=10,
-                    nom_export="anomalies_principales",
                 )
             with resume_col:
                 st.markdown('<div class="vg-mini-title">Résumé des contrôles</div>', unsafe_allow_html=True)
@@ -3229,7 +3234,6 @@ else:
                     "Objets distincts",
                     C_RED,
                     top_n=10,
-                    nom_export="alertes_principales",
                 )
             with table_alertes_resume:
                 st.markdown('<div class="vg-mini-title">Résumé des alertes</div>', unsafe_allow_html=True)
