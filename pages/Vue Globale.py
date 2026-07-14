@@ -2184,12 +2184,24 @@ df_prestations_kpi = filtrer_prestations_depuis_contrats(
 # =====================================================
 
 if vue_active == "Vue globale":
-    section(
-        "Vue globale",
-        "La réalité présente dans Intent, puis la part réellement exploitable pour les analyses de couverture.",
-    )
+    if statut_selectionne == "active":
+        section(
+            "Vue globale",
+            "Les contrats actifs et le patrimoine des ESI auxquels ils sont rattachés.",
+        )
+    elif statut_selectionne == "inactive":
+        section(
+            "Vue globale",
+            "Les contrats inactifs et le patrimoine des ESI auxquels ils sont rattachés.",
+        )
+    else:
+        section(
+            "Vue globale",
+            "La réalité présente dans Intent, puis la part réellement exploitable pour les analyses de couverture.",
+        )
 
-    if not perimetre_filtre_actif:
+    # Tous les contrats sans filtre : on conserve la lecture globale de la source.
+    if statut_selectionne is None and not perimetre_filtre_actif:
         contrats_value = global_value(df_global, "contrats_total")
         contrats_pill = (
             f"{fmt_nombre(global_value(df_global, 'contrats_rattaches_programme'))} exploitables"
@@ -2219,6 +2231,59 @@ if vue_active == "Vue globale":
         equipements_help = (
             f"{fmt_nombre(global_value(df_global, 'equipements_sans_programme'))} sans programme."
         )
+
+        contrats_label = "Contrats"
+        programmes_label = "Programmes / ESI"
+        logements_label = "Logements"
+        equipements_label = "Équipements"
+
+    # Contrats actifs : chaque carte décrit uniquement le périmètre lié aux contrats actifs.
+    elif statut_selectionne == "active":
+        contrats_value = len(liste_refs_valides(df_contrats_kpi, "contract_reference"))
+        contrats_pill = "Statut actif"
+        contrats_help = "Contrats actifs rattachés à au moins un ESI dans le périmètre."
+
+        programmes_value = len(liste_refs_valides(df_esi_context, "esi_reference"))
+        programmes_pill = "Liés à un contrat actif"
+        programmes_help = "ESI ayant au moins un contrat actif dans le périmètre."
+
+        logements_value = int(serie_numerique(df_esi_context, "nb_logements").sum())
+        logements_pill = "Dans les ESI concernés"
+        logements_help = "Logements situés dans les ESI liés aux contrats actifs."
+
+        equipements_value = int(serie_numerique(df_esi_context, "nb_equipements").sum())
+        equipements_pill = "Dans les ESI concernés"
+        equipements_help = "Équipements situés dans les ESI liés aux contrats actifs."
+
+        contrats_label = "Contrats actifs"
+        programmes_label = "ESI concernés"
+        logements_label = "Logements concernés"
+        equipements_label = "Équipements concernés"
+
+    # Contrats inactifs : on décrit le patrimoine concerné, sans parler de couverture.
+    elif statut_selectionne == "inactive":
+        contrats_value = len(liste_refs_valides(df_contrats_kpi, "contract_reference"))
+        contrats_pill = "Statut inactif"
+        contrats_help = "Contrats inactifs rattachés à au moins un ESI dans le périmètre."
+
+        programmes_value = len(liste_refs_valides(df_esi_context, "esi_reference"))
+        programmes_pill = "Liés à un contrat inactif"
+        programmes_help = "ESI ayant au moins un contrat inactif dans le périmètre."
+
+        logements_value = int(serie_numerique(df_esi_context, "nb_logements").sum())
+        logements_pill = "Dans les ESI concernés"
+        logements_help = "Logements situés dans les ESI liés aux contrats inactifs."
+
+        equipements_value = int(serie_numerique(df_esi_context, "nb_equipements").sum())
+        equipements_pill = "Dans les ESI concernés"
+        equipements_help = "Équipements situés dans les ESI liés aux contrats inactifs."
+
+        contrats_label = "Contrats inactifs"
+        programmes_label = "ESI concernés"
+        logements_label = "Logements concernés"
+        equipements_label = "Équipements concernés"
+
+    # Tous les contrats avec un filtre patrimoine ou métier/prestataire actif.
     else:
         contrats_value = len(liste_refs_valides(df_contrats_kpi, "contract_reference"))
         contrats_pill = "Périmètre filtré"
@@ -2237,26 +2302,50 @@ if vue_active == "Vue globale":
         equipements_pill = "Rattachés aux ESI"
         equipements_help = "Équipements exploitables du périmètre filtré."
 
+        contrats_label = "Contrats"
+        programmes_label = "Programmes / ESI"
+        logements_label = "Logements"
+        equipements_label = "Équipements"
+
     c1, c2, c3, c4 = st.columns(4)
     with c1:
-        kpi_card("Contrats", contrats_value, contrats_pill, contrats_help, accent=C_NAVY)
+        kpi_card(
+            contrats_label,
+            contrats_value,
+            contrats_pill,
+            contrats_help,
+            accent=C_NAVY,
+        )
     with c2:
         kpi_card(
-            "Programmes / ESI",
+            programmes_label,
             programmes_value,
             programmes_pill,
             programmes_help,
             accent=C_NAVY,
         )
     with c3:
-        kpi_card("Logements", logements_value, logements_pill, logements_help, accent=C_PINK)
+        kpi_card(
+            logements_label,
+            logements_value,
+            logements_pill,
+            logements_help,
+            accent=C_PINK,
+        )
     with c4:
         kpi_card(
-            "Équipements",
+            equipements_label,
             equipements_value,
             equipements_pill,
             equipements_help,
             accent=C_VIOLET,
+        )
+
+    if statut_selectionne is not None:
+        info(
+            "À savoir : cette analyse porte uniquement sur les contrats rattachés à un ESI. "
+            "Les contrats sans rattachement ne sont pas pris en compte dans ces indicateurs. "
+            "Ils sont disponibles dans l’onglet Qualité et anomalies."
         )
 
     st.markdown("<br>", unsafe_allow_html=True)
