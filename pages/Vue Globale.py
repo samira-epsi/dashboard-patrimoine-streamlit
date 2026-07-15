@@ -3834,13 +3834,15 @@ elif vue_active == "Couverture":
     st.markdown("<br>", unsafe_allow_html=True)
     section(
         "Situation actuelle des ESI",
-        "Équipements, couverture contractuelle réelle et complexité des rattachements sur le périmètre sélectionné.",
+        "Trois lectures complémentaires : présence des équipements, couverture réelle et répartition des contrats par ESI.",
     )
 
     df_esi_situation = dedupliquer_esi(df_esi_context)
-    total_esi_situation = len(
-        liste_refs_valides(df_esi_situation, "esi_reference")
+    refs_esi_situation = liste_refs_valides(
+        df_esi_situation,
+        "esi_reference",
     )
+    total_esi_situation = len(refs_esi_situation)
 
     def compter_indicateur(colonne: str) -> int:
         return int(
@@ -3852,13 +3854,13 @@ elif vue_active == "Couverture":
             ).sum()
         )
 
-    def pourcentage_esi(nombre: int) -> str:
-        taux = (
-            nombre / total_esi_situation * 100
-            if total_esi_situation
-            else 0
+    def taux_esi(nombre: int, denominateur: int | None = None) -> float:
+        base = (
+            total_esi_situation
+            if denominateur is None
+            else denominateur
         )
-        return fmt_pourcentage(taux)
+        return round(nombre / base * 100, 1) if base else 0.0
 
     nb_esi_avec_equipement = compter_indicateur(
         "esi_avec_equipement"
@@ -3867,7 +3869,6 @@ elif vue_active == "Couverture":
         "esi_sans_equipement"
     )
 
-    # Le lien équipement → contrat reste un lien réel issu d’Intent.
     if statut_selectionne == "active":
         colonne_avec_contrat_equipement = (
             "esi_avec_equipement_couvert_valide"
@@ -3877,49 +3878,12 @@ elif vue_active == "Couverture":
         )
         colonne_sans_contrat_programme = "esi_sans_contrat_valide"
         colonne_multi_metier = "esi_multi_meme_metier_valide"
-        colonne_moyenne_contrats = "nb_contrats_actifs_valides"
         libelle_contrat_equipement = (
-            "ESI avec équipement et contrat actif valide"
+            "Avec contrat actif valide"
         )
-        aide_contrat_equipement = (
-            "Au moins un équipement possède un contrat actif "
-            "dont la date de fin n’est pas dépassée."
+        libelle_sans_contrat_equipement = (
+            "Équipés sans couverture active"
         )
-        aide_sans_contrat_equipement = (
-            "ESI équipé sans couverture active valide sur ses équipements."
-        )
-        aide_sans_contrat_programme = (
-            "Aucun contrat actif valide rattaché au programme."
-        )
-
-    elif statut_selectionne == "inactive":
-        # Les ESI sont déjà limités au périmètre des contrats inactifs
-        # par les filtres communs. La présence équipement-contrat reste
-        # fondée sur le lien réel disponible dans Intent.
-        colonne_avec_contrat_equipement = (
-            "esi_avec_equipement_et_contrat"
-        )
-        colonne_sans_contrat_equipement = (
-            "esi_avec_equipement_sans_contrat_equipement"
-        )
-        colonne_sans_contrat_programme = "esi_sans_aucun_contrat"
-        colonne_multi_metier = "esi_multi_meme_metier"
-        colonne_moyenne_contrats = "nb_contrats_inactifs"
-        libelle_contrat_equipement = (
-            "ESI avec équipement et contrat rattaché"
-        )
-        aide_contrat_equipement = (
-            "Lien direct équipement → contrat dans le périmètre "
-            "des ESI concernés par des contrats inactifs."
-        )
-        aide_sans_contrat_equipement = (
-            "ESI équipé sans aucun contrat directement rattaché "
-            "aux équipements."
-        )
-        aide_sans_contrat_programme = (
-            "Aucun contrat rattaché au programme."
-        )
-
     else:
         colonne_avec_contrat_equipement = (
             "esi_avec_equipement_et_contrat"
@@ -3929,20 +3893,11 @@ elif vue_active == "Couverture":
         )
         colonne_sans_contrat_programme = "esi_sans_aucun_contrat"
         colonne_multi_metier = "esi_multi_meme_metier"
-        colonne_moyenne_contrats = "nb_contrats_total"
         libelle_contrat_equipement = (
-            "ESI avec équipement et contrat rattaché"
+            "Avec contrat rattaché"
         )
-        aide_contrat_equipement = (
-            "Au moins un équipement possède un contrat directement "
-            "rattaché dans Intent."
-        )
-        aide_sans_contrat_equipement = (
-            "ESI équipé sans aucun contrat directement rattaché "
-            "aux équipements."
-        )
-        aide_sans_contrat_programme = (
-            "Aucun contrat actif ou inactif rattaché au programme."
+        libelle_sans_contrat_equipement = (
+            "Équipés sans contrat équipement"
         )
 
     nb_esi_avec_contrat_equipement = compter_indicateur(
@@ -3958,103 +3913,316 @@ elif vue_active == "Couverture":
         colonne_multi_metier
     )
 
-    moyenne_contrats_esi = (
-        float(
-            serie_numerique(
-                df_esi_situation,
-                colonne_moyenne_contrats,
-            ).mean()
+    # Calcul fiable : un nombre de contrats DISTINCTS pour chaque ESI.
+    # Les ESI sans contrat sont explicitement conservés avec la valeur 0.
+    base_esi_contrats = pd.DataFrame(
+        {"esi_reference": refs_esi_situation}
+    )
+
+    if (
+        not df_contrats_kpi.empty
+        and "esi_reference" in df_contrats_kpi.columns
+        and "contract_reference" in df_contrats_kpi.columns
+    ):
+        contrats_distincts_par_esi = (
+            df_contrats_kpi[
+                df_contrats_kpi["esi_reference"].notna()
+                & df_contrats_kpi["contract_reference"].notna()
+            ]
+            .groupby("esi_reference")["contract_reference"]
+            .nunique()
+            .rename("nb_contrats")
+            .reset_index()
         )
-        if total_esi_situation
+    else:
+        contrats_distincts_par_esi = pd.DataFrame(
+            columns=["esi_reference", "nb_contrats"]
+        )
+
+    repartition_contrats_esi = base_esi_contrats.merge(
+        contrats_distincts_par_esi,
+        on="esi_reference",
+        how="left",
+    )
+    repartition_contrats_esi["nb_contrats"] = (
+        pd.to_numeric(
+            repartition_contrats_esi["nb_contrats"],
+            errors="coerce",
+        )
+        .fillna(0)
+        .astype(int)
+    )
+
+    moyenne_contrats_esi = (
+        float(repartition_contrats_esi["nb_contrats"].mean())
+        if not repartition_contrats_esi.empty
+        else 0.0
+    )
+    mediane_contrats_esi = (
+        float(repartition_contrats_esi["nb_contrats"].median())
+        if not repartition_contrats_esi.empty
         else 0.0
     )
 
-    # Ligne principale : les quatre informations essentielles.
-    s1, s2, s3, s4 = st.columns(4)
+    repartition_contrats_esi["Tranche"] = pd.cut(
+        repartition_contrats_esi["nb_contrats"],
+        bins=[-1, 0, 1, 2, 3, float("inf")],
+        labels=[
+            "0 contrat",
+            "1 contrat",
+            "2 contrats",
+            "3 contrats",
+            "4 contrats ou plus",
+        ],
+    )
 
-    with s1:
-        kpi_card(
-            "ESI avec équipement",
-            nb_esi_avec_equipement,
-            pourcentage_esi(nb_esi_avec_equipement),
-            "Au moins un équipement est enregistré sur l’ESI.",
-            accent=C_NAVY,
+    distribution_contrats = (
+        repartition_contrats_esi["Tranche"]
+        .value_counts(sort=False)
+        .rename_axis("Tranche")
+        .reset_index(name="ESI")
+    )
+    distribution_contrats["Taux"] = distribution_contrats["ESI"].map(
+        lambda nombre: taux_esi(int(nombre))
+    )
+
+    # =====================================================
+    # TROIS GRAPHIQUES REGROUPÉS PAR SUJET
+    # =====================================================
+
+    graph_equipements, graph_couverture, graph_contrats = st.columns(
+        [0.9, 1.1, 1.25],
+        gap="large",
+    )
+
+    with graph_equipements:
+        st.markdown(
+            '<div class="vg-mini-title">Présence des équipements</div>',
+            unsafe_allow_html=True,
         )
 
-    with s2:
-        kpi_card(
-            "ESI sans équipement",
-            nb_esi_sans_equipement,
-            pourcentage_esi(nb_esi_sans_equipement),
-            "Aucun équipement n’est enregistré sur l’ESI.",
-            accent=C_BLUE_LIGHT,
+        donnees_equipements = pd.DataFrame(
+            {
+                "Situation": [
+                    "Avec équipement",
+                    "Sans équipement",
+                ],
+                "ESI": [
+                    nb_esi_avec_equipement,
+                    nb_esi_sans_equipement,
+                ],
+            }
         )
 
-    with s3:
-        kpi_card(
-            libelle_contrat_equipement,
-            nb_esi_avec_contrat_equipement,
-            pourcentage_esi(nb_esi_avec_contrat_equipement),
-            aide_contrat_equipement,
-            accent=C_RED,
+        if go is None:
+            st.bar_chart(
+                donnees_equipements.set_index("Situation")["ESI"],
+                width="stretch",
+            )
+        else:
+            fig_equipements = go.Figure(
+                go.Pie(
+                    labels=donnees_equipements["Situation"],
+                    values=donnees_equipements["ESI"],
+                    hole=0.62,
+                    sort=False,
+                    textinfo="percent",
+                    hovertemplate=(
+                        "<b>%{label}</b><br>"
+                        "ESI : %{value:,}<br>"
+                        "Part : %{percent}<extra></extra>"
+                    ),
+                    marker=dict(
+                        colors=[C_NAVY, C_BLUE_LIGHT],
+                        line=dict(color="#FFFFFF", width=2),
+                    ),
+                )
+            )
+            fig_equipements.add_annotation(
+                text=(
+                    f"<b>{fmt_nombre(total_esi_situation)}</b>"
+                    "<br><span style='font-size:11px'>ESI</span>"
+                ),
+                x=0.5,
+                y=0.5,
+                showarrow=False,
+                font=dict(color=C_INK, size=18),
+            )
+            _layout_plotly(fig_equipements, 320)
+            fig_equipements.update_layout(
+                showlegend=True,
+                legend=dict(
+                    orientation="h",
+                    yanchor="bottom",
+                    y=-0.14,
+                    xanchor="center",
+                    x=0.5,
+                ),
+                margin=dict(l=8, r=8, t=10, b=55),
+            )
+            st.plotly_chart(
+                fig_equipements,
+                use_container_width=True,
+                config=config_plotly("presence_equipements_esi"),
+            )
+
+    with graph_couverture:
+        st.markdown(
+            '<div class="vg-mini-title">Couverture réelle</div>',
+            unsafe_allow_html=True,
         )
 
-    with s4:
-        kpi_card(
-            "ESI équipés sans contrat équipement",
-            nb_esi_sans_contrat_equipement,
-            pourcentage_esi(nb_esi_sans_contrat_equipement),
-            aide_sans_contrat_equipement,
-            accent=C_PINK,
+        donnees_couverture = pd.DataFrame(
+            {
+                "Situation": [
+                    libelle_contrat_equipement,
+                    libelle_sans_contrat_equipement,
+                    "Sans contrat programme",
+                ],
+                "ESI": [
+                    nb_esi_avec_contrat_equipement,
+                    nb_esi_sans_contrat_equipement,
+                    nb_esi_sans_contrat_programme,
+                ],
+            }
+        )
+        donnees_couverture["Taux"] = donnees_couverture["ESI"].map(
+            lambda nombre: taux_esi(int(nombre))
+        )
+        donnees_couverture = donnees_couverture.sort_values(
+            "Taux",
+            ascending=True,
         )
 
-    # Ligne secondaire : les indicateurs de vigilance et de complexité.
-    st.markdown("<br>", unsafe_allow_html=True)
-    secondaire_1, secondaire_2, secondaire_3 = st.columns(3)
+        if go is None:
+            st.bar_chart(
+                donnees_couverture.set_index("Situation")["Taux"],
+                width="stretch",
+            )
+        else:
+            fig_couverture = go.Figure(
+                go.Bar(
+                    x=donnees_couverture["Taux"],
+                    y=donnees_couverture["Situation"],
+                    orientation="h",
+                    text=donnees_couverture["Taux"].map(
+                        lambda valeur: fmt_pourcentage(valeur)
+                    ),
+                    textposition="outside",
+                    customdata=donnees_couverture["ESI"],
+                    marker=dict(
+                        color=[C_YELLOW, C_PINK, C_RED],
+                    ),
+                    hovertemplate=(
+                        "<b>%{y}</b><br>"
+                        "ESI : %{customdata:,}<br>"
+                        "Taux : %{x:.1f} %<extra></extra>"
+                    ),
+                )
+            )
+            _layout_plotly(fig_couverture, 320)
+            fig_couverture.update_layout(
+                xaxis=dict(
+                    title=None,
+                    ticksuffix=" %",
+                    range=[
+                        0,
+                        max(
+                            100,
+                            float(
+                                donnees_couverture["Taux"].max()
+                                if not donnees_couverture.empty
+                                else 0
+                            ) + 12,
+                        ),
+                    ],
+                    gridcolor=C_GRID,
+                ),
+                yaxis=dict(title=None, automargin=True),
+                margin=dict(l=8, r=55, t=10, b=35),
+                showlegend=False,
+            )
+            st.plotly_chart(
+                fig_couverture,
+                use_container_width=True,
+                config=config_plotly("couverture_reelle_esi"),
+            )
 
-    with secondaire_1:
-        kpi_card(
-            "ESI sans contrat programme",
-            nb_esi_sans_contrat_programme,
-            pourcentage_esi(nb_esi_sans_contrat_programme),
-            aide_sans_contrat_programme,
-            accent=C_YELLOW,
-            compact=True,
+    with graph_contrats:
+        st.markdown(
+            '<div class="vg-mini-title">Contrats par ESI</div>',
+            unsafe_allow_html=True,
         )
 
-    with secondaire_2:
-        kpi_card(
-            "Plusieurs contrats sur le même métier",
-            nb_esi_multi_metier,
-            pourcentage_esi(nb_esi_multi_metier),
-            "Au moins deux contrats sont rattachés au même métier sur l’ESI.",
-            accent=C_VIOLET,
-            compact=True,
-        )
+        if go is None:
+            st.bar_chart(
+                distribution_contrats.set_index("Tranche")["ESI"],
+                width="stretch",
+            )
+        else:
+            fig_contrats = go.Figure(
+                go.Bar(
+                    x=distribution_contrats["Tranche"].astype(str),
+                    y=distribution_contrats["ESI"],
+                    text=distribution_contrats["Taux"].map(
+                        lambda valeur: fmt_pourcentage(valeur)
+                    ),
+                    textposition="outside",
+                    customdata=distribution_contrats["Taux"],
+                    marker=dict(color=C_VIOLET),
+                    hovertemplate=(
+                        "<b>%{x}</b><br>"
+                        "ESI : %{y:,}<br>"
+                        "Part : %{customdata:.1f} %<extra></extra>"
+                    ),
+                )
+            )
+            _layout_plotly(fig_contrats, 320)
+            fig_contrats.update_layout(
+                xaxis=dict(
+                    title=None,
+                    tickangle=-20,
+                    automargin=True,
+                ),
+                yaxis=dict(
+                    title="Nombre d’ESI",
+                    gridcolor=C_GRID,
+                ),
+                margin=dict(l=45, r=15, t=10, b=75),
+                showlegend=False,
+            )
+            st.plotly_chart(
+                fig_contrats,
+                use_container_width=True,
+                config=config_plotly("distribution_contrats_par_esi"),
+            )
 
-    with secondaire_3:
-        moyenne_affichee = (
+        moyenne_texte = (
             f"{moyenne_contrats_esi:.2f}".replace(".", ",")
+        )
+        mediane_texte = (
+            f"{mediane_contrats_esi:.0f}".replace(".", ",")
         )
         st.markdown(
             f"""
-            <div class="vg-card vg-card-compact"
-                 style="--accent:{C_TEAL};">
-                <div class="vg-card-accent"></div>
-                <div class="vg-card-label">
-                    Nombre moyen de contrats par ESI
-                </div>
-                <div class="vg-card-value">
-                    {_safe(moyenne_affichee)}
-                </div>
-                <div class="vg-card-help">
-                    Moyenne sur l’ensemble des ESI du périmètre,
-                    y compris ceux ayant zéro contrat.
-                </div>
+            <div class="vg-info" style="margin-top:-4px;margin-bottom:0;">
+                <strong>{_safe(moyenne_texte)}</strong> contrat(s) distinct(s)
+                en moyenne par ESI
+                &nbsp;·&nbsp;
+                médiane : <strong>{_safe(mediane_texte)}</strong>
+                &nbsp;·&nbsp;
+                <strong>{fmt_nombre(nb_esi_multi_metier)}</strong> ESI avec
+                plusieurs contrats sur le même métier
+                ({fmt_pourcentage(taux_esi(nb_esi_multi_metier))}).
             </div>
             """,
             unsafe_allow_html=True,
         )
+
+    st.caption(
+        "Le nombre moyen est calculé après avoir compté les références de contrats "
+        "distinctes pour chaque ESI. Les ESI sans contrat sont conservés avec la valeur zéro."
+    )
 
 
 # =====================================================
