@@ -21,7 +21,7 @@ from common.ui_style import (
 )
 from common.vue_globale_data import *
 from common.vue_globale_tables import *
-
+from common.charts_style import _layout_plotly
 
 setup_page("Vue Globale", None)
 apply_3f_page_style()
