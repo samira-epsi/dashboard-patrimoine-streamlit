@@ -1354,8 +1354,8 @@ if vue_active == "Vue globale":
 
             st.caption(
                 f"Page {page_selectionnee} sur {nb_pages} · lignes "
-                f"{format_nombre(debut + 1)} à "
-                f"{format_nombre(min(fin, nb_lignes_resultat))}"
+                f"{fmt_nombre(debut + 1)} à "
+                f"{fmt_nombre(min(fin, nb_lignes_resultat))}"
             )
 
             st.dataframe(
