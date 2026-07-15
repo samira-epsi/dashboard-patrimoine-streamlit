@@ -45,7 +45,12 @@ def apply_3f_page_style():
         /* Masquer l’ancienne interface pendant les recalculs Streamlit */
         [data-stale="true"] {
             opacity: 0 !important;
+            visibility: hidden !important;
             pointer-events: none !important;
+        }
+
+        [data-stale="true"] * {
+            visibility: hidden !important;
         }
         :root {
             --3f-red: #B5121B;
@@ -1213,6 +1218,97 @@ def apply_vue_globale_style():
             }
         }
 
+
+        /* CHARGEMENT DE LA PAGE */
+        .vg-loading-shell {
+            display: flex;
+            width: 100%;
+            min-height: 180px;
+            align-items: center;
+            justify-content: center;
+            padding: 20px 0 28px;
+        }
+
+        .vg-loading-card {
+            display: flex;
+            width: min(520px, 92vw);
+            align-items: center;
+            gap: 16px;
+            box-sizing: border-box;
+            padding: 20px 22px;
+            background: #FFFFFF;
+            border: 1px solid #E7E3E8;
+            border-radius: 18px;
+            box-shadow: 0 14px 34px -24px rgba(23, 59, 105, 0.30);
+        }
+
+        .vg-loading-logo {
+            display: grid;
+            width: 48px;
+            height: 48px;
+            flex: 0 0 48px;
+            place-items: center;
+            color: #FFFFFF;
+            background: #E5114D;
+            border-radius: 14px;
+            font-size: 17px;
+            font-weight: 900;
+            letter-spacing: -0.5px;
+        }
+
+        .vg-loading-content {
+            min-width: 0;
+            flex: 1;
+        }
+
+        .vg-loading-title {
+            color: #17243A;
+            font-size: 14px;
+            font-weight: 850;
+            line-height: 1.3;
+        }
+
+        .vg-loading-subtitle {
+            margin-top: 3px;
+            color: #8A94A6;
+            font-size: 11.5px;
+            font-weight: 600;
+            line-height: 1.4;
+        }
+
+        .vg-loading-progress {
+            position: relative;
+            overflow: hidden;
+            height: 5px;
+            margin-top: 12px;
+            background: #F2E8EC;
+            border-radius: 999px;
+        }
+
+        .vg-loading-progress span {
+            position: absolute;
+            top: 0;
+            bottom: 0;
+            width: 42%;
+            background: linear-gradient(
+                90deg,
+                #E5114D,
+                #FFB7E3,
+                #80CDFF
+            );
+            border-radius: inherit;
+            animation: vg-loading-slide 1.15s ease-in-out infinite;
+        }
+
+        @keyframes vg-loading-slide {
+            0% {
+                left: -42%;
+            }
+            100% {
+                left: 100%;
+            }
+        }
+
         /* HERO */
         .vg-hero {
             position: relative;
@@ -1929,49 +2025,47 @@ def apply_vue_globale_style():
             white-space: nowrap;
         }
 
-
         /* COUVERTURE DES ÉQUIPEMENTS */
         .vg-equipment-coverage {
             display: grid;
-            grid-template-columns: minmax(0, 1.35fr) minmax(230px, 0.85fr);
+            grid-template-columns: minmax(0, 1.25fr) minmax(220px, 0.75fr);
+            gap: 16px;
             align-items: stretch;
-            gap: 18px;
-            margin-top: 2px;
+            margin-top: 4px;
         }
 
         .vg-equipment-coverage-main,
         .vg-equipment-stat {
             box-sizing: border-box;
             background: #FFFFFF;
-            border: 1px solid var(--border);
+            border: 1px solid #E4E1E3;
             border-radius: 18px;
-            box-shadow: 0 8px 20px -18px rgba(27, 36, 48, 0.22);
+            box-shadow: none;
         }
 
         .vg-equipment-coverage-main {
             display: flex;
-            min-height: 388px;
+            min-height: 390px;
             flex-direction: column;
             align-items: center;
             justify-content: center;
-            padding: 24px 22px 21px;
+            padding: 24px 24px 20px;
         }
 
         .vg-equipment-gauge {
             --coverage: 0%;
             position: relative;
             display: grid;
-            width: clamp(210px, 24vw, 285px);
+            width: min(270px, 78%);
             aspect-ratio: 1;
             place-items: center;
             border-radius: 50%;
             background:
                 conic-gradient(
-                    from 0deg,
+                    from -90deg,
                     #E5114D 0 var(--coverage),
                     #F0EEE8 var(--coverage) 100%
                 );
-            transform: rotate(-90deg);
         }
 
         .vg-equipment-gauge::after {
@@ -1980,76 +2074,58 @@ def apply_vue_globale_style():
             inset: 17px;
             border-radius: 50%;
             background: #FFFFFF;
-            box-shadow: inset 0 0 0 1px rgba(23, 59, 105, 0.04);
         }
 
         .vg-equipment-gauge-inner {
             position: relative;
             z-index: 1;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            transform: rotate(90deg);
             text-align: center;
         }
 
         .vg-equipment-gauge-rate {
             color: #E5114D;
-            font-size: clamp(40px, 4.3vw, 60px);
+            font-size: clamp(42px, 4.2vw, 58px);
             font-weight: 850;
             letter-spacing: -2px;
-            line-height: 0.98;
+            line-height: 1;
         }
 
         .vg-equipment-gauge-label {
-            margin-top: 7px;
-            color: #5B5B5B;
+            margin-top: 8px;
+            color: #5F5F60;
             font-size: 15px;
-            font-weight: 650;
+            font-weight: 700;
         }
 
         .vg-equipment-gauge-total {
             width: 100%;
-            margin-top: 15px;
+            margin-top: 18px;
             color: #173B69;
             font-size: 18px;
-            font-weight: 800;
-            text-align: left;
+            font-weight: 850;
         }
 
         .vg-equipment-gauge-note {
-            display: flex;
             width: 100%;
-            align-items: center;
-            gap: 9px;
             margin-top: 8px;
-            color: #667085;
-            font-size: 12px;
+            color: #7C8491;
+            font-size: 11.5px;
             font-weight: 600;
-            line-height: 1.35;
-        }
-
-        .vg-equipment-gauge-dot {
-            width: 9px;
-            height: 9px;
-            flex: 0 0 auto;
-            border-radius: 50%;
-            background: #2F7C6D;
+            line-height: 1.4;
         }
 
         .vg-equipment-coverage-stats {
             display: grid;
             grid-template-rows: 1fr 1fr;
-            gap: 18px;
+            gap: 16px;
         }
 
         .vg-equipment-stat {
             display: flex;
-            min-height: 184px;
+            min-height: 185px;
             flex-direction: column;
             justify-content: center;
-            padding: 24px 27px;
+            padding: 24px 26px;
         }
 
         .vg-equipment-stat-covered {
@@ -2065,14 +2141,13 @@ def apply_vue_globale_style():
         .vg-equipment-stat-label {
             color: #173B69;
             font-size: 15px;
-            font-weight: 800;
-            letter-spacing: 0.2px;
+            font-weight: 850;
         }
 
         .vg-equipment-stat-value {
             margin-top: 14px;
             color: #173B69;
-            font-size: clamp(38px, 4vw, 56px);
+            font-size: clamp(38px, 3.7vw, 54px);
             font-weight: 850;
             letter-spacing: -1.5px;
             line-height: 1;
@@ -2085,9 +2160,48 @@ def apply_vue_globale_style():
         .vg-equipment-stat-help {
             margin-top: 18px;
             color: #5F6368;
-            font-size: 14px;
+            font-size: 13.5px;
             font-weight: 600;
-            line-height: 1.35;
+        }
+
+        @media screen and (max-width: 1100px) {
+            .vg-equipment-coverage {
+                grid-template-columns: 1fr;
+            }
+
+            .vg-equipment-coverage-stats {
+                grid-template-columns: 1fr 1fr;
+                grid-template-rows: none;
+            }
+
+            .vg-equipment-stat {
+                min-height: 150px;
+            }
+        }
+
+        @media screen and (max-width: 620px) {
+            .vg-equipment-coverage-main {
+                min-height: 340px;
+                padding: 20px 16px;
+            }
+
+            .vg-equipment-coverage-stats {
+                grid-template-columns: 1fr;
+            }
+
+            .vg-equipment-stat {
+                min-height: 132px;
+                padding: 20px;
+            }
+
+            .vg-equipment-gauge {
+                width: min(235px, 78vw);
+            }
+
+            .vg-equipment-gauge-total,
+            .vg-equipment-gauge-note {
+                text-align: center;
+            }
         }
 
         .vg-drilldown-summary {
@@ -2105,47 +2219,6 @@ def apply_vue_globale_style():
             border-radius: 999px;
             font-size: 10.5px;
             font-weight: 700;
-        }
-
-        @media screen and (max-width: 1050px) {
-            .vg-equipment-coverage {
-                grid-template-columns: 1fr;
-            }
-
-            .vg-equipment-coverage-stats {
-                grid-template-columns: 1fr 1fr;
-                grid-template-rows: none;
-            }
-
-            .vg-equipment-stat {
-                min-height: 155px;
-            }
-        }
-
-        @media screen and (max-width: 620px) {
-            .vg-equipment-coverage-main {
-                min-height: 340px;
-                padding: 20px 16px;
-            }
-
-            .vg-equipment-coverage-stats {
-                grid-template-columns: 1fr;
-            }
-
-            .vg-equipment-stat {
-                min-height: 135px;
-                padding: 20px;
-            }
-
-            .vg-equipment-gauge {
-                width: min(235px, 76vw);
-            }
-
-            .vg-equipment-gauge-total,
-            .vg-equipment-gauge-note {
-                text-align: center;
-                justify-content: center;
-            }
         }
 
         @media screen and (max-width: 900px) {
