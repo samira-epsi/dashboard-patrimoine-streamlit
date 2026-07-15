@@ -1394,7 +1394,7 @@ if vue_active == "Vue globale":
                 ].copy()
                 st.caption(
                     "Le fichier contient toutes les lignes filtrées : "
-                    f"{format_nombre(len(table_export_complete))} ligne(s)."
+                    f"{fmt_nombre(len(table_export_complete))} ligne(s)."
                 )
                 dataframe_download(
                     "Télécharger toutes les lignes",
@@ -2250,11 +2250,6 @@ elif vue_active == "Couverture":
                     width="stretch",
                 )
             else:
-                couleurs_couverture = {
-                    "Équipements avec contrat": "#2F7C6D",
-                    "Équipements sans contrat": "#F4D84E",
-                }
-
                 couverture_indexee = (
                     couverture_equipements
                     .set_index("Couverture")
@@ -2292,174 +2287,65 @@ elif vue_active == "Couverture":
                     ]
                 )
 
-                fig_couverture = go.Figure()
+                taux_css = max(0.0, min(100.0, taux_avec_contrat))
 
-                fig_couverture.add_trace(
-                    go.Bar(
-                        y=["Parc d’équipements"],
-                        x=[taux_avec_contrat],
-                        name="Avec contrat",
-                        orientation="h",
-                        marker=dict(
-                            color=couleurs_couverture[
-                                "Équipements avec contrat"
-                            ],
-                            line=dict(
-                                color="#FFFFFF",
-                                width=2,
-                            ),
-                        ),
-                        text=[
-                            (
-                                f"<b>{fmt_pourcentage(taux_avec_contrat)}</b>"
-                                f"<br>{fmt_nombre(nb_avec_contrat)} équipements"
-                            )
-                        ],
-                        textposition="inside",
-                        insidetextanchor="middle",
-                        textfont=dict(
-                            size=14,
-                            color="#FFFFFF",
-                        ),
-                        customdata=[[nb_avec_contrat]],
-                        hovertemplate=(
-                            "<b>Équipements avec contrat</b><br>"
-                            "Équipements : %{customdata[0]:,}<br>"
-                            "Part du parc : %{x:.1f} %"
-                            "<extra></extra>"
-                        ),
-                    )
-                )
+                st.markdown(
+                    f"""
+                    <div class="vg-equipment-coverage">
+                        <div class="vg-equipment-coverage-main">
+                            <div
+                                class="vg-equipment-gauge"
+                                style="--coverage:{taux_css:.2f}%;"
+                            >
+                                <div class="vg-equipment-gauge-inner">
+                                    <div class="vg-equipment-gauge-rate">
+                                        {fmt_pourcentage(taux_avec_contrat)}
+                                    </div>
+                                    <div class="vg-equipment-gauge-label">
+                                        Avec contrat
+                                    </div>
+                                </div>
+                            </div>
 
-                fig_couverture.add_trace(
-                    go.Bar(
-                        y=["Parc d’équipements"],
-                        x=[taux_sans_contrat],
-                        name="Sans contrat",
-                        orientation="h",
-                        marker=dict(
-                            color=couleurs_couverture[
-                                "Équipements sans contrat"
-                            ],
-                            line=dict(
-                                color="#FFFFFF",
-                                width=2,
-                            ),
-                        ),
-                        text=[
-                            (
-                                f"<b>{fmt_pourcentage(taux_sans_contrat)}</b>"
-                                f"<br>{fmt_nombre(nb_sans_contrat)}"
-                            )
-                        ],
-                        textposition=(
-                            "inside"
-                            if taux_sans_contrat >= 12
-                            else "outside"
-                        ),
-                        insidetextanchor="middle",
-                        textfont=dict(
-                            size=13,
-                            color=(
-                                "#173B69"
-                                if taux_sans_contrat >= 12
-                                else C_INK
-                            ),
-                        ),
-                        customdata=[[nb_sans_contrat]],
-                        hovertemplate=(
-                            "<b>Équipements sans contrat</b><br>"
-                            "Équipements : %{customdata[0]:,}<br>"
-                            "Part du parc : %{x:.1f} %"
-                            "<extra></extra>"
-                        ),
-                        cliponaxis=False,
-                    )
-                )
+                            <div class="vg-equipment-gauge-total">
+                                {fmt_nombre(nb_avec_contrat)} équipements
+                            </div>
 
-                _layout_plotly(fig_couverture, 245)
-                fig_couverture.update_layout(
-                    barmode="stack",
-                    barnorm=None,
-                    showlegend=True,
-                    legend=dict(
-                        orientation="h",
-                        yanchor="top",
-                        y=-0.18,
-                        xanchor="center",
-                        x=0.5,
-                        font=dict(size=11),
-                        itemclick=False,
-                        itemdoubleclick=False,
-                    ),
-                    xaxis=dict(
-                        range=[0, 100],
-                        ticksuffix=" %",
-                        tickvals=[0, 25, 50, 75, 100],
-                        title=None,
-                        gridcolor=C_GRID,
-                        fixedrange=True,
-                    ),
-                    yaxis=dict(
-                        title=None,
-                        showticklabels=False,
-                        fixedrange=True,
-                    ),
-                    margin=dict(
-                        l=12,
-                        r=55,
-                        t=30,
-                        b=72,
-                    ),
-                    bargap=0.55,
-                    uniformtext=dict(
-                        minsize=10,
-                        mode="hide",
-                    ),
-                )
-
-                st.plotly_chart(
-                    fig_couverture,
-                    use_container_width=True,
-                    config=config_plotly(
-                        "part_equipements_avec_contrat"
-                    ),
-                )
-
-                resume_avec, resume_sans = st.columns(2)
-
-                with resume_avec:
-                    st.markdown(
-                        f"""
-                        <div class="vg-info" style="
-                            margin:0;
-                            border-left:4px solid {couleurs_couverture["Équipements avec contrat"]};
-                            background:#F3FAF7;
-                        ">
-                            <strong>{fmt_nombre(nb_avec_contrat)}</strong>
-                            équipements avec contrat
-                            · <strong>{fmt_pourcentage(taux_avec_contrat)}</strong>
+                            <div class="vg-equipment-gauge-note">
+                                <span class="vg-equipment-gauge-dot"></span>
+                                Contrat directement rattaché dans Intent
+                            </div>
                         </div>
-                        """,
-                        unsafe_allow_html=True,
-                    )
 
-                with resume_sans:
-                    st.markdown(
-                        f"""
-                        <div class="vg-info" style="
-                            margin:0;
-                            border-left:4px solid {couleurs_couverture["Équipements sans contrat"]};
-                            background:#FFFBEA;
-                        ">
-                            <strong>{fmt_nombre(nb_sans_contrat)}</strong>
-                            équipements sans contrat
-                            · <strong>{fmt_pourcentage(taux_sans_contrat)}</strong>
+                        <div class="vg-equipment-coverage-stats">
+                            <div class="vg-equipment-stat vg-equipment-stat-covered">
+                                <div class="vg-equipment-stat-label">
+                                    Avec contrat
+                                </div>
+                                <div class="vg-equipment-stat-value">
+                                    {fmt_nombre(nb_avec_contrat)}
+                                </div>
+                                <div class="vg-equipment-stat-help">
+                                    {fmt_pourcentage(taux_avec_contrat)} du parc
+                                </div>
+                            </div>
+
+                            <div class="vg-equipment-stat vg-equipment-stat-uncovered">
+                                <div class="vg-equipment-stat-label">
+                                    Sans contrat
+                                </div>
+                                <div class="vg-equipment-stat-value">
+                                    {fmt_nombre(nb_sans_contrat)}
+                                </div>
+                                <div class="vg-equipment-stat-help">
+                                    {fmt_pourcentage(taux_sans_contrat)} du parc
+                                </div>
+                            </div>
                         </div>
-                        """,
-                        unsafe_allow_html=True,
-                    )
-
+                    </div>
+                    """,
+                    unsafe_allow_html=True,
+                )
 
             definition_couverture = (
                 "un contrat actif valide"
