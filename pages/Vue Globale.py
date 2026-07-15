@@ -12,18 +12,11 @@ from common.app_config import setup_page
 from common.export_utils import dataframe_download
 from common.filters import render_filtres_patrimoine
 
-from common.charts_style import (
-    C_BLUE_LIGHT,
-    C_GRID,
-    C_INK,
-    C_NAVY,
-    C_PINK,
-    C_RED,
-    C_TEAL,
-    C_VIOLET,
-    _layout_plotly,
-    config_plotly,
-)
+# Les constantes et fonctions publiques de style Plotly.
+from common.charts_style import *
+
+# Les noms commençant par "_" ne sont jamais chargés par import *.
+from common.charts_style import _layout_plotly
 
 from common.ui_style import (
     apply_3f_page_style,
@@ -36,46 +29,21 @@ from common.ui_style import (
     vg_section as section,
 )
 
-from common.vue_globale_data import (
-    afficher_filtre_statut_contrat,
-    charger_donnees,
-    construire_contrats_uniques_source,
-    construire_couverture_reelle_equipements,
-    construire_evolution_contrats,
-    construire_presence_metiers,
-    construire_repartition_types_equipement,
-    contrats_actifs_fin_depassee,
-    dedupliquer_esi,
-    effacer_recherche_contrat,
-    filtre_contrat_est_actif,
-    filtrer_contrats_par_statut,
-    filtrer_esi_depuis_contrats,
-    filtrer_prestations_depuis_contrats,
-    filtrer_table_par_esi,
-    fmt_nombre,
-    fmt_pourcentage,
-    global_value,
-    graduations_periodes,
-    liste_refs_valides,
-    refs_ont_change,
-    serie_numerique,
-    tester_connexion,
-)
-
-from common.vue_globale_tables import (
-    afficher_detail_qualite,
-    filtrer_table_recherche,
-    preparer_contrats_table,
-    preparer_prestations_table,
-    preparer_qualite_table,
-)
+# Fonctions de données et de préparation des tableaux.
+from common.vue_globale_data import *
+from common.vue_globale_tables import *
 
 
 def _safe(value) -> str:
-    """Échappe une valeur avant son insertion dans du HTML."""
+    """Sécurise une valeur avant son insertion dans du HTML."""
     if value is None:
         return ""
     return html.escape(str(value))
+
+
+def effacer_recherche_contrat() -> None:
+    """Vide la recherche de la liste des contrats."""
+    st.session_state["global_search_contract"] = ""
 
 
 setup_page("Vue Globale", None)
