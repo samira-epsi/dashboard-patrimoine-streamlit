@@ -8,6 +8,7 @@ except ImportError:
 
 from common.app_config import setup_page
 from common.charts_style import *
+from common.charts_style import _layout_plotly
 from common.filters import render_filtres_patrimoine
 from common.export_utils import dataframe_download
 from common.ui_style import (
