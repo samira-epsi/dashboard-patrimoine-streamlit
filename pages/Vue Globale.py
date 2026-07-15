@@ -389,7 +389,7 @@ def inject_style():
         }
 
         div[data-testid="stPlotlyChart"] {
-            overflow: hidden !important;
+            overflow: visible !important;
             display: flex !important;
             align-items: center !important;
             justify-content: center !important;
@@ -770,6 +770,21 @@ def inject_style():
             align-items: stretch !important;
         }
 
+
+
+        /* STABILITÉ APRÈS RERUN / PAGINATION */
+        div[data-testid="stExpander"] {
+            contain: none !important;
+            overflow: visible !important;
+        }
+
+        div[data-testid="stExpanderDetails"] {
+            overflow: visible !important;
+        }
+
+        [data-testid="stMainBlockContainer"] {
+            min-height: max-content !important;
+        }
 
         /* BLOCS COUVERTURE RESPONSIVES */
         .vg-chart-intro {
@@ -4859,7 +4874,7 @@ elif vue_active == "Couverture":
                         values=couverture_equipements["Équipements"],
                         hole=0.68,
                         sort=False,
-                        textinfo="percent",
+                        textinfo="label+percent",
                         textposition="inside",
                         textfont=dict(
                             size=14,
@@ -4904,12 +4919,22 @@ elif vue_active == "Couverture":
                 )
                 _layout_plotly(fig_couverture, 340)
                 fig_couverture.update_layout(
-                    showlegend=False,
+                    showlegend=True,
+                    legend=dict(
+                        orientation="h",
+                        yanchor="top",
+                        y=-0.04,
+                        xanchor="center",
+                        x=0.5,
+                        font=dict(size=11),
+                        itemclick=False,
+                        itemdoubleclick=False,
+                    ),
                     margin=dict(
                         l=8,
                         r=8,
                         t=4,
-                        b=4,
+                        b=72,
                     ),
                 )
                 st.plotly_chart(
@@ -4920,36 +4945,6 @@ elif vue_active == "Couverture":
                     ),
                 )
 
-                lignes_legende = []
-                for _, ligne in couverture_equipements.iterrows():
-                    label = str(ligne["Couverture"])
-                    couleur = couleurs_couverture.get(
-                        label,
-                        C_NAVY,
-                    )
-                    lignes_legende.append(
-                        (
-                            '<div class="vg-coverage-legend-item">'
-                            f'<span class="vg-coverage-dot" '
-                            f'style="--dot:{couleur};"></span>'
-                            f'<span class="vg-coverage-label">'
-                            f'{_safe(label)}</span>'
-                            '<span class="vg-coverage-value">'
-                            f'{fmt_nombre(ligne["Équipements"])} · '
-                            f'{fmt_pourcentage(ligne["Taux"])}'
-                            '</span>'
-                            '</div>'
-                        )
-                    )
-
-                st.markdown(
-                    (
-                        '<div class="vg-coverage-legend">'
-                        + "".join(lignes_legende)
-                        + "</div>"
-                    ),
-                    unsafe_allow_html=True,
-                )
 
             definition_couverture = (
                 "un contrat actif valide"
@@ -4981,10 +4976,13 @@ elif vue_active == "Couverture":
                 cle="export_couverture_equipements",
             )
 
-        with st.expander(
-            "Explorer et exporter le détail des équipements",
-            expanded=False,
-        ):
+        afficher_detail_equipements = st.toggle(
+            "Afficher le détail des équipements",
+            value=False,
+            key="afficher_detail_equipements",
+        )
+
+        if afficher_detail_equipements:
             detail_equipements = (
                 df_equipements_couverture_kpi.copy()
             )
@@ -5256,10 +5254,13 @@ elif vue_active == "Couverture":
         )
 
 
-        with st.expander(
-            "Explorer un métier",
-            expanded=False,
-        ):
+        afficher_detail_metier = st.toggle(
+            "Afficher le détail d’un métier",
+            value=False,
+            key="afficher_detail_metier",
+        )
+
+        if afficher_detail_metier:
             liste_metiers = (
                 presence_metiers["Métier"].astype(str).tolist()
                 if not presence_metiers.empty
