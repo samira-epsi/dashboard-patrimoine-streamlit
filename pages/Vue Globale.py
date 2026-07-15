@@ -2706,7 +2706,12 @@ def construire_graph_qualite(df_resume: pd.DataFrame, df_qualite: pd.DataFrame):
     return pd.DataFrame(columns=["Anomalie", "Objets distincts"])
 
 
-def dataframe_download(label: str, df: pd.DataFrame, filename: str):
+def dataframe_download(
+    label: str,
+    df: pd.DataFrame,
+    filename: str,
+    cle: str | None = None,
+):
     if df.empty:
         return
 
@@ -2745,6 +2750,7 @@ def dataframe_download(label: str, df: pd.DataFrame, filename: str):
         data=fichier.getvalue(),
         file_name=nom_excel,
         mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        key=cle,
         width="stretch",
     )
 
@@ -4731,9 +4737,20 @@ elif vue_active == "Couverture":
                     ].to_numpy(),
                     marker=dict(
                         color=[
-                            PALETTE_3F_GRAPHIQUES[
-                                index % len(PALETTE_3F_GRAPHIQUES)
-                            ]
+                            [
+                                "#173B69",
+                                "#2F7C6D",
+                                "#63B9DF",
+                                "#E89BC7",
+                                "#432ABD",
+                                "#F4D84E",
+                                "#8CC8BC",
+                                "#B8DFF1",
+                                "#EAC3D8",
+                                "#8D7CE0",
+                                "#D8C95B",
+                                "#7B9BC3",
+                            ][index % 12]
                             for index in range(len(repartition_types))
                         ],
                         line=dict(color="#FFFFFF", width=1.5),
@@ -4804,7 +4821,7 @@ elif vue_active == "Couverture":
             )
         else:
             couleurs_couverture = {
-                "Aucun équipement avec contrat": "#D83B55",
+                "Aucun équipement avec contrat": "#E89BC7",
                 "Une partie des équipements avec contrat": "#F4D84E",
                 "Tous les équipements avec contrat": "#2F7C6D",
             }
@@ -4848,10 +4865,10 @@ elif vue_active == "Couverture":
                 showarrow=False,
                 font=dict(color=C_INK, size=20),
             )
-            _layout_plotly(fig_couverture_equipements, 370)
+            _layout_plotly(fig_couverture_equipements, 345)
             fig_couverture_equipements.update_layout(
                 showlegend=False,
-                margin=dict(l=15, r=15, t=5, b=5),
+                margin=dict(l=8, r=8, t=4, b=4),
             )
             st.plotly_chart(
                 fig_couverture_equipements,
@@ -4866,21 +4883,26 @@ elif vue_active == "Couverture":
                 label = str(ligne["Niveau de couverture"])
                 couleur = couleurs_couverture.get(label, C_NAVY)
                 lignes_legende.append(
-                    f"""
-                    <div class="vg-coverage-legend-item">
-                        <span class="vg-coverage-dot" style="--dot:{couleur};"></span>
-                        <span class="vg-coverage-label">{_safe(label)}</span>
-                        <span class="vg-coverage-value">
-                            {fmt_nombre(ligne["ESI"])} · {fmt_pourcentage(ligne["Taux"])}
-                        </span>
-                    </div>
-                    """
+                    (
+                        '<div class="vg-coverage-legend-item">'
+                        f'<span class="vg-coverage-dot" '
+                        f'style="--dot:{couleur};"></span>'
+                        f'<span class="vg-coverage-label">{_safe(label)}</span>'
+                        '<span class="vg-coverage-value">'
+                        f'{fmt_nombre(ligne["ESI"])} · '
+                        f'{fmt_pourcentage(ligne["Taux"])}'
+                        '</span>'
+                        '</div>'
+                    )
                 )
 
-            st.markdown(
+            html_legende = (
                 '<div class="vg-coverage-legend">'
                 + "".join(lignes_legende)
-                + "</div>",
+                + "</div>"
+            )
+            st.markdown(
+                html_legende,
                 unsafe_allow_html=True,
             )
 
