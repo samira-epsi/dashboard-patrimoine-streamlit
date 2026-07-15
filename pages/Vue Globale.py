@@ -2935,3 +2935,4 @@ else:
 if "date_maj" in df_global.columns:
     date_maj = global_value(df_global, "date_maj", "")
     st.caption(f"Dernière mise à jour des tables dashboard : {date_maj}")
+#  EOKDOZ
