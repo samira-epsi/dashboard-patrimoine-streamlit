@@ -907,6 +907,49 @@ def aujourd_hui_france():
     return datetime.now(ZoneInfo("Europe/Paris")).date()
 
 
+MOIS_FR_COURTS = {
+    1: "janv.",
+    2: "févr.",
+    3: "mars",
+    4: "avr.",
+    5: "mai",
+    6: "juin",
+    7: "juil.",
+    8: "août",
+    9: "sept.",
+    10: "oct.",
+    11: "nov.",
+    12: "déc.",
+}
+
+
+def libelle_mois_fr(date_value) -> str:
+    date_value = pd.Timestamp(date_value)
+    return f"{MOIS_FR_COURTS[date_value.month]} {date_value.year}"
+
+
+def config_plotly(nom_fichier: str, afficher_barre: bool = True) -> dict:
+    return {
+        "displayModeBar": afficher_barre,
+        "displaylogo": False,
+        "responsive": True,
+        "locale": "fr",
+        "modeBarButtonsToRemove": [
+            "select2d",
+            "lasso2d",
+            "autoScale2d",
+            "toggleSpikelines",
+        ],
+        "toImageButtonOptions": {
+            "format": "png",
+            "filename": nom_fichier,
+            "height": 900,
+            "width": 1600,
+            "scale": 2,
+        },
+    }
+
+
 def nettoyer_df(df: pd.DataFrame) -> pd.DataFrame:
     df = df.copy()
 
@@ -1409,6 +1452,491 @@ def global_value(df_global: pd.DataFrame, col: str, default=0):
         return default
 
 
+
+# =====================================================
+# ÉVOLUTION DES CONTRATS
+# =====================================================
+
+
+def preparer_base_evolution_contrats(
+    df_contrats: pd.DataFrame,
+    df_prestations: pd.DataFrame,
+) -> pd.DataFrame:
+    """
+    Construit une ligne par contrat avec les dates utiles à l'évolution.
+
+    Priorité donnée à dashboard.contrats_prestations, car cette source contient
+    les dates de création et de désactivation Intent. Les colonnes manquantes
+    sont complétées depuis dashboard.contrats_patrimoine.
+    """
+    colonnes_sortie = [
+        "contract_reference",
+        "contract_creation_date",
+        "contract_deactivation_date",
+        "contract_end_date",
+        "contract_status_clean",
+    ]
+
+    base = pd.DataFrame(columns=colonnes_sortie)
+
+    if not df_prestations.empty and "contract_reference_3f" in df_prestations.columns:
+        p = df_prestations.copy()
+        p["contract_reference"] = p["contract_reference_3f"].astype("string")
+
+        for col in [
+            "contract_creation_date",
+            "contract_deactivation_date",
+            "contract_end_date",
+        ]:
+            if col not in p.columns:
+                p[col] = pd.NaT
+            p[col] = pd.to_datetime(p[col], errors="coerce")
+
+        if "contract_status_clean" not in p.columns:
+            p["contract_status_clean"] = (
+                p.get("contract_status", "")
+                .fillna("")
+                .astype(str)
+                .str.lower()
+                .str.strip()
+            )
+
+        base = (
+            p.sort_values(
+                ["contract_reference", "contract_last_update_date"]
+                if "contract_last_update_date" in p.columns
+                else ["contract_reference"],
+                na_position="last",
+            )
+            .drop_duplicates("contract_reference", keep="last")
+            [colonnes_sortie]
+            .copy()
+        )
+
+    if not df_contrats.empty and "contract_reference" in df_contrats.columns:
+        c = df_contrats.copy()
+
+        for col in ["contract_end_date"]:
+            if col not in c.columns:
+                c[col] = pd.NaT
+            c[col] = pd.to_datetime(c[col], errors="coerce")
+
+        if "contract_status_clean" not in c.columns:
+            c["contract_status_clean"] = (
+                c.get("contract_status", "")
+                .fillna("")
+                .astype(str)
+                .str.lower()
+                .str.strip()
+            )
+
+        c = (
+            c.sort_values("contract_reference")
+            .drop_duplicates("contract_reference")
+            .copy()
+        )
+
+        colonnes_c = [
+            "contract_reference",
+            "contract_end_date",
+            "contract_status_clean",
+        ]
+        c = c[colonnes_c]
+
+        if base.empty:
+            base = c.copy()
+            base["contract_creation_date"] = pd.NaT
+            base["contract_deactivation_date"] = pd.NaT
+            base = base[colonnes_sortie]
+        else:
+            base = base.merge(
+                c,
+                on="contract_reference",
+                how="outer",
+                suffixes=("", "_patrimoine"),
+            )
+
+            base["contract_end_date"] = base["contract_end_date"].fillna(
+                base.get("contract_end_date_patrimoine")
+            )
+            base["contract_status_clean"] = (
+                base["contract_status_clean"]
+                .replace("", pd.NA)
+                .fillna(base.get("contract_status_clean_patrimoine"))
+                .fillna("")
+            )
+
+            base = base[colonnes_sortie]
+
+    for col in [
+        "contract_creation_date",
+        "contract_deactivation_date",
+        "contract_end_date",
+    ]:
+        base[col] = pd.to_datetime(base[col], errors="coerce")
+
+    base["contract_reference"] = (
+        base["contract_reference"]
+        .astype("string")
+        .str.strip()
+    )
+
+    return base[
+        base["contract_reference"].notna()
+        & (base["contract_reference"] != "")
+    ].drop_duplicates("contract_reference")
+
+
+def construire_periodes_continues(
+    base: pd.DataFrame,
+    granularite: str,
+    nb_mois: int,
+) -> pd.DataFrame:
+    aujourd_hui = pd.Timestamp(aujourd_hui_france())
+
+    if granularite == "Annuel":
+        annee_fin = aujourd_hui.year
+        nb_annees = max(2, int((nb_mois + 11) // 12))
+        annees = list(range(annee_fin - nb_annees + 1, annee_fin + 1))
+
+        periodes = pd.DataFrame(
+            {
+                "periode_debut": [pd.Timestamp(year=a, month=1, day=1) for a in annees],
+                "periode_fin": [pd.Timestamp(year=a, month=12, day=31) for a in annees],
+                "libelle": [str(a) for a in annees],
+            }
+        )
+        periodes.loc[
+            periodes["periode_fin"] > aujourd_hui,
+            "periode_fin",
+        ] = aujourd_hui
+        return periodes
+
+    mois_fin = aujourd_hui.to_period("M").to_timestamp()
+    mois_debut = mois_fin - pd.DateOffset(months=nb_mois - 1)
+    mois = pd.date_range(mois_debut, mois_fin, freq="MS")
+
+    return pd.DataFrame(
+        {
+            "periode_debut": mois,
+            "periode_fin": mois + pd.offsets.MonthEnd(1),
+            "libelle": [libelle_mois_fr(m) for m in mois],
+        }
+    )
+
+
+def construire_evolution_contrats(
+    df_contrats: pd.DataFrame,
+    df_prestations: pd.DataFrame,
+    granularite: str,
+    nb_mois: int,
+) -> pd.DataFrame:
+    base = preparer_base_evolution_contrats(
+        df_contrats=df_contrats,
+        df_prestations=df_prestations,
+    )
+    periodes = construire_periodes_continues(
+        base=base,
+        granularite=granularite,
+        nb_mois=nb_mois,
+    )
+
+    lignes = []
+
+    for row in periodes.itertuples(index=False):
+        debut = pd.Timestamp(row.periode_debut)
+        fin = pd.Timestamp(row.periode_fin)
+
+        crees = int(
+            (
+                base["contract_creation_date"].notna()
+                & (base["contract_creation_date"] >= debut)
+                & (base["contract_creation_date"] <= fin)
+            ).sum()
+        )
+
+        desactives = int(
+            (
+                base["contract_deactivation_date"].notna()
+                & (base["contract_deactivation_date"] >= debut)
+                & (base["contract_deactivation_date"] <= fin)
+            ).sum()
+        )
+
+        existe_fin = (
+            base["contract_creation_date"].isna()
+            | (base["contract_creation_date"] <= fin)
+        )
+
+        actif_fin = (
+            existe_fin
+            & (
+                base["contract_deactivation_date"].isna()
+                | (base["contract_deactivation_date"] > fin)
+            )
+        )
+
+        inactif_fin = (
+            existe_fin
+            & base["contract_deactivation_date"].notna()
+            & (base["contract_deactivation_date"] <= fin)
+        )
+
+        actif_expire_fin = (
+            actif_fin
+            & base["contract_end_date"].notna()
+            & (base["contract_end_date"] < fin)
+        )
+
+        lignes.append(
+            {
+                "periode_debut": debut,
+                "periode_fin": fin,
+                "Période": row.libelle,
+                "Créés": crees,
+                "Désactivés": desactives,
+                "Contrats actifs": int(actif_fin.sum()),
+                "Contrats inactifs": int(inactif_fin.sum()),
+                "Actifs avec date de fin dépassée": int(actif_expire_fin.sum()),
+            }
+        )
+
+    return pd.DataFrame(lignes)
+
+
+def afficher_evolution_contrats(
+    df_contrats: pd.DataFrame,
+    df_prestations: pd.DataFrame,
+):
+    section(
+        "Évolution des contrats dans Intent",
+        "Créations, désactivations et stock de contrats selon les dates enregistrées dans Intent.",
+    )
+
+    c_granularite, c_periode = st.columns([1, 1], gap="large")
+
+    with c_granularite:
+        st.markdown(
+            '<div class="vg-mini-title">Granularité</div>',
+            unsafe_allow_html=True,
+        )
+        granularite = st.radio(
+            "Granularité",
+            ["Mensuel", "Annuel"],
+            horizontal=True,
+            label_visibility="collapsed",
+            key="evolution_granularite",
+        )
+
+    with c_periode:
+        if granularite == "Mensuel":
+            st.markdown(
+                '<div class="vg-mini-title">Période mensuelle</div>',
+                unsafe_allow_html=True,
+            )
+            periode_label = st.radio(
+                "Période mensuelle",
+                ["12 mois", "24 mois", "36 mois"],
+                index=1,
+                horizontal=True,
+                label_visibility="collapsed",
+                key="evolution_periode_mensuelle",
+            )
+            nb_mois = int(periode_label.split()[0])
+        else:
+            st.markdown(
+                '<div class="vg-mini-title">Période annuelle</div>',
+                unsafe_allow_html=True,
+            )
+            periode_label = st.radio(
+                "Période annuelle",
+                ["3 ans", "5 ans", "10 ans"],
+                index=1,
+                horizontal=True,
+                label_visibility="collapsed",
+                key="evolution_periode_annuelle",
+            )
+            nb_mois = int(periode_label.split()[0]) * 12
+
+    evolution = construire_evolution_contrats(
+        df_contrats=df_contrats,
+        df_prestations=df_prestations,
+        granularite=granularite,
+        nb_mois=nb_mois,
+    )
+
+    if evolution.empty:
+        st.info("Aucune donnée d'évolution disponible.")
+        return
+
+    col_flux, col_stock = st.columns(
+        [1, 1],
+        gap="medium",
+        vertical_alignment="top",
+    )
+
+    with col_flux:
+        st.markdown(
+            '<div class="vg-mini-title">Flux de contrats</div>',
+            unsafe_allow_html=True,
+        )
+
+        fig_flux = go.Figure()
+
+        fig_flux.add_trace(
+            go.Bar(
+                x=evolution["Période"],
+                y=evolution["Créés"],
+                name="Créés",
+                marker=dict(color=C_RED),
+                hovertemplate=(
+                    "<b>%{x}</b><br>"
+                    "Contrats créés : %{y}<extra></extra>"
+                ),
+            )
+        )
+
+        fig_flux.add_trace(
+            go.Bar(
+                x=evolution["Période"],
+                y=evolution["Désactivés"],
+                name="Désactivés",
+                marker=dict(color=C_BLUE_LIGHT),
+                hovertemplate=(
+                    "<b>%{x}</b><br>"
+                    "Contrats désactivés : %{y}<extra></extra>"
+                ),
+            )
+        )
+
+        _layout_plotly(fig_flux, 360)
+        fig_flux.update_layout(
+            barmode="group",
+            bargap=0.28,
+            bargroupgap=0.08,
+            showlegend=True,
+            legend=dict(
+                orientation="h",
+                yanchor="bottom",
+                y=1.02,
+                xanchor="left",
+                x=0,
+                title=None,
+            ),
+            margin=dict(l=55, r=18, t=50, b=70),
+            xaxis=dict(
+                title=None,
+                type="category",
+                categoryorder="array",
+                categoryarray=evolution["Période"].tolist(),
+                tickangle=-45 if len(evolution) > 18 else 0,
+                showgrid=False,
+                automargin=True,
+            ),
+            yaxis=dict(
+                title="Nombre de contrats",
+                rangemode="tozero",
+                gridcolor=C_GRID,
+                zeroline=False,
+            ),
+        )
+
+        st.plotly_chart(
+            fig_flux,
+            use_container_width=True,
+            config=config_plotly("evolution_flux_contrats"),
+        )
+
+    with col_stock:
+        st.markdown(
+            '<div class="vg-mini-title">Stock de contrats</div>',
+            unsafe_allow_html=True,
+        )
+
+        fig_stock = go.Figure()
+
+        series_stock = [
+            ("Contrats actifs", C_RED),
+            ("Contrats inactifs", C_BLUE_LIGHT),
+            ("Actifs avec date de fin dépassée", C_VIOLET),
+        ]
+
+        for colonne, couleur in series_stock:
+            fig_stock.add_trace(
+                go.Scatter(
+                    x=evolution["Période"],
+                    y=evolution[colonne],
+                    name=colonne,
+                    mode="lines+markers",
+                    line=dict(color=couleur, width=3),
+                    marker=dict(size=6),
+                    hovertemplate=(
+                        "<b>%{x}</b><br>"
+                        + colonne
+                        + " : %{y}<extra></extra>"
+                    ),
+                )
+            )
+
+        _layout_plotly(fig_stock, 360)
+        fig_stock.update_layout(
+            showlegend=True,
+            legend=dict(
+                orientation="h",
+                yanchor="bottom",
+                y=1.02,
+                xanchor="left",
+                x=0,
+                title=None,
+            ),
+            margin=dict(l=55, r=18, t=50, b=70),
+            hovermode="x unified",
+            xaxis=dict(
+                title=None,
+                type="category",
+                categoryorder="array",
+                categoryarray=evolution["Période"].tolist(),
+                tickangle=-45 if len(evolution) > 18 else 0,
+                showgrid=False,
+                automargin=True,
+            ),
+            yaxis=dict(
+                title="Nombre de contrats",
+                rangemode="tozero",
+                gridcolor=C_GRID,
+                zeroline=False,
+            ),
+        )
+
+        st.plotly_chart(
+            fig_stock,
+            use_container_width=True,
+            config=config_plotly("evolution_stock_contrats"),
+        )
+
+    export = evolution[
+        [
+            "Période",
+            "Créés",
+            "Désactivés",
+            "Contrats actifs",
+            "Contrats inactifs",
+            "Actifs avec date de fin dépassée",
+        ]
+    ].copy()
+
+    dataframe_download(
+        "Télécharger les données d’évolution des contrats",
+        export,
+        "evolution_contrats.csv",
+    )
+
+    st.caption(
+        "Les périodes sans événement sont conservées et affichées avec une valeur égale à zéro. "
+        "Le stock historique est reconstitué à partir des dates de création et de désactivation disponibles dans Intent."
+    )
+
+
 # =====================================================
 # COMPOSANTS VISUELS
 # =====================================================
@@ -1581,7 +2109,7 @@ def afficher_couverture(df_couverture: pd.DataFrame):
     st.plotly_chart(
         fig,
         use_container_width=True,
-        config={"displayModeBar": False, "responsive": True},
+        config=config_plotly("taux_couverture_patrimoine"),
     )
 
 
@@ -1663,7 +2191,7 @@ def afficher_barres_horizontales(
     st.plotly_chart(
         fig,
         use_container_width=True,
-        config={"displayModeBar": False, "responsive": True},
+        config=config_plotly("graphique_barres_horizontales"),
     )
 
 
@@ -2146,7 +2674,7 @@ with nav_col:
     with st.container(key="dashboard_tabs"):
         vue_active = st.radio(
             "Navigation",
-            ["Vue globale", "Couverture", "Qualité et anomalies"],
+            ["Vue globale", "Couverture", "Évolution des contrats", "Qualité et anomalies"],
             horizontal=True,
             label_visibility="collapsed",
             key="dashboard_vue_active",
@@ -2478,7 +3006,7 @@ if vue_active == "Vue globale":
                 st.plotly_chart(
                     fig,
                     use_container_width=True,
-                    config={"displayModeBar": False, "responsive": True},
+                    config=config_plotly("repartition_statut_contrats"),
                 )
 
     with col_metier:
@@ -2487,14 +3015,52 @@ if vue_active == "Vue globale":
                 '<div class="vg-mini-title">Répartition des contrats par métier</div>',
                 unsafe_allow_html=True,
             )
-            afficher_barres_horizontales(
-                df_graph_metier,
-                "Métier",
-                "Contrats",
-                color=C_RED,
-                height_base=HAUTEUR_GRAPHIQUES,
-                fixed_height=HAUTEUR_GRAPHIQUES,
-            )
+            if go is None:
+                st.bar_chart(
+                    df_graph_metier.set_index("Métier")["Contrats"],
+                    width="stretch",
+                )
+            else:
+                max_value = max(
+                    float(df_graph_metier["Contrats"].max()),
+                    1.0,
+                )
+                fig_metier = go.Figure(
+                    go.Bar(
+                        x=df_graph_metier["Contrats"],
+                        y=df_graph_metier["Métier"],
+                        orientation="h",
+                        text=df_graph_metier["Contrats"].apply(fmt_nombre),
+                        textposition="outside",
+                        textfont=dict(color=C_INK, size=12),
+                        cliponaxis=False,
+                        marker=dict(color=C_RED),
+                        hovertemplate=(
+                            "<b>%{y}</b><br>"
+                            "Nombre de contrats : %{x}"
+                            "<extra></extra>"
+                        ),
+                    )
+                )
+                _layout_plotly(fig_metier, HAUTEUR_GRAPHIQUES)
+                fig_metier.update_layout(
+                    bargap=0.36,
+                    margin=dict(l=18, r=46, t=14, b=24),
+                    xaxis=dict(
+                        range=[0, max_value * 1.18],
+                        gridcolor=C_GRID,
+                        zeroline=False,
+                        title=None,
+                    ),
+                    yaxis=dict(title=None, automargin=True),
+                )
+                st.plotly_chart(
+                    fig_metier,
+                    use_container_width=True,
+                    config=config_plotly(
+                        "repartition_contrats_par_metier"
+                    ),
+                )
 
     with st.expander("Consulter la liste des contrats", expanded=False):
         recherche_contrat = st.text_input(
@@ -3084,7 +3650,7 @@ elif vue_active == "Couverture":
                 st.plotly_chart(
                     fig,
                     use_container_width=True,
-                    config={"displayModeBar": False},
+                    config=config_plotly("repartition_esi_par_nombre_contrats"),
                 )
 
     with st.expander("Consulter le détail des ESI", expanded=False):
@@ -3134,7 +3700,18 @@ elif vue_active == "Couverture":
 
 
 # =====================================================
-# VUE 3 — QUALITÉ ET ANOMALIES
+# VUE 3 — ÉVOLUTION DES CONTRATS
+# =====================================================
+
+elif vue_active == "Évolution des contrats":
+    afficher_evolution_contrats(
+        df_contrats=df_contrats_filtre,
+        df_prestations=df_prestations_kpi,
+    )
+
+
+# =====================================================
+# VUE 4 — QUALITÉ ET ANOMALIES
 # =====================================================
 
 else:
