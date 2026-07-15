@@ -2442,7 +2442,7 @@ if vue_active == "Vue globale":
                 unsafe_allow_html=True,
             )
             afficher_barres_horizontales(
-                construire_graph_metier(df_contrats_kpi, top_n=10),
+                construire_graph_metier(df_contrats_kpi, top_n=20),
                 "Métier",
                 "Contrats",
                 color=C_RED,
