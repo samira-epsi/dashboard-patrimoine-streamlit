@@ -4550,122 +4550,15 @@ elif vue_active == "Couverture":
         "Les ESI sans contrat sont conservés avec la valeur zéro."
     )
 
-
     # =====================================================
-    # MÉTIERS ET ÉQUIPEMENTS
+    # ÉQUIPEMENTS DU PATRIMOINE
     # =====================================================
 
     st.markdown("<br>", unsafe_allow_html=True)
     section(
-        "Métiers et équipements",
-        "Les métiers indiquent la présence contractuelle sur les ESI. "
-        "La couverture des équipements repose uniquement sur les liens réellement enregistrés dans Intent.",
+        "Équipements du patrimoine",
+        "Quels équipements sont présents et quelle part possède réellement un contrat rattaché ?",
     )
-
-    presence_metiers = construire_presence_metiers(
-        df_contrats=df_contrats_kpi,
-        total_esi=total_esi_situation,
-        top_n=15,
-    )
-
-    repartition_types = construire_repartition_types_equipement(
-        df_equipements=df_equipements_couverture_kpi,
-        top_n=12,
-    )
-
-    couverture_equipements = construire_couverture_reelle_equipements(
-        df_equipements=df_equipements_couverture_kpi,
-        statut=statut_selectionne,
-    )
-
-    # -----------------------------------------------------
-    # 1. PRÉSENCE DES CONTRATS PAR MÉTIER — PLEINE LARGEUR
-    # -----------------------------------------------------
-    st.markdown(
-        '<div class="vg-mini-title">Nombre d’ESI ayant au moins un contrat par métier</div>',
-        unsafe_allow_html=True,
-    )
-    st.caption(
-        f"Population de référence : {fmt_nombre(total_esi_situation)} ESI. "
-        "Un même ESI peut apparaître dans plusieurs métiers."
-    )
-
-    if presence_metiers.empty:
-        st.info("Aucune donnée métier disponible sur le périmètre sélectionné.")
-    elif go is None:
-        st.bar_chart(
-            presence_metiers.set_index("Métier")["Taux"],
-            width="stretch",
-        )
-    else:
-        fig_metiers = go.Figure(
-            go.Bar(
-                x=presence_metiers["ESI"],
-                y=presence_metiers["Métier"],
-                orientation="h",
-                text=[
-                    (
-                        f"{fmt_nombre(nb)} ESI · "
-                        f"{fmt_pourcentage(taux)}"
-                    )
-                    for nb, taux in zip(
-                        presence_metiers["ESI"],
-                        presence_metiers["Taux"],
-                    )
-                ],
-                textposition="outside",
-                customdata=presence_metiers["Taux"],
-                marker=dict(color=C_RED),
-                hovertemplate=(
-                    "<b>%{y}</b><br>"
-                    "ESI concernés : %{x:,}<br>"
-                    "Part du périmètre : %{customdata:.1f} %"
-                    "<extra></extra>"
-                ),
-            )
-        )
-        hauteur_metiers = max(
-            430,
-            min(720, 34 * len(presence_metiers) + 125),
-        )
-        _layout_plotly(fig_metiers, hauteur_metiers)
-        fig_metiers.update_layout(
-            xaxis=dict(
-                title="Nombre d’ESI concernés",
-                range=[
-                    0,
-                    max(
-                        int(total_esi_situation),
-                        int(presence_metiers["ESI"].max()) + 500,
-                    ),
-                ],
-                gridcolor=C_GRID,
-                tickfont=dict(size=11),
-                separatethousands=True,
-            ),
-            yaxis=dict(
-                title=None,
-                automargin=True,
-                tickfont=dict(size=12),
-            ),
-            margin=dict(l=15, r=120, t=15, b=55),
-            bargap=0.28,
-            showlegend=False,
-        )
-        st.plotly_chart(
-            fig_metiers,
-            use_container_width=True,
-            config=config_plotly("presence_contrats_par_metier"),
-        )
-
-    st.caption(
-        "Lecture : la longueur de la barre correspond au nombre d’ESI concernés. "
-        "Le pourcentage affiché indique la part de ces ESI dans le périmètre total."
-    )
-
-    # -----------------------------------------------------
-    # 2. TYPES D'ÉQUIPEMENT + COUVERTURE RÉELLE
-    # -----------------------------------------------------
     st.markdown("<br>", unsafe_allow_html=True)
     col_types, col_couverture_equipements = st.columns(
         [1.25, 0.85],
@@ -4674,7 +4567,7 @@ elif vue_active == "Couverture":
 
     with col_types:
         st.markdown(
-            '<div class="vg-mini-title">Répartition des types d’équipement</div>',
+            '<div class="vg-mini-title">Quels équipements trouve-t-on dans le patrimoine ?</div>',
             unsafe_allow_html=True,
         )
 
@@ -4707,7 +4600,16 @@ elif vue_active == "Couverture":
                     customdata=repartition_types[
                         ["ESI", "Part du parc"]
                     ].to_numpy(),
-                    marker=dict(color=C_NAVY),
+                    marker=dict(
+                        color=repartition_types["Part du parc"],
+                        colorscale=[
+                            [0.0, "#EAF5FF"],
+                            [0.5, "#80CDFF"],
+                            [1.0, "#173B69"],
+                        ],
+                        showscale=False,
+                        line=dict(color="#FFFFFF", width=1),
+                    ),
                     hovertemplate=(
                         "<b>%{y}</b><br>"
                         "Équipements : %{x:,}<br>"
@@ -4745,7 +4647,7 @@ elif vue_active == "Couverture":
 
     with col_couverture_equipements:
         st.markdown(
-            '<div class="vg-mini-title">Couverture réelle des équipements</div>',
+            '<div class="vg-mini-title">Les équipements sont-ils couverts ?</div>',
             unsafe_allow_html=True,
         )
 
@@ -4760,9 +4662,9 @@ elif vue_active == "Couverture":
             )
         else:
             couleurs_couverture = {
-                "Aucun équipement couvert": C_PINK,
-                "Partiellement couvert": C_YELLOW,
-                "Tous les équipements couverts": C_TEAL,
+                "Aucun équipement avec contrat": "#D8E4F0",
+                "Une partie des équipements avec contrat": "#80CDFF",
+                "Tous les équipements avec contrat": "#173B69",
             }
             fig_couverture_equipements = go.Figure(
                 go.Pie(
@@ -4835,10 +4737,135 @@ elif vue_active == "Couverture":
             else "tous les contrats rattachés"
         )
         st.caption(
-            f"Classification selon les {statut_couverture}. "
-            "« Partiellement couvert » signifie qu’au moins un équipement de "
-            "l’ESI est couvert, mais pas tous."
+            f"Lecture selon les {statut_couverture}. "
+            "« Une partie des équipements avec contrat » signifie que certains équipements de l’ESI ont un contrat, mais pas tous."
         )
+
+
+
+    # =====================================================
+    # MÉTIERS ET ÉQUIPEMENTS
+    # =====================================================
+
+    st.markdown("<br>", unsafe_allow_html=True)
+    section(
+        "Contrats par métier",
+        "Pour chaque métier, on compte les ESI qui possèdent au moins un contrat de ce métier.",
+    )
+
+    presence_metiers = construire_presence_metiers(
+        df_contrats=df_contrats_kpi,
+        total_esi=total_esi_situation,
+        top_n=15,
+    )
+
+    repartition_types = construire_repartition_types_equipement(
+        df_equipements=df_equipements_couverture_kpi,
+        top_n=12,
+    )
+
+    couverture_equipements = construire_couverture_reelle_equipements(
+        df_equipements=df_equipements_couverture_kpi,
+        statut=statut_selectionne,
+    )
+
+    # -----------------------------------------------------
+    # 1. PRÉSENCE DES CONTRATS PAR MÉTIER — PLEINE LARGEUR
+    # -----------------------------------------------------
+    st.markdown(
+        '<div class="vg-mini-title">ESI concernés par métier</div>',
+        unsafe_allow_html=True,
+    )
+    st.caption(
+        f"Base analysée : {fmt_nombre(total_esi_situation)} ESI. "
+        "Un ESI peut être compté dans plusieurs métiers."
+    )
+
+    if presence_metiers.empty:
+        st.info("Aucune donnée métier disponible sur le périmètre sélectionné.")
+    elif go is None:
+        st.bar_chart(
+            presence_metiers.set_index("Métier")["Taux"],
+            width="stretch",
+        )
+    else:
+        fig_metiers = go.Figure(
+            go.Bar(
+                x=presence_metiers["ESI"],
+                y=presence_metiers["Métier"],
+                orientation="h",
+                text=[
+                    (
+                        f"{fmt_nombre(nb)} ESI · "
+                        f"{fmt_pourcentage(taux)}"
+                    )
+                    for nb, taux in zip(
+                        presence_metiers["ESI"],
+                        presence_metiers["Taux"],
+                    )
+                ],
+                textposition="outside",
+                cliponaxis=False,
+                customdata=presence_metiers["Taux"],
+                marker=dict(
+                    color=presence_metiers["Taux"],
+                    colorscale=[
+                        [0.0, "#DCEEFF"],
+                        [0.45, "#80CDFF"],
+                        [1.0, "#173B69"],
+                    ],
+                    showscale=False,
+                    line=dict(color="#FFFFFF", width=1),
+                ),
+                hovertemplate=(
+                    "<b>%{y}</b><br>"
+                    "ESI concernés : %{x:,}<br>"
+                    "Part du périmètre : %{customdata:.1f} %"
+                    "<extra></extra>"
+                ),
+            )
+        )
+        hauteur_metiers = max(
+            430,
+            min(720, 34 * len(presence_metiers) + 125),
+        )
+        _layout_plotly(fig_metiers, hauteur_metiers)
+        fig_metiers.update_layout(
+            xaxis=dict(
+                title="Nombre d’ESI ayant ce métier",
+                range=[
+                    0,
+                    max(
+                        int(total_esi_situation),
+                        int(presence_metiers["ESI"].max()) + 500,
+                    ),
+                ],
+                gridcolor=C_GRID,
+                tickfont=dict(size=11),
+                separatethousands=True,
+            ),
+            yaxis=dict(
+                title=None,
+                automargin=True,
+                tickfont=dict(size=12),
+            ),
+            margin=dict(l=20, r=150, t=20, b=55),
+            bargap=0.34,
+            showlegend=False,
+        )
+        st.plotly_chart(
+            fig_metiers,
+            use_container_width=True,
+            config=config_plotly("presence_contrats_par_metier"),
+        )
+
+    st.caption(
+        "Lecture : chaque barre répond à la question « sur combien d’ESI ce métier est-il présent ? ». "
+        "Le pourcentage indique la part correspondante dans le périmètre."
+    )
+
+
+
 
 
 
