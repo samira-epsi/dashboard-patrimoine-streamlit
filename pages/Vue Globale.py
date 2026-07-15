@@ -1,3 +1,5 @@
+from pathlib import Path
+
 import pandas as pd
 import streamlit as st
 
@@ -25,6 +27,11 @@ from common.vue_globale_tables import *
 
 
 setup_page("Vue Globale", None)
+
+logo_path = Path("assets/Logo.png")
+if logo_path.exists():
+    st.logo(str(logo_path))
+
 apply_3f_page_style()
 apply_vue_globale_style()
 
@@ -547,23 +554,45 @@ with refresh_col:
         st.cache_data.clear()
         st.rerun()
 
+chargement_placeholder = st.empty()
+chargement_placeholder.markdown(
+    """
+    <div class="vg-loading-card">
+        <div class="vg-loading-mark">
+            <span></span>
+            <span></span>
+            <span></span>
+        </div>
+        <div>
+            <div class="vg-loading-title">Chargement du patrimoine</div>
+            <div class="vg-loading-subtitle">
+                Préparation des données, des filtres et des indicateurs…
+            </div>
+        </div>
+    </div>
+    """,
+    unsafe_allow_html=True,
+)
+
 try:
-    with st.spinner("Chargement des données..."):
-        (
-            df_global,
-            df_esi,
-            df_contrats,
-            df_prestations,
-            df_equipements_couverture,
-            df_equipements_contrats,
-            df_creations,
-            df_qualite,
-            df_qualite_resume,
-        ) = charger_donnees()
+    (
+        df_global,
+        df_esi,
+        df_contrats,
+        df_prestations,
+        df_equipements_couverture,
+        df_equipements_contrats,
+        df_creations,
+        df_qualite,
+        df_qualite_resume,
+    ) = charger_donnees()
 except Exception as exc:
+    chargement_placeholder.empty()
     st.error("Erreur pendant le chargement des données.")
     st.code(str(exc))
     st.stop()
+finally:
+    chargement_placeholder.empty()
 
 if df_global.empty:
     st.error("La table dashboard.kpi_globale est vide.")
