@@ -14,6 +14,7 @@ from common.charts_style import _layout_plotly
 from common.filters import render_filtres_patrimoine
 from common.export_utils import dataframe_download
 from common.ui_style import (
+    _safe,
     apply_3f_page_style,
     apply_vue_globale_style,
     vg_alert_card as alert_card,
@@ -35,6 +36,9 @@ if logo_path.exists():
 apply_3f_page_style()
 apply_vue_globale_style()
 
+
+def effacer_recherche_contrat():
+    st.session_state["global_search_contract"] = ""
 
 # =====================================================
 # GRAPHIQUES ET COMPOSANTS DE LA PAGE
