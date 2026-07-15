@@ -3906,9 +3906,24 @@ elif vue_active == "Couverture":
     nb_esi_sans_contrat_equipement = compter_indicateur(
         colonne_sans_contrat_equipement
     )
-    nb_esi_sans_contrat_programme = compter_indicateur(
-        colonne_sans_contrat_programme
+    # Présence d'au moins un contrat directement rattaché au programme.
+    refs_esi_avec_contrat_programme = set(
+        liste_refs_valides(
+            df_contrats_kpi,
+            "esi_reference",
+        )
     )
+    refs_esi_du_perimetre = set(refs_esi_situation)
+
+    nb_esi_avec_contrat_programme = len(
+        refs_esi_avec_contrat_programme
+        & refs_esi_du_perimetre
+    )
+    nb_esi_sans_contrat_programme = max(
+        total_esi_situation - nb_esi_avec_contrat_programme,
+        0,
+    )
+
     nb_esi_multi_metier = compter_indicateur(
         colonne_multi_metier
     )
@@ -4075,23 +4090,31 @@ elif vue_active == "Couverture":
         donnees_couverture = pd.DataFrame(
             {
                 "Situation": [
-                    libelle_contrat_equipement,
-                    libelle_sans_contrat_equipement,
-                    "Sans contrat programme",
+                    "ESI équipés avec contrat équipement",
+                    "ESI équipés sans contrat équipement",
+                    "ESI avec au moins un contrat",
+                    "ESI sans contrat",
                 ],
                 "ESI": [
                     nb_esi_avec_contrat_equipement,
                     nb_esi_sans_contrat_equipement,
+                    nb_esi_avec_contrat_programme,
                     nb_esi_sans_contrat_programme,
+                ],
+                "Couleur": [
+                    C_RED,
+                    C_PINK,
+                    C_NAVY,
+                    C_YELLOW,
                 ],
             }
         )
         donnees_couverture["Taux"] = donnees_couverture["ESI"].map(
             lambda nombre: taux_esi(int(nombre))
         )
-        donnees_couverture = donnees_couverture.sort_values(
-            "Taux",
-            ascending=True,
+        # Ordre métier conservé de haut en bas dans le graphique.
+        donnees_couverture = donnees_couverture.iloc[::-1].reset_index(
+            drop=True
         )
 
         if go is None:
@@ -4111,7 +4134,7 @@ elif vue_active == "Couverture":
                     textposition="outside",
                     customdata=donnees_couverture["ESI"],
                     marker=dict(
-                        color=[C_YELLOW, C_PINK, C_RED],
+                        color=donnees_couverture["Couleur"],
                     ),
                     hovertemplate=(
                         "<b>%{y}</b><br>"
@@ -4120,7 +4143,7 @@ elif vue_active == "Couverture":
                     ),
                 )
             )
-            _layout_plotly(fig_couverture, 320)
+            _layout_plotly(fig_couverture, 350)
             fig_couverture.update_layout(
                 xaxis=dict(
                     title=None,
@@ -4206,22 +4229,21 @@ elif vue_active == "Couverture":
         st.markdown(
             f"""
             <div class="vg-info" style="margin-top:-4px;margin-bottom:0;">
-                <strong>{_safe(moyenne_texte)}</strong> contrat(s) distinct(s)
-                en moyenne par ESI
-                &nbsp;·&nbsp;
-                médiane : <strong>{_safe(mediane_texte)}</strong>
-                &nbsp;·&nbsp;
-                <strong>{fmt_nombre(nb_esi_multi_metier)}</strong> ESI avec
-                plusieurs contrats sur le même métier
-                ({fmt_pourcentage(taux_esi(nb_esi_multi_metier))}).
+                <strong>En moyenne, un ESI possède {_safe(moyenne_texte)}
+                contrats distincts.</strong><br>
+                La moitié des ESI en possède
+                <strong>{_safe(mediane_texte)} ou moins</strong>.
+                <strong>{fmt_nombre(nb_esi_multi_metier)} ESI</strong>,
+                soit <strong>{fmt_pourcentage(taux_esi(nb_esi_multi_metier))}</strong>,
+                ont plusieurs contrats sur un même métier.
             </div>
             """,
             unsafe_allow_html=True,
         )
 
     st.caption(
-        "Le nombre moyen est calculé après avoir compté les références de contrats "
-        "distinctes pour chaque ESI. Les ESI sans contrat sont conservés avec la valeur zéro."
+        "Calcul : les contrats sont d’abord dédupliqués pour chaque ESI. "
+        "Les ESI sans contrat comptent pour zéro dans la moyenne."
     )
 
 
