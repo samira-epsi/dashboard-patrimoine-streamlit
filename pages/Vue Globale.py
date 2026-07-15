@@ -4310,7 +4310,7 @@ elif vue_active == "Couverture":
                     ),
                     marker=dict(
                         colors=[C_NAVY, C_BLUE_LIGHT],
-                        line=dict(color="#FFFFFF", width=3),
+                        line=dict(color="#FFFFFF", width=4),
                     ),
                 )
             )
@@ -4619,12 +4619,13 @@ elif vue_active == "Couverture":
                     marker=dict(
                         color=repartition_types["Part du parc"],
                         colorscale=[
-                            [0.0, "#EAF5FF"],
-                            [0.5, "#80CDFF"],
-                            [1.0, "#173B69"],
+                            [0.0, "#F0ECFF"],
+                            [0.35, "#C7B9FF"],
+                            [0.68, "#7A67E8"],
+                            [1.0, "#3422A6"],
                         ],
                         showscale=False,
-                        line=dict(color="#FFFFFF", width=1),
+                        line=dict(color="#FFFFFF", width=1.5),
                     ),
                     hovertemplate=(
                         "<b>%{y}</b><br>"
@@ -4678,9 +4679,9 @@ elif vue_active == "Couverture":
             )
         else:
             couleurs_couverture = {
-                "Aucun équipement avec contrat": "#D8E4F0",
-                "Une partie des équipements avec contrat": "#80CDFF",
-                "Tous les équipements avec contrat": "#173B69",
+                "Aucun équipement avec contrat": "#F2D7E2",
+                "Une partie des équipements avec contrat": "#FFD36E",
+                "Tous les équipements avec contrat": "#4AAE8A",
             }
             fig_couverture_equipements = go.Figure(
                 go.Pie(
@@ -4810,9 +4811,10 @@ elif vue_active == "Couverture":
                 marker=dict(
                     color=presence_metiers["Taux"],
                     colorscale=[
-                        [0.0, "#DCEEFF"],
-                        [0.45, "#80CDFF"],
-                        [1.0, "#173B69"],
+                        [0.0, "#FFE8F2"],
+                        [0.35, "#FFB7D1"],
+                        [0.68, "#E66AA2"],
+                        [1.0, "#A83A73"],
                     ],
                     showscale=False,
                     line=dict(color="#FFFFFF", width=1),
