@@ -1929,6 +1929,167 @@ def apply_vue_globale_style():
             white-space: nowrap;
         }
 
+
+        /* COUVERTURE DES ÉQUIPEMENTS */
+        .vg-equipment-coverage {
+            display: grid;
+            grid-template-columns: minmax(0, 1.35fr) minmax(230px, 0.85fr);
+            align-items: stretch;
+            gap: 18px;
+            margin-top: 2px;
+        }
+
+        .vg-equipment-coverage-main,
+        .vg-equipment-stat {
+            box-sizing: border-box;
+            background: #FFFFFF;
+            border: 1px solid var(--border);
+            border-radius: 18px;
+            box-shadow: 0 8px 20px -18px rgba(27, 36, 48, 0.22);
+        }
+
+        .vg-equipment-coverage-main {
+            display: flex;
+            min-height: 388px;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 24px 22px 21px;
+        }
+
+        .vg-equipment-gauge {
+            --coverage: 0%;
+            position: relative;
+            display: grid;
+            width: clamp(210px, 24vw, 285px);
+            aspect-ratio: 1;
+            place-items: center;
+            border-radius: 50%;
+            background:
+                conic-gradient(
+                    from 0deg,
+                    #E5114D 0 var(--coverage),
+                    #F0EEE8 var(--coverage) 100%
+                );
+            transform: rotate(-90deg);
+        }
+
+        .vg-equipment-gauge::after {
+            content: "";
+            position: absolute;
+            inset: 17px;
+            border-radius: 50%;
+            background: #FFFFFF;
+            box-shadow: inset 0 0 0 1px rgba(23, 59, 105, 0.04);
+        }
+
+        .vg-equipment-gauge-inner {
+            position: relative;
+            z-index: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            transform: rotate(90deg);
+            text-align: center;
+        }
+
+        .vg-equipment-gauge-rate {
+            color: #E5114D;
+            font-size: clamp(40px, 4.3vw, 60px);
+            font-weight: 850;
+            letter-spacing: -2px;
+            line-height: 0.98;
+        }
+
+        .vg-equipment-gauge-label {
+            margin-top: 7px;
+            color: #5B5B5B;
+            font-size: 15px;
+            font-weight: 650;
+        }
+
+        .vg-equipment-gauge-total {
+            width: 100%;
+            margin-top: 15px;
+            color: #173B69;
+            font-size: 18px;
+            font-weight: 800;
+            text-align: left;
+        }
+
+        .vg-equipment-gauge-note {
+            display: flex;
+            width: 100%;
+            align-items: center;
+            gap: 9px;
+            margin-top: 8px;
+            color: #667085;
+            font-size: 12px;
+            font-weight: 600;
+            line-height: 1.35;
+        }
+
+        .vg-equipment-gauge-dot {
+            width: 9px;
+            height: 9px;
+            flex: 0 0 auto;
+            border-radius: 50%;
+            background: #2F7C6D;
+        }
+
+        .vg-equipment-coverage-stats {
+            display: grid;
+            grid-template-rows: 1fr 1fr;
+            gap: 18px;
+        }
+
+        .vg-equipment-stat {
+            display: flex;
+            min-height: 184px;
+            flex-direction: column;
+            justify-content: center;
+            padding: 24px 27px;
+        }
+
+        .vg-equipment-stat-covered {
+            background: #FFF5F8;
+            border: 2px solid #E5114D;
+        }
+
+        .vg-equipment-stat-uncovered {
+            background: #FFFFFF;
+            border-color: #DDDAD1;
+        }
+
+        .vg-equipment-stat-label {
+            color: #173B69;
+            font-size: 15px;
+            font-weight: 800;
+            letter-spacing: 0.2px;
+        }
+
+        .vg-equipment-stat-value {
+            margin-top: 14px;
+            color: #173B69;
+            font-size: clamp(38px, 4vw, 56px);
+            font-weight: 850;
+            letter-spacing: -1.5px;
+            line-height: 1;
+        }
+
+        .vg-equipment-stat-covered .vg-equipment-stat-value {
+            color: #E5114D;
+        }
+
+        .vg-equipment-stat-help {
+            margin-top: 18px;
+            color: #5F6368;
+            font-size: 14px;
+            font-weight: 600;
+            line-height: 1.35;
+        }
+
         .vg-drilldown-summary {
             display: flex;
             flex-wrap: wrap;
@@ -1944,6 +2105,47 @@ def apply_vue_globale_style():
             border-radius: 999px;
             font-size: 10.5px;
             font-weight: 700;
+        }
+
+        @media screen and (max-width: 1050px) {
+            .vg-equipment-coverage {
+                grid-template-columns: 1fr;
+            }
+
+            .vg-equipment-coverage-stats {
+                grid-template-columns: 1fr 1fr;
+                grid-template-rows: none;
+            }
+
+            .vg-equipment-stat {
+                min-height: 155px;
+            }
+        }
+
+        @media screen and (max-width: 620px) {
+            .vg-equipment-coverage-main {
+                min-height: 340px;
+                padding: 20px 16px;
+            }
+
+            .vg-equipment-coverage-stats {
+                grid-template-columns: 1fr;
+            }
+
+            .vg-equipment-stat {
+                min-height: 135px;
+                padding: 20px;
+            }
+
+            .vg-equipment-gauge {
+                width: min(235px, 76vw);
+            }
+
+            .vg-equipment-gauge-total,
+            .vg-equipment-gauge-note {
+                text-align: center;
+                justify-content: center;
+            }
         }
 
         @media screen and (max-width: 900px) {
