@@ -770,6 +770,91 @@ def inject_style():
             align-items: stretch !important;
         }
 
+
+        /* BLOCS COUVERTURE RESPONSIVES */
+        .vg-chart-intro {
+            display: flex;
+            align-items: flex-start;
+            justify-content: space-between;
+            gap: 18px;
+            margin: 2px 0 12px 0;
+        }
+
+        .vg-chart-question {
+            color: var(--text-main);
+            font-size: 14px;
+            font-weight: 750;
+            line-height: 1.35;
+        }
+
+        .vg-chart-base {
+            flex: 0 0 auto;
+            padding: 5px 9px;
+            color: var(--navy);
+            background: #EFF7FC;
+            border: 1px solid #D9EAF5;
+            border-radius: 999px;
+            font-size: 10.5px;
+            font-weight: 700;
+            white-space: nowrap;
+        }
+
+        .vg-coverage-legend {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 8px;
+            margin-top: 10px;
+        }
+
+        .vg-coverage-legend-item {
+            display: grid;
+            grid-template-columns: 11px minmax(0, 1fr) auto;
+            align-items: center;
+            gap: 9px;
+            padding: 8px 10px;
+            background: #FFFFFF;
+            border: 1px solid var(--border);
+            border-radius: 10px;
+        }
+
+        .vg-coverage-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background: var(--dot);
+        }
+
+        .vg-coverage-label {
+            color: var(--text-soft);
+            font-size: 11px;
+            font-weight: 650;
+            line-height: 1.25;
+        }
+
+        .vg-coverage-value {
+            color: var(--text-main);
+            font-size: 11px;
+            font-weight: 800;
+            white-space: nowrap;
+        }
+
+        .vg-drilldown-summary {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin: 5px 0 13px 0;
+        }
+
+        .vg-drilldown-pill {
+            padding: 6px 9px;
+            color: var(--navy);
+            background: #F4F8FB;
+            border: 1px solid #DFEAF2;
+            border-radius: 999px;
+            font-size: 10.5px;
+            font-weight: 700;
+        }
+
         @media screen and (max-width: 900px) {
             .block-container {
                 padding-left: 1rem !important;
@@ -1792,11 +1877,11 @@ def construire_couverture_reelle_equipements(
         )
     )
 
-    par_esi["Niveau de couverture"] = "Partiellement couvert"
+    par_esi["Niveau de couverture"] = "Une partie des équipements avec contrat"
     par_esi.loc[
         par_esi["nb_equipements_couverts"] == 0,
         "Niveau de couverture",
-    ] = "Aucun équipement couvert"
+    ] = "Aucun équipement avec contrat"
     par_esi.loc[
         (
             par_esi["nb_equipements"] > 0
@@ -1806,12 +1891,12 @@ def construire_couverture_reelle_equipements(
             == par_esi["nb_equipements"]
         ),
         "Niveau de couverture",
-    ] = "Tous les équipements couverts"
+    ] = "Tous les équipements avec contrat"
 
     ordre = [
-        "Aucun équipement couvert",
-        "Partiellement couvert",
-        "Tous les équipements couverts",
+        "Aucun équipement avec contrat",
+        "Une partie des équipements avec contrat",
+        "Tous les équipements avec contrat",
     ]
 
     resultat = (
@@ -4594,17 +4679,26 @@ elif vue_active == "Couverture":
     st.markdown("<br>", unsafe_allow_html=True)
     section(
         "Équipements du patrimoine",
-        "Quels équipements sont présents et quelle part possède réellement un contrat rattaché ?",
+        "Quels équipements sont présents et, parmi les ESI équipés, lesquels disposent réellement de contrats sur leurs équipements ?",
     )
-    st.markdown("<br>", unsafe_allow_html=True)
+
     col_types, col_couverture_equipements = st.columns(
-        [1.25, 0.85],
+        [1.3, 0.9],
         gap="large",
     )
 
     with col_types:
         st.markdown(
-            '<div class="vg-mini-title">Quels équipements trouve-t-on dans le patrimoine ?</div>',
+            f"""
+            <div class="vg-chart-intro">
+                <div class="vg-chart-question">
+                    Quels types d’équipement trouve-t-on dans le patrimoine ?
+                </div>
+                <div class="vg-chart-base">
+                    {fmt_nombre(int(repartition_types["Équipements"].sum()) if not repartition_types.empty else 0)} équipements
+                </div>
+            </div>
+            """,
             unsafe_allow_html=True,
         )
 
@@ -4624,16 +4718,14 @@ elif vue_active == "Couverture":
                     y=repartition_types["Type d’équipement"],
                     orientation="h",
                     text=[
-                        (
-                            f"{fmt_nombre(nb)} · "
-                            f"{fmt_pourcentage(part)}"
-                        )
+                        f"{fmt_nombre(nb)} · {fmt_pourcentage(part)}"
                         for nb, part in zip(
                             repartition_types["Équipements"],
                             repartition_types["Part du parc"],
                         )
                     ],
                     textposition="outside",
+                    cliponaxis=False,
                     customdata=repartition_types[
                         ["ESI", "Part du parc"]
                     ].to_numpy(),
@@ -4649,15 +4741,15 @@ elif vue_active == "Couverture":
                     hovertemplate=(
                         "<b>%{y}</b><br>"
                         "Équipements : %{x:,}<br>"
-                        "ESI concernés : %{customdata[0]:,}<br>"
+                        "Présents sur %{customdata[0]:,} ESI<br>"
                         "Part du parc : %{customdata[1]:.1f} %"
                         "<extra></extra>"
                     ),
                 )
             )
             hauteur_types = max(
-                420,
-                min(650, 35 * len(repartition_types) + 120),
+                380,
+                min(590, 39 * len(repartition_types) + 105),
             )
             _layout_plotly(fig_types, hauteur_types)
             fig_types.update_layout(
@@ -4665,14 +4757,15 @@ elif vue_active == "Couverture":
                     title="Nombre d’équipements",
                     gridcolor=C_GRID,
                     tickfont=dict(size=11),
+                    rangemode="tozero",
                 ),
                 yaxis=dict(
                     title=None,
                     automargin=True,
                     tickfont=dict(size=11.5),
                 ),
-                margin=dict(l=15, r=105, t=15, b=55),
-                bargap=0.3,
+                margin=dict(l=18, r=112, t=10, b=50),
+                bargap=0.34,
                 showlegend=False,
             )
             st.plotly_chart(
@@ -4682,8 +4775,21 @@ elif vue_active == "Couverture":
             )
 
     with col_couverture_equipements:
+        total_esi_equipes = int(
+            couverture_equipements["ESI"].sum()
+        ) if not couverture_equipements.empty else 0
+
         st.markdown(
-            '<div class="vg-mini-title">Les équipements sont-ils couverts ?</div>',
+            f"""
+            <div class="vg-chart-intro">
+                <div class="vg-chart-question">
+                    Les équipements des ESI sont-ils couverts ?
+                </div>
+                <div class="vg-chart-base">
+                    {fmt_nombre(total_esi_equipes)} ESI équipés
+                </div>
+            </div>
+            """,
             unsafe_allow_html=True,
         )
 
@@ -4702,16 +4808,17 @@ elif vue_active == "Couverture":
                 "Une partie des équipements avec contrat": "#F4D84E",
                 "Tous les équipements avec contrat": "#2F7C6D",
             }
+
             fig_couverture_equipements = go.Figure(
                 go.Pie(
-                    labels=couverture_equipements[
-                        "Niveau de couverture"
-                    ],
+                    labels=couverture_equipements["Niveau de couverture"],
                     values=couverture_equipements["ESI"],
-                    hole=0.60,
+                    hole=0.67,
                     sort=False,
+                    direction="clockwise",
                     textinfo="percent",
-                    textfont=dict(size=13),
+                    textposition="inside",
+                    textfont=dict(size=13, color="#FFFFFF"),
                     marker=dict(
                         colors=[
                             couleurs_couverture.get(label, C_NAVY)
@@ -4719,7 +4826,7 @@ elif vue_active == "Couverture":
                                 "Niveau de couverture"
                             ]
                         ],
-                        line=dict(color="#FFFFFF", width=3),
+                        line=dict(color="#FFFFFF", width=4),
                     ),
                     customdata=couverture_equipements["Taux"],
                     hovertemplate=(
@@ -4731,9 +4838,6 @@ elif vue_active == "Couverture":
                 )
             )
 
-            total_esi_equipes = int(
-                couverture_equipements["ESI"].sum()
-            )
             fig_couverture_equipements.add_annotation(
                 text=(
                     f"<b>{fmt_nombre(total_esi_equipes)}</b>"
@@ -4742,20 +4846,12 @@ elif vue_active == "Couverture":
                 x=0.5,
                 y=0.5,
                 showarrow=False,
-                font=dict(color=C_INK, size=19),
+                font=dict(color=C_INK, size=20),
             )
-            _layout_plotly(fig_couverture_equipements, 470)
+            _layout_plotly(fig_couverture_equipements, 370)
             fig_couverture_equipements.update_layout(
-                showlegend=True,
-                legend=dict(
-                    orientation="h",
-                    yanchor="top",
-                    y=-0.08,
-                    xanchor="center",
-                    x=0.5,
-                    font=dict(size=11),
-                ),
-                margin=dict(l=10, r=10, t=20, b=110),
+                showlegend=False,
+                margin=dict(l=15, r=15, t=5, b=5),
             )
             st.plotly_chart(
                 fig_couverture_equipements,
@@ -4763,6 +4859,29 @@ elif vue_active == "Couverture":
                 config=config_plotly(
                     "couverture_reelle_des_equipements"
                 ),
+            )
+
+            lignes_legende = []
+            for _, ligne in couverture_equipements.iterrows():
+                label = str(ligne["Niveau de couverture"])
+                couleur = couleurs_couverture.get(label, C_NAVY)
+                lignes_legende.append(
+                    f"""
+                    <div class="vg-coverage-legend-item">
+                        <span class="vg-coverage-dot" style="--dot:{couleur};"></span>
+                        <span class="vg-coverage-label">{_safe(label)}</span>
+                        <span class="vg-coverage-value">
+                            {fmt_nombre(ligne["ESI"])} · {fmt_pourcentage(ligne["Taux"])}
+                        </span>
+                    </div>
+                    """
+                )
+
+            st.markdown(
+                '<div class="vg-coverage-legend">'
+                + "".join(lignes_legende)
+                + "</div>",
+                unsafe_allow_html=True,
             )
 
         statut_couverture = (
@@ -4773,10 +4892,129 @@ elif vue_active == "Couverture":
             else "tous les contrats rattachés"
         )
         st.caption(
-            f"Lecture selon les {statut_couverture}. "
-            "« Une partie des équipements avec contrat » signifie que certains équipements de l’ESI ont un contrat, mais pas tous."
+            f"Lecture selon les {statut_couverture}. Une couverture partielle signifie "
+            "que certains équipements de l’ESI possèdent un contrat, mais pas tous."
         )
 
+    # -----------------------------------------------------
+    # DRILL-DOWN ÉQUIPEMENTS
+    # -----------------------------------------------------
+    with st.expander(
+        "Explorer les équipements",
+        expanded=False,
+    ):
+        options_types = (
+            repartition_types["Type d’équipement"]
+            .astype(str)
+            .tolist()
+            if not repartition_types.empty
+            else []
+        )
+        options_types = [
+            option for option in options_types
+            if option != "Autres types"
+        ]
+
+        type_selectionne = st.selectbox(
+            "Type d’équipement",
+            ["Tous les types"] + options_types,
+            key="coverage_drilldown_type_equipement",
+        )
+
+        detail_equipements = df_equipements_couverture_kpi.copy()
+        colonne_type_detail = next(
+            (
+                candidate
+                for candidate in [
+                    "equipment_type",
+                    "equipment_asset_type",
+                ]
+                if candidate in detail_equipements.columns
+            ),
+            None,
+        )
+
+        if (
+            type_selectionne != "Tous les types"
+            and colonne_type_detail is not None
+        ):
+            detail_equipements = detail_equipements[
+                detail_equipements[colonne_type_detail]
+                .fillna("Non renseigné")
+                .astype(str)
+                .str.strip()
+                == type_selectionne
+            ].copy()
+
+        detail_equipements = detail_equipements.drop_duplicates(
+            "equipment_reference"
+        ) if "equipment_reference" in detail_equipements.columns else detail_equipements
+
+        colonnes_detail = {
+            "societe": "Société",
+            "agence": "Agence",
+            "groupe": "Groupe",
+            "secteur": "Secteur",
+            "esi_reference": "Référence ESI",
+            "esi_label": "Libellé ESI",
+            "equipment_reference": "Référence équipement",
+            "equipment_label": "Libellé équipement",
+            "equipment_type": "Type d’équipement",
+            "equipment_asset_type": "Famille d’équipement",
+            "nb_contrats_total": "Contrats rattachés",
+            "nb_contrats_actifs_valides": "Contrats actifs valides",
+            "nb_contrats_inactifs": "Contrats inactifs",
+        }
+        disponibles = [
+            colonne for colonne in colonnes_detail
+            if colonne in detail_equipements.columns
+        ]
+        table_detail_equipements = (
+            detail_equipements[disponibles]
+            .rename(columns=colonnes_detail)
+            .copy()
+        )
+
+        nb_detail_equipements = (
+            table_detail_equipements["Référence équipement"].nunique()
+            if "Référence équipement" in table_detail_equipements.columns
+            else len(table_detail_equipements)
+        )
+        nb_detail_esi = (
+            table_detail_equipements["Référence ESI"].nunique()
+            if "Référence ESI" in table_detail_equipements.columns
+            else 0
+        )
+
+        st.markdown(
+            f"""
+            <div class="vg-drilldown-summary">
+                <span class="vg-drilldown-pill">
+                    {fmt_nombre(nb_detail_equipements)} équipements
+                </span>
+                <span class="vg-drilldown-pill">
+                    {fmt_nombre(nb_detail_esi)} ESI concernés
+                </span>
+                <span class="vg-drilldown-pill">
+                    {_safe(type_selectionne)}
+                </span>
+            </div>
+            """,
+            unsafe_allow_html=True,
+        )
+
+        st.dataframe(
+            table_detail_equipements,
+            width="stretch",
+            hide_index=True,
+            height=420,
+        )
+        dataframe_download(
+            "Télécharger le détail en Excel",
+            table_detail_equipements,
+            "detail_equipements.xlsx",
+            cle="export_detail_equipements",
+        )
 
 
     # =====================================================
@@ -4847,8 +5085,8 @@ elif vue_active == "Couverture":
             )
         )
         hauteur_metiers = max(
-            430,
-            min(720, 34 * len(presence_metiers) + 125),
+            390,
+            min(620, 35 * len(presence_metiers) + 95),
         )
         _layout_plotly(fig_metiers, hauteur_metiers)
         fig_metiers.update_layout(
@@ -4870,7 +5108,7 @@ elif vue_active == "Couverture":
                 automargin=True,
                 tickfont=dict(size=12),
             ),
-            margin=dict(l=20, r=150, t=20, b=55),
+            margin=dict(l=24, r=135, t=12, b=50),
             bargap=0.34,
             showlegend=False,
         )
@@ -4884,6 +5122,87 @@ elif vue_active == "Couverture":
         "Lecture : chaque barre répond à la question « sur combien d’ESI ce métier est-il présent ? ». "
         "Le pourcentage indique la part correspondante dans le périmètre."
     )
+
+
+    with st.expander(
+        "Explorer un métier",
+        expanded=False,
+    ):
+        liste_metiers = (
+            presence_metiers["Métier"].astype(str).tolist()
+            if not presence_metiers.empty
+            else []
+        )
+        metier_selectionne = st.selectbox(
+            "Métier",
+            liste_metiers,
+            key="coverage_drilldown_metier",
+        ) if liste_metiers else None
+
+        if metier_selectionne:
+            detail_metier = df_contrats_kpi[
+                df_contrats_kpi["contract_topic"]
+                .fillna("Non renseigné")
+                .astype(str)
+                .str.strip()
+                == metier_selectionne
+            ].copy()
+
+            detail_metier = detail_metier.drop_duplicates(
+                ["esi_reference", "contract_reference"]
+            )
+
+            colonnes_metier = {
+                "societe": "Société",
+                "agence": "Agence",
+                "groupe": "Groupe",
+                "secteur": "Secteur",
+                "esi_reference": "Référence ESI",
+                "esi_label": "Libellé ESI",
+                "contract_reference": "Référence contrat",
+                "contract_label": "Libellé contrat",
+                "contract_status": "Statut",
+                "third_party_label": "Prestataire",
+            }
+            disponibles_metier = [
+                colonne for colonne in colonnes_metier
+                if colonne in detail_metier.columns
+            ]
+            table_detail_metier = (
+                detail_metier[disponibles_metier]
+                .rename(columns=colonnes_metier)
+                .copy()
+            )
+
+            st.markdown(
+                f"""
+                <div class="vg-drilldown-summary">
+                    <span class="vg-drilldown-pill">
+                        {fmt_nombre(detail_metier["esi_reference"].nunique())} ESI
+                    </span>
+                    <span class="vg-drilldown-pill">
+                        {fmt_nombre(detail_metier["contract_reference"].nunique())} contrats
+                    </span>
+                    <span class="vg-drilldown-pill">
+                        {_safe(metier_selectionne)}
+                    </span>
+                </div>
+                """,
+                unsafe_allow_html=True,
+            )
+
+            st.dataframe(
+                table_detail_metier,
+                width="stretch",
+                hide_index=True,
+                height=420,
+            )
+            dataframe_download(
+                "Télécharger le détail en Excel",
+                table_detail_metier,
+                "detail_metier.xlsx",
+                cle="export_detail_metier",
+            )
 
 
 
