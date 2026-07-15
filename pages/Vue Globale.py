@@ -930,7 +930,7 @@ def libelle_mois_fr(date_value) -> str:
 
 
 PLOTLY_FR_DICTIONARY = {
-    "Download plot as a png": "Télécharger le graphique en PNG",
+    "Download plot as a PNG": "Télécharger en PNG",
     "Download plot": "Télécharger le graphique",
     "Zoom": "Zoomer",
     "Pan": "Déplacer",
