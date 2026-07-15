@@ -1,5 +1,5 @@
 from pathlib import Path
-
+from textwrap import dedent
 import pandas as pd
 import streamlit as st
 
@@ -530,11 +530,6 @@ def construire_graph_qualite(df_resume: pd.DataFrame, df_qualite: pd.DataFrame):
 # PAGE
 # =====================================================
 
-hero(
-    "Pilotage du patrimoine",
-    "Une lecture en trois temps : réalité source, couverture exploitable, puis anomalies à corriger.",
-)
-
 ok, erreur = tester_connexion()
 if not ok:
     st.error("Connexion PostgreSQL impossible.")
@@ -560,21 +555,26 @@ with refresh_col:
 
 chargement_placeholder = st.empty()
 chargement_placeholder.markdown(
-    """
-    <div class="vg-loading-card">
-        <div class="vg-loading-mark">
-            <span></span>
-            <span></span>
-            <span></span>
-        </div>
-        <div>
-            <div class="vg-loading-title">Chargement du patrimoine</div>
-            <div class="vg-loading-subtitle">
-                Préparation des données, des filtres et des indicateurs…
+    dedent(
+        """
+        <div class="vg-loading-shell">
+            <div class="vg-loading-card">
+                <div class="vg-loading-logo">3F</div>
+                <div class="vg-loading-content">
+                    <div class="vg-loading-title">
+                        Chargement du patrimoine
+                    </div>
+                    <div class="vg-loading-subtitle">
+                        Préparation des données et des indicateurs…
+                    </div>
+                    <div class="vg-loading-progress">
+                        <span></span>
+                    </div>
+                </div>
             </div>
         </div>
-    </div>
-    """,
+        """
+    ).strip(),
     unsafe_allow_html=True,
 )
 
@@ -595,12 +595,18 @@ except Exception as exc:
     st.error("Erreur pendant le chargement des données.")
     st.code(str(exc))
     st.stop()
-finally:
+else:
     chargement_placeholder.empty()
 
 if df_global.empty:
     st.error("La table dashboard.kpi_globale est vide.")
     st.stop()
+
+hero(
+    "Pilotage du patrimoine",
+    "Une lecture en trois temps : réalité source, couverture exploitable, puis anomalies à corriger.",
+)
+
 
 # Filtres patrimoine dans la barre latérale.
 df_esi_filtre, df_contrats_filtre, filtres_selectionnes = render_filtres_patrimoine(
@@ -1270,7 +1276,7 @@ if vue_active == "Vue globale":
             "</div>"
             '<div class="vg-table-summary-separator"></div>'
             '<div class="vg-table-summary-item">'
-            f'<span class="vg-table-summary-value">{fmt_nombre(nb_contrats_resultat)}</span>'
+            f'<span class="vg-table-summary-value">{fmt_nombre(nb_lignes_resultat)}</span>'
             f'<span class="vg-table-summary-label">{libelle_lignes}</span>'
             "</div>"
             f'<div class="vg-table-summary-mode">{mode_tableau}</div>'
@@ -2287,9 +2293,12 @@ elif vue_active == "Couverture":
                     ]
                 )
 
-                taux_css = max(0.0, min(100.0, taux_avec_contrat))
+                taux_css = max(
+                    0.0,
+                    min(100.0, taux_avec_contrat),
+                )
 
-                st.markdown(
+                couverture_html = dedent(
                     f"""
                     <div class="vg-equipment-coverage">
                         <div class="vg-equipment-coverage-main">
@@ -2312,7 +2321,6 @@ elif vue_active == "Couverture":
                             </div>
 
                             <div class="vg-equipment-gauge-note">
-                                <span class="vg-equipment-gauge-dot"></span>
                                 Contrat directement rattaché dans Intent
                             </div>
                         </div>
@@ -2343,7 +2351,11 @@ elif vue_active == "Couverture":
                             </div>
                         </div>
                     </div>
-                    """,
+                    """
+                ).strip()
+
+                st.markdown(
+                    couverture_html,
                     unsafe_allow_html=True,
                 )
 
