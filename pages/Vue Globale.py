@@ -1567,7 +1567,7 @@ def afficher_couverture(df_couverture: pd.DataFrame):
     )
 
 
-def construire_graph_metier(df_contrats: pd.DataFrame, top_n=12):
+def construire_graph_metier(df_contrats: pd.DataFrame, top_n=20):
     if df_contrats.empty:
         return pd.DataFrame(columns=["Métier", "Contrats"])
 
