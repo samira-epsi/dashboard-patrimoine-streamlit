@@ -3827,6 +3827,236 @@ elif vue_active == "Couverture":
         )
 
 
+    # =====================================================
+    # SITUATION ACTUELLE DES ESI
+    # =====================================================
+
+    st.markdown("<br>", unsafe_allow_html=True)
+    section(
+        "Situation actuelle des ESI",
+        "Équipements, couverture contractuelle réelle et complexité des rattachements sur le périmètre sélectionné.",
+    )
+
+    df_esi_situation = dedupliquer_esi(df_esi_context)
+    total_esi_situation = len(
+        liste_refs_valides(df_esi_situation, "esi_reference")
+    )
+
+    def compter_indicateur(colonne: str) -> int:
+        return int(
+            (
+                serie_numerique(
+                    df_esi_situation,
+                    colonne,
+                ) > 0
+            ).sum()
+        )
+
+    def pourcentage_esi(nombre: int) -> str:
+        taux = (
+            nombre / total_esi_situation * 100
+            if total_esi_situation
+            else 0
+        )
+        return fmt_pourcentage(taux)
+
+    nb_esi_avec_equipement = compter_indicateur(
+        "esi_avec_equipement"
+    )
+    nb_esi_sans_equipement = compter_indicateur(
+        "esi_sans_equipement"
+    )
+
+    # Le lien équipement → contrat reste un lien réel issu d’Intent.
+    if statut_selectionne == "active":
+        colonne_avec_contrat_equipement = (
+            "esi_avec_equipement_couvert_valide"
+        )
+        colonne_sans_contrat_equipement = (
+            "esi_avec_equipement_sans_couverture_valide"
+        )
+        colonne_sans_contrat_programme = "esi_sans_contrat_valide"
+        colonne_multi_metier = "esi_multi_meme_metier_valide"
+        colonne_moyenne_contrats = "nb_contrats_actifs_valides"
+        libelle_contrat_equipement = (
+            "ESI avec équipement et contrat actif valide"
+        )
+        aide_contrat_equipement = (
+            "Au moins un équipement possède un contrat actif "
+            "dont la date de fin n’est pas dépassée."
+        )
+        aide_sans_contrat_equipement = (
+            "ESI équipé sans couverture active valide sur ses équipements."
+        )
+        aide_sans_contrat_programme = (
+            "Aucun contrat actif valide rattaché au programme."
+        )
+
+    elif statut_selectionne == "inactive":
+        # Les ESI sont déjà limités au périmètre des contrats inactifs
+        # par les filtres communs. La présence équipement-contrat reste
+        # fondée sur le lien réel disponible dans Intent.
+        colonne_avec_contrat_equipement = (
+            "esi_avec_equipement_et_contrat"
+        )
+        colonne_sans_contrat_equipement = (
+            "esi_avec_equipement_sans_contrat_equipement"
+        )
+        colonne_sans_contrat_programme = "esi_sans_aucun_contrat"
+        colonne_multi_metier = "esi_multi_meme_metier"
+        colonne_moyenne_contrats = "nb_contrats_inactifs"
+        libelle_contrat_equipement = (
+            "ESI avec équipement et contrat rattaché"
+        )
+        aide_contrat_equipement = (
+            "Lien direct équipement → contrat dans le périmètre "
+            "des ESI concernés par des contrats inactifs."
+        )
+        aide_sans_contrat_equipement = (
+            "ESI équipé sans aucun contrat directement rattaché "
+            "aux équipements."
+        )
+        aide_sans_contrat_programme = (
+            "Aucun contrat rattaché au programme."
+        )
+
+    else:
+        colonne_avec_contrat_equipement = (
+            "esi_avec_equipement_et_contrat"
+        )
+        colonne_sans_contrat_equipement = (
+            "esi_avec_equipement_sans_contrat_equipement"
+        )
+        colonne_sans_contrat_programme = "esi_sans_aucun_contrat"
+        colonne_multi_metier = "esi_multi_meme_metier"
+        colonne_moyenne_contrats = "nb_contrats_total"
+        libelle_contrat_equipement = (
+            "ESI avec équipement et contrat rattaché"
+        )
+        aide_contrat_equipement = (
+            "Au moins un équipement possède un contrat directement "
+            "rattaché dans Intent."
+        )
+        aide_sans_contrat_equipement = (
+            "ESI équipé sans aucun contrat directement rattaché "
+            "aux équipements."
+        )
+        aide_sans_contrat_programme = (
+            "Aucun contrat actif ou inactif rattaché au programme."
+        )
+
+    nb_esi_avec_contrat_equipement = compter_indicateur(
+        colonne_avec_contrat_equipement
+    )
+    nb_esi_sans_contrat_equipement = compter_indicateur(
+        colonne_sans_contrat_equipement
+    )
+    nb_esi_sans_contrat_programme = compter_indicateur(
+        colonne_sans_contrat_programme
+    )
+    nb_esi_multi_metier = compter_indicateur(
+        colonne_multi_metier
+    )
+
+    moyenne_contrats_esi = (
+        float(
+            serie_numerique(
+                df_esi_situation,
+                colonne_moyenne_contrats,
+            ).mean()
+        )
+        if total_esi_situation
+        else 0.0
+    )
+
+    # Ligne principale : les quatre informations essentielles.
+    s1, s2, s3, s4 = st.columns(4)
+
+    with s1:
+        kpi_card(
+            "ESI avec équipement",
+            nb_esi_avec_equipement,
+            pourcentage_esi(nb_esi_avec_equipement),
+            "Au moins un équipement est enregistré sur l’ESI.",
+            accent=C_NAVY,
+        )
+
+    with s2:
+        kpi_card(
+            "ESI sans équipement",
+            nb_esi_sans_equipement,
+            pourcentage_esi(nb_esi_sans_equipement),
+            "Aucun équipement n’est enregistré sur l’ESI.",
+            accent=C_BLUE_LIGHT,
+        )
+
+    with s3:
+        kpi_card(
+            libelle_contrat_equipement,
+            nb_esi_avec_contrat_equipement,
+            pourcentage_esi(nb_esi_avec_contrat_equipement),
+            aide_contrat_equipement,
+            accent=C_RED,
+        )
+
+    with s4:
+        kpi_card(
+            "ESI équipés sans contrat équipement",
+            nb_esi_sans_contrat_equipement,
+            pourcentage_esi(nb_esi_sans_contrat_equipement),
+            aide_sans_contrat_equipement,
+            accent=C_PINK,
+        )
+
+    # Ligne secondaire : les indicateurs de vigilance et de complexité.
+    st.markdown("<br>", unsafe_allow_html=True)
+    secondaire_1, secondaire_2, secondaire_3 = st.columns(3)
+
+    with secondaire_1:
+        kpi_card(
+            "ESI sans contrat programme",
+            nb_esi_sans_contrat_programme,
+            pourcentage_esi(nb_esi_sans_contrat_programme),
+            aide_sans_contrat_programme,
+            accent=C_YELLOW,
+            compact=True,
+        )
+
+    with secondaire_2:
+        kpi_card(
+            "Plusieurs contrats sur le même métier",
+            nb_esi_multi_metier,
+            pourcentage_esi(nb_esi_multi_metier),
+            "Au moins deux contrats sont rattachés au même métier sur l’ESI.",
+            accent=C_VIOLET,
+            compact=True,
+        )
+
+    with secondaire_3:
+        moyenne_affichee = (
+            f"{moyenne_contrats_esi:.2f}".replace(".", ",")
+        )
+        st.markdown(
+            f"""
+            <div class="vg-card vg-card-compact"
+                 style="--accent:{C_TEAL};">
+                <div class="vg-card-accent"></div>
+                <div class="vg-card-label">
+                    Nombre moyen de contrats par ESI
+                </div>
+                <div class="vg-card-value">
+                    {_safe(moyenne_affichee)}
+                </div>
+                <div class="vg-card-help">
+                    Moyenne sur l’ensemble des ESI du périmètre,
+                    y compris ceux ayant zéro contrat.
+                </div>
+            </div>
+            """,
+            unsafe_allow_html=True,
+        )
+
+
 # =====================================================
 # VUE 3 — QUALITÉ ET ANOMALIES
 # =====================================================
