@@ -2316,13 +2316,7 @@ elif vue_active == "Couverture":
                                 </div>
                             </div>
 
-                            <div class="vg-equipment-gauge-total">
-                                {fmt_nombre(nb_avec_contrat)} équipements
-                            </div>
 
-                            <div class="vg-equipment-gauge-note">
-                                Contrat directement rattaché dans Intent
-                            </div>
                         </div>
 
                         <div class="vg-equipment-coverage-stats">
