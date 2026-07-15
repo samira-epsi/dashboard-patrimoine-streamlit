@@ -4550,6 +4550,22 @@ elif vue_active == "Couverture":
         "Les ESI sans contrat sont conservés avec la valeur zéro."
     )
 
+    presence_metiers = construire_presence_metiers(
+        df_contrats=df_contrats_kpi,
+        total_esi=total_esi_situation,
+        top_n=15,
+    )
+
+    repartition_types = construire_repartition_types_equipement(
+        df_equipements=df_equipements_couverture_kpi,
+        top_n=12,
+    )
+
+    couverture_equipements = construire_couverture_reelle_equipements(
+        df_equipements=df_equipements_couverture_kpi,
+        statut=statut_selectionne,
+    )
+
     # =====================================================
     # ÉQUIPEMENTS DU PATRIMOINE
     # =====================================================
@@ -4751,22 +4767,6 @@ elif vue_active == "Couverture":
     section(
         "Contrats par métier",
         "Pour chaque métier, on compte les ESI qui possèdent au moins un contrat de ce métier.",
-    )
-
-    presence_metiers = construire_presence_metiers(
-        df_contrats=df_contrats_kpi,
-        total_esi=total_esi_situation,
-        top_n=15,
-    )
-
-    repartition_types = construire_repartition_types_equipement(
-        df_equipements=df_equipements_couverture_kpi,
-        top_n=12,
-    )
-
-    couverture_equipements = construire_couverture_reelle_equipements(
-        df_equipements=df_equipements_couverture_kpi,
-        statut=statut_selectionne,
     )
 
     # -----------------------------------------------------
