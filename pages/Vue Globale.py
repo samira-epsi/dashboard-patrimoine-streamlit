@@ -1261,12 +1261,12 @@ if vue_active == "Vue globale":
         resume_html = (
             '<div class="vg-table-summary">'
             '<div class="vg-table-summary-item">'
-            f'<span class="vg-table-summary-value">{format_nombre(nb_contrats_resultat)}</span>'
+            f'<span class="vg-table-summary-value">{fmt_nombre(nb_contrats_resultat)}</span>'
             f'<span class="vg-table-summary-label">{libelle_contrats}</span>'
             "</div>"
             '<div class="vg-table-summary-separator"></div>'
             '<div class="vg-table-summary-item">'
-            f'<span class="vg-table-summary-value">{format_nombre(nb_lignes_resultat)}</span>'
+            f'<span class="vg-table-summary-value">{fmt_nombre(nb_contrats_resultat)}</span>'
             f'<span class="vg-table-summary-label">{libelle_lignes}</span>'
             "</div>"
             f'<div class="vg-table-summary-mode">{mode_tableau}</div>'

@@ -42,7 +42,11 @@ def apply_3f_page_style():
         /* =====================================================
            VARIABLES DESIGN 3F
         ===================================================== */
-
+        /* Masquer l’ancienne interface pendant les recalculs Streamlit */
+        [data-stale="true"] {
+            opacity: 0 !important;
+            pointer-events: none !important;
+        }
         :root {
             --3f-red: #B5121B;
             --3f-red-dark: #8F0E15;
