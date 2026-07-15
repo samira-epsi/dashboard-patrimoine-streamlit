@@ -2027,63 +2027,11 @@ def apply_vue_globale_style():
 
         /* COUVERTURE DES ÉQUIPEMENTS */
         .vg-equipment-coverage {
-            grid-template-columns: minmax(0, 1.15fr) minmax(190px, 0.65fr);
-            gap: 14px;
-        }
-
-        .vg-equipment-coverage-main {
-            min-height: 300px;
-            padding: 18px;
-        }
-
-        .vg-equipment-gauge {
-            width: min(205px, 72%);
-        }
-
-        .vg-equipment-gauge::after {
-            inset: 14px;
-        }
-
-        .vg-equipment-gauge-rate {
-            font-size: clamp(36px, 3.2vw, 44px);
-            letter-spacing: -1.4px;
-        }
-
-        .vg-equipment-gauge-label {
-            font-size: 13px;
-        }
-
-        .vg-equipment-gauge-total {
-            margin-top: 12px;
-            font-size: 15px;
-        }
-
-        .vg-equipment-gauge-note {
-            margin-top: 5px;
-            font-size: 10.5px;
-        }
-
-        .vg-equipment-coverage-stats {
+            display: grid;
+            grid-template-columns: minmax(0, 1.15fr) minmax(185px, 0.55fr);
             gap: 12px;
-        }
-
-        .vg-equipment-stat {
-            min-height: 140px;
-            padding: 18px 20px;
-        }
-
-        .vg-equipment-stat-label {
-            font-size: 13px;
-        }
-
-        .vg-equipment-stat-value {
-            margin-top: 10px;
-            font-size: clamp(32px, 3vw, 40px);
-        }
-
-        .vg-equipment-stat-help {
-            margin-top: 12px;
-            font-size: 12px;
+            align-items: stretch;
+            margin-top: 4px;
         }
 
         .vg-equipment-coverage-main,
@@ -2091,24 +2039,24 @@ def apply_vue_globale_style():
             box-sizing: border-box;
             background: #FFFFFF;
             border: 1px solid #E4E1E3;
-            border-radius: 18px;
+            border-radius: 16px;
             box-shadow: none;
         }
 
         .vg-equipment-coverage-main {
             display: flex;
-            min-height: 390px;
+            min-height: 330px;
             flex-direction: column;
             align-items: center;
             justify-content: center;
-            padding: 24px 24px 20px;
+            padding: 18px 20px 16px;
         }
 
         .vg-equipment-gauge {
             --coverage: 0%;
             position: relative;
             display: grid;
-            width: min(270px, 78%);
+            width: 190px;
             aspect-ratio: 1;
             place-items: center;
             border-radius: 50%;
@@ -2123,7 +2071,7 @@ def apply_vue_globale_style():
         .vg-equipment-gauge::after {
             content: "";
             position: absolute;
-            inset: 17px;
+            inset: 14px;
             border-radius: 50%;
             background: #FFFFFF;
         }
@@ -2136,32 +2084,32 @@ def apply_vue_globale_style():
 
         .vg-equipment-gauge-rate {
             color: #E5114D;
-            font-size: clamp(42px, 4.2vw, 58px);
+            font-size: 42px;
             font-weight: 850;
-            letter-spacing: -2px;
+            letter-spacing: -1.5px;
             line-height: 1;
         }
 
         .vg-equipment-gauge-label {
-            margin-top: 8px;
+            margin-top: 6px;
             color: #5F5F60;
-            font-size: 15px;
+            font-size: 13px;
             font-weight: 700;
         }
 
         .vg-equipment-gauge-total {
             width: 100%;
-            margin-top: 18px;
+            margin-top: 14px;
             color: #173B69;
-            font-size: 18px;
+            font-size: 16px;
             font-weight: 850;
         }
 
         .vg-equipment-gauge-note {
             width: 100%;
-            margin-top: 8px;
+            margin-top: 5px;
             color: #7C8491;
-            font-size: 11.5px;
+            font-size: 10.5px;
             font-weight: 600;
             line-height: 1.4;
         }
@@ -2169,15 +2117,15 @@ def apply_vue_globale_style():
         .vg-equipment-coverage-stats {
             display: grid;
             grid-template-rows: 1fr 1fr;
-            gap: 16px;
+            gap: 10px;
         }
 
         .vg-equipment-stat {
             display: flex;
-            min-height: 185px;
+            min-height: 160px;
             flex-direction: column;
             justify-content: center;
-            padding: 24px 26px;
+            padding: 18px 20px;
         }
 
         .vg-equipment-stat-covered {
@@ -2192,16 +2140,16 @@ def apply_vue_globale_style():
 
         .vg-equipment-stat-label {
             color: #173B69;
-            font-size: 15px;
+            font-size: 13px;
             font-weight: 850;
         }
 
         .vg-equipment-stat-value {
-            margin-top: 14px;
+            margin-top: 9px;
             color: #173B69;
-            font-size: clamp(38px, 3.7vw, 54px);
+            font-size: 38px;
             font-weight: 850;
-            letter-spacing: -1.5px;
+            letter-spacing: -1px;
             line-height: 1;
         }
 
@@ -2210,9 +2158,9 @@ def apply_vue_globale_style():
         }
 
         .vg-equipment-stat-help {
-            margin-top: 18px;
+            margin-top: 10px;
             color: #5F6368;
-            font-size: 13.5px;
+            font-size: 12px;
             font-weight: 600;
         }
 
@@ -2227,14 +2175,22 @@ def apply_vue_globale_style():
             }
 
             .vg-equipment-stat {
-                min-height: 150px;
+                min-height: 145px;
             }
         }
 
         @media screen and (max-width: 620px) {
             .vg-equipment-coverage-main {
-                min-height: 340px;
-                padding: 20px 16px;
+                min-height: 290px;
+                padding: 16px;
+            }
+
+            .vg-equipment-gauge {
+                width: 165px;
+            }
+
+            .vg-equipment-gauge-rate {
+                font-size: 36px;
             }
 
             .vg-equipment-coverage-stats {
@@ -2242,12 +2198,8 @@ def apply_vue_globale_style():
             }
 
             .vg-equipment-stat {
-                min-height: 132px;
-                padding: 20px;
-            }
-
-            .vg-equipment-gauge {
-                width: min(235px, 78vw);
+                min-height: 125px;
+                padding: 16px 18px;
             }
 
             .vg-equipment-gauge-total,
