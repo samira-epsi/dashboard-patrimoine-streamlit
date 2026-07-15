@@ -4582,8 +4582,12 @@ elif vue_active == "Couverture":
     # 1. PRÉSENCE DES CONTRATS PAR MÉTIER — PLEINE LARGEUR
     # -----------------------------------------------------
     st.markdown(
-        '<div class="vg-mini-title">Présence des contrats par métier</div>',
+        '<div class="vg-mini-title">Nombre d’ESI ayant au moins un contrat par métier</div>',
         unsafe_allow_html=True,
+    )
+    st.caption(
+        f"Population de référence : {fmt_nombre(total_esi_situation)} ESI. "
+        "Un même ESI peut apparaître dans plusieurs métiers."
     )
 
     if presence_metiers.empty:
@@ -4596,7 +4600,7 @@ elif vue_active == "Couverture":
     else:
         fig_metiers = go.Figure(
             go.Bar(
-                x=presence_metiers["Taux"],
+                x=presence_metiers["ESI"],
                 y=presence_metiers["Métier"],
                 orientation="h",
                 text=[
@@ -4610,12 +4614,12 @@ elif vue_active == "Couverture":
                     )
                 ],
                 textposition="outside",
-                customdata=presence_metiers["ESI"],
+                customdata=presence_metiers["Taux"],
                 marker=dict(color=C_RED),
                 hovertemplate=(
                     "<b>%{y}</b><br>"
-                    "ESI concernés : %{customdata:,}<br>"
-                    "Part du patrimoine : %{x:.1f} %"
+                    "ESI concernés : %{x:,}<br>"
+                    "Part du périmètre : %{customdata:.1f} %"
                     "<extra></extra>"
                 ),
             )
@@ -4627,17 +4631,17 @@ elif vue_active == "Couverture":
         _layout_plotly(fig_metiers, hauteur_metiers)
         fig_metiers.update_layout(
             xaxis=dict(
-                title="Part des ESI du périmètre",
-                ticksuffix=" %",
+                title="Nombre d’ESI concernés",
                 range=[
                     0,
                     max(
-                        100,
-                        float(presence_metiers["Taux"].max()) + 12,
+                        int(total_esi_situation),
+                        int(presence_metiers["ESI"].max()) + 500,
                     ),
                 ],
                 gridcolor=C_GRID,
                 tickfont=dict(size=11),
+                separatethousands=True,
             ),
             yaxis=dict(
                 title=None,
@@ -4655,8 +4659,8 @@ elif vue_active == "Couverture":
         )
 
     st.caption(
-        "Lecture : un ESI est compté une seule fois par métier, même s’il possède "
-        "plusieurs contrats du même métier."
+        "Lecture : la longueur de la barre correspond au nombre d’ESI concernés. "
+        "Le pourcentage affiché indique la part de ces ESI dans le périmètre total."
     )
 
     # -----------------------------------------------------
