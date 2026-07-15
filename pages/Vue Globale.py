@@ -26,9 +26,6 @@ from config import DB_URL
 SOURCE_ESI = "dashboard.esi_couverture"
 SOURCE_CONTRATS = "dashboard.contrats_patrimoine"
 SOURCE_PRESTATIONS = "dashboard.contrats_prestations"
-SOURCE_EQUIPEMENTS_COUVERTURE = "dashboard.equipements_couverture"
-SOURCE_EQUIPEMENTS_CONTRATS = "dashboard.equipements_contrats"
-SOURCE_ALERTES_COUVERTURE = "dashboard.alertes_couverture"
 SOURCE_GLOBAL = "dashboard.kpi_globale"
 SOURCE_CREATIONS = "dashboard.kpi_creation_detail"
 SOURCE_QUALITE = "dashboard.qualite_donnees"
@@ -874,8 +871,6 @@ def verifier_sources(conn):
         SOURCE_ESI,
         SOURCE_CONTRATS,
         SOURCE_PRESTATIONS,
-        SOURCE_EQUIPEMENTS_COUVERTURE,
-        SOURCE_EQUIPEMENTS_CONTRATS,
         SOURCE_GLOBAL,
     ]
     return [source for source in required if not table_exists(conn, source)]
@@ -1282,18 +1277,6 @@ def charger_donnees():
             df_esi = pd.read_sql_query(text(f"SELECT * FROM {SOURCE_ESI}"), conn)
             df_contrats = pd.read_sql_query(text(f"SELECT * FROM {SOURCE_CONTRATS}"), conn)
             df_prestations = pd.read_sql_query(text(f"SELECT * FROM {SOURCE_PRESTATIONS}"), conn)
-            df_equipements_couverture = pd.read_sql_query(
-                text(f"SELECT * FROM {SOURCE_EQUIPEMENTS_COUVERTURE}"), conn
-            )
-            df_equipements_contrats = pd.read_sql_query(
-                text(f"SELECT * FROM {SOURCE_EQUIPEMENTS_CONTRATS}"), conn
-            )
-            if table_exists(conn, SOURCE_ALERTES_COUVERTURE):
-                df_alertes_couverture = pd.read_sql_query(
-                    text(f"SELECT * FROM {SOURCE_ALERTES_COUVERTURE}"), conn
-                )
-            else:
-                df_alertes_couverture = pd.DataFrame()
 
             if table_exists(conn, SOURCE_CREATIONS):
                 df_creations = pd.read_sql_query(text(f"SELECT * FROM {SOURCE_CREATIONS}"), conn)
@@ -1316,13 +1299,6 @@ def charger_donnees():
     df_esi = nettoyer_df(df_esi)
     df_contrats = normaliser_contrats(df_contrats)
     df_prestations = normaliser_prestations(df_prestations)
-    df_equipements_couverture = nettoyer_df(df_equipements_couverture)
-    df_equipements_contrats = nettoyer_df(df_equipements_contrats)
-    df_alertes_couverture = (
-        nettoyer_df(df_alertes_couverture)
-        if not df_alertes_couverture.empty
-        else df_alertes_couverture
-    )
     df_creations = normaliser_creations(df_creations)
     df_qualite = nettoyer_df(df_qualite) if not df_qualite.empty else df_qualite
     if not df_qualite.empty and "contract_end_date" in df_qualite.columns:
@@ -1336,9 +1312,6 @@ def charger_donnees():
         df_esi,
         df_contrats,
         df_prestations,
-        df_equipements_couverture,
-        df_equipements_contrats,
-        df_alertes_couverture,
         df_creations,
         df_qualite,
         df_qualite_resume,
@@ -1595,287 +1568,6 @@ def global_value(df_global: pd.DataFrame, col: str, default=0):
     except Exception:
         return default
 
-
-
-
-# =====================================================
-# COUVERTURE DES ESI ET DES ÉQUIPEMENTS
-# =====================================================
-
-
-def filtrer_par_esi(dataframe: pd.DataFrame, df_esi_perimetre: pd.DataFrame) -> pd.DataFrame:
-    if dataframe.empty or "esi_reference" not in dataframe.columns:
-        return dataframe.copy()
-
-    refs = set(liste_refs_valides(df_esi_perimetre, "esi_reference"))
-    if not refs:
-        return dataframe.iloc[0:0].copy()
-
-    return dataframe[dataframe["esi_reference"].isin(refs)].copy()
-
-
-def filtrer_equipements_par_statut(dataframe: pd.DataFrame, statut: str | None) -> pd.DataFrame:
-    if dataframe.empty:
-        return dataframe.copy()
-
-    df = dataframe.copy()
-
-    if statut == "active" and "contract_active_intent" in df.columns:
-        return df[serie_numerique(df, "contract_active_intent") > 0].copy()
-
-    if statut == "inactive" and "contract_inactive_intent" in df.columns:
-        return df[serie_numerique(df, "contract_inactive_intent") > 0].copy()
-
-    return df
-
-
-def construire_synthese_couverture(
-    df_esi: pd.DataFrame,
-    df_equipements: pd.DataFrame,
-    df_liens: pd.DataFrame,
-    statut: str | None,
-) -> dict:
-    esi = dedupliquer_esi(df_esi)
-    total_esi = len(liste_refs_valides(esi, "esi_reference"))
-
-    nb_equipements = serie_numerique(esi, "nb_equipements")
-    avec_equipement = int((nb_equipements > 0).sum())
-    sans_equipement = max(total_esi - avec_equipement, 0)
-
-    if statut == "active":
-        colonne_contrats = "nb_contrats_actifs_valides"
-        colonne_multi = "esi_multi_meme_metier_valide"
-        colonne_couverture = "esi_avec_equipement_couvert_valide"
-    elif statut == "inactive":
-        colonne_contrats = "nb_contrats_inactifs"
-        colonne_multi = "esi_multi_meme_metier"
-        colonne_couverture = None
-    else:
-        colonne_contrats = "nb_contrats_total"
-        colonne_multi = "esi_multi_meme_metier"
-        colonne_couverture = "esi_avec_equipement_et_contrat"
-
-    moyenne_contrats = (
-        float(serie_numerique(esi, colonne_contrats).mean())
-        if total_esi
-        else 0.0
-    )
-    multi_meme_metier = int(
-        (serie_numerique(esi, colonne_multi) > 0).sum()
-    )
-
-    liens_statut = filtrer_equipements_par_statut(df_liens, statut)
-    refs_esi_avec_equipement_contrat = set(
-        liste_refs_valides(liens_statut, "esi_reference")
-    )
-
-    if colonne_couverture and colonne_couverture in esi.columns:
-        esi_avec_equipement_contrat = int(
-            (serie_numerique(esi, colonne_couverture) > 0).sum()
-        )
-    else:
-        esi_avec_equipement_contrat = len(refs_esi_avec_equipement_contrat)
-
-    esi_equipes_sans_contrat = max(
-        avec_equipement - esi_avec_equipement_contrat,
-        0,
-    )
-
-    total_equipements = len(
-        liste_refs_valides(df_equipements, "equipment_reference")
-    )
-
-    if statut == "active":
-        couverts = int(
-            (serie_numerique(df_equipements, "equipment_covered_valid") > 0).sum()
-        )
-    elif statut == "inactive":
-        couverts = int(
-            (
-                serie_numerique(
-                    df_equipements,
-                    "equipment_has_only_non_active_contracts",
-                ) > 0
-            ).sum()
-        )
-    else:
-        couverts = int(
-            (
-                serie_numerique(
-                    df_equipements,
-                    "equipment_has_contract_link",
-                ) > 0
-            ).sum()
-        )
-
-    sans_couverture = max(total_equipements - couverts, 0)
-
-    def taux(nombre, total):
-        return round(nombre / total * 100, 1) if total else 0.0
-
-    return {
-        "total_esi": total_esi,
-        "avec_equipement": avec_equipement,
-        "sans_equipement": sans_equipement,
-        "esi_avec_equipement_contrat": esi_avec_equipement_contrat,
-        "esi_equipes_sans_contrat": esi_equipes_sans_contrat,
-        "multi_meme_metier": multi_meme_metier,
-        "moyenne_contrats": moyenne_contrats,
-        "total_equipements": total_equipements,
-        "equipements_couverts": couverts,
-        "equipements_sans_couverture": sans_couverture,
-        "taux_avec_equipement": taux(avec_equipement, total_esi),
-        "taux_sans_equipement": taux(sans_equipement, total_esi),
-        "taux_esi_avec_contrat": taux(
-            esi_avec_equipement_contrat,
-            avec_equipement,
-        ),
-        "taux_esi_sans_contrat": taux(
-            esi_equipes_sans_contrat,
-            avec_equipement,
-        ),
-        "taux_multi": taux(multi_meme_metier, total_esi),
-        "taux_equipements_couverts": taux(couverts, total_equipements),
-    }
-
-
-def construire_comparaison_maille(
-    df_esi: pd.DataFrame,
-    maille: str,
-    indicateur: str,
-    statut: str | None,
-) -> pd.DataFrame:
-    correspondance = {
-        "Société": "societe",
-        "Agence": "agence",
-        "Groupe": "groupe",
-        "Secteur": "secteur",
-    }
-    colonne_maille = correspondance[maille]
-
-    if df_esi.empty or colonne_maille not in df_esi.columns:
-        return pd.DataFrame(columns=[maille, "Valeur"])
-
-    df = dedupliquer_esi(df_esi)
-    df[colonne_maille] = (
-        df[colonne_maille]
-        .fillna("Non renseigné")
-        .astype(str)
-        .str.strip()
-        .replace("", "Non renseigné")
-    )
-
-    if statut == "active":
-        colonne_contrats = "nb_contrats_actifs_valides"
-        colonne_couverture = "esi_avec_equipement_couvert_valide"
-        colonne_multi = "esi_multi_meme_metier_valide"
-    elif statut == "inactive":
-        colonne_contrats = "nb_contrats_inactifs"
-        colonne_couverture = None
-        colonne_multi = "esi_multi_meme_metier"
-    else:
-        colonne_contrats = "nb_contrats_total"
-        colonne_couverture = "esi_avec_equipement_et_contrat"
-        colonne_multi = "esi_multi_meme_metier"
-
-    df["_avec_equipement"] = (
-        serie_numerique(df, "nb_equipements") > 0
-    ).astype(int)
-    df["_sans_equipement"] = 1 - df["_avec_equipement"]
-
-    if colonne_couverture and colonne_couverture in df.columns:
-        df["_avec_contrat_equipement"] = (
-            serie_numerique(df, colonne_couverture) > 0
-        ).astype(int)
-    else:
-        df["_avec_contrat_equipement"] = 0
-
-    df["_sans_contrat_equipement"] = (
-        (df["_avec_equipement"] > 0)
-        & (df["_avec_contrat_equipement"] == 0)
-    ).astype(int)
-    df["_multi"] = (
-        serie_numerique(df, colonne_multi) > 0
-    ).astype(int)
-    df["_nb_contrats"] = serie_numerique(df, colonne_contrats)
-
-    lignes = []
-    for entite, groupe in df.groupby(colonne_maille, dropna=False):
-        total = len(groupe)
-        equipes = int(groupe["_avec_equipement"].sum())
-
-        if indicateur == "Taux d’ESI avec équipement":
-            valeur = equipes / total * 100 if total else 0
-        elif indicateur == "Taux d’ESI avec équipement et contrat":
-            valeur = (
-                groupe["_avec_contrat_equipement"].sum() / equipes * 100
-                if equipes
-                else 0
-            )
-        elif indicateur == "Taux d’ESI sans équipement":
-            valeur = groupe["_sans_equipement"].sum() / total * 100 if total else 0
-        elif indicateur == "Taux d’ESI équipés sans contrat":
-            valeur = (
-                groupe["_sans_contrat_equipement"].sum() / equipes * 100
-                if equipes
-                else 0
-            )
-        elif indicateur == "Taux de multi-contrats même métier":
-            valeur = groupe["_multi"].sum() / total * 100 if total else 0
-        else:
-            valeur = groupe["_nb_contrats"].mean() if total else 0
-
-        lignes.append(
-            {
-                maille: entite,
-                "Valeur": round(float(valeur), 1),
-                "Total ESI": total,
-            }
-        )
-
-    return (
-        pd.DataFrame(lignes)
-        .sort_values("Valeur", ascending=False)
-        .head(20)
-        .sort_values("Valeur", ascending=True)
-    )
-
-
-def preparer_detail_couverture(df_esi: pd.DataFrame) -> pd.DataFrame:
-    colonnes = {
-        "societe": "Société",
-        "agence": "Agence",
-        "groupe": "Groupe",
-        "secteur": "Secteur",
-        "esi_reference": "Référence ESI",
-        "esi_label": "Libellé ESI",
-        "nb_logements": "Logements",
-        "nb_equipements": "Équipements",
-        "nb_contrats_total": "Contrats totaux",
-        "nb_contrats_actifs_valides": "Contrats actifs valides",
-        "nb_contrats_inactifs": "Contrats inactifs",
-        "nb_equipements_couverts_valides": "Équipements couverts valides",
-        "nb_equipements_sans_contrat": "Équipements sans contrat",
-        "taux_equipements_couverts_valides": "Taux équipements couverts",
-    }
-
-    disponibles = [c for c in colonnes if c in df_esi.columns]
-    if not disponibles:
-        return pd.DataFrame()
-
-    table = df_esi[disponibles].copy().rename(columns=colonnes)
-
-    if "Taux équipements couverts" in table.columns:
-        table["Taux équipements couverts"] = (
-            pd.to_numeric(
-                table["Taux équipements couverts"],
-                errors="coerce",
-            )
-            .fillna(0)
-            .map(lambda valeur: f"{valeur:.1f} %".replace(".", ","))
-        )
-
-    return table
 
 
 # =====================================================
@@ -3151,9 +2843,6 @@ try:
             df_esi,
             df_contrats,
             df_prestations,
-            df_equipements_couverture,
-            df_equipements_contrats,
-            df_alertes_couverture,
             df_creations,
             df_qualite,
             df_qualite_resume,
@@ -3223,19 +2912,6 @@ df_prestations_kpi = filtrer_prestations_depuis_contrats(
 df_contrats_source_kpi = construire_contrats_uniques_source(
     df_prestations=df_prestations_kpi,
     df_contrats_rattaches=df_contrats_kpi,
-)
-
-df_equipements_couverture_kpi = filtrer_par_esi(
-    df_equipements_couverture,
-    df_esi_context,
-)
-df_equipements_contrats_kpi = filtrer_par_esi(
-    df_equipements_contrats,
-    df_esi_context,
-)
-df_alertes_couverture_kpi = filtrer_par_esi(
-    df_alertes_couverture,
-    df_esi_context,
 )
 
 
@@ -3992,314 +3668,162 @@ if vue_active == "Vue globale":
 # =====================================================
 
 elif vue_active == "Couverture":
-    section(
-        "Couverture du patrimoine",
-        "Une lecture simple de la présence des équipements et de leur couverture contractuelle réelle dans Intent.",
-    )
+    if statut_selectionne == "active":
+        section(
+            "Couverture du patrimoine",
+            "Périmètre des contrats actifs et patrimoine associé.",
+        )
+    elif statut_selectionne == "inactive":
+        section(
+            "Couverture du patrimoine",
+            "Périmètre des contrats inactifs et patrimoine associé.",
+        )
+    else:
+        section(
+            "Couverture du patrimoine",
+            "La réalité présente dans Intent, puis la part réellement exploitable pour les analyses de couverture.",
+        )
 
-    libelle_statut_couverture = (
-        "Contrats actifs valides"
-        if statut_selectionne == "active"
-        else "Contrats inactifs"
-        if statut_selectionne == "inactive"
-        else "Tous les contrats"
-    )
+    # Même base de lecture que la Vue globale.
+    if statut_selectionne is None and not perimetre_filtre_actif:
+        contrats_value = global_value(df_global, "contrats_total")
+        contrats_pill = (
+            f"{fmt_nombre(global_value(df_global, 'contrats_rattaches_programme'))} exploitables"
+        )
+        contrats_help = (
+            f"{fmt_nombre(global_value(df_global, 'contrats_non_rattaches_programme'))} "
+            "non rattachés à un programme."
+        )
 
-    synthese_couverture = construire_synthese_couverture(
-        df_esi=df_esi_context,
-        df_equipements=df_equipements_couverture_kpi,
-        df_liens=df_equipements_contrats_kpi,
-        statut=statut_selectionne,
-    )
+        programmes_value = global_value(df_global, "programmes_total")
+        programmes_couverts = int(serie_numerique(df_esi, "esi_couvert").sum())
+        programmes_pill = f"{fmt_nombre(programmes_couverts)} couverts"
+        programmes_help = "Programmes / ESI présents dans la source patrimoniale."
 
-    st.caption(
-        f"Périmètre de couverture affiché : {libelle_statut_couverture}. "
-        "Les pourcentages ESI sont calculés sur le périmètre filtré."
-    )
+        logements_value = global_value(df_global, "logements_total")
+        logements_pill = (
+            f"{fmt_nombre(global_value(df_global, 'logements_rattaches_programme'))} exploitables"
+        )
+        logements_help = (
+            f"{fmt_nombre(global_value(df_global, 'logements_sans_programme'))} sans programme."
+        )
 
-    k1, k2, k3, k4 = st.columns(4)
+        equipements_value = global_value(df_global, "equipements_total")
+        equipements_pill = (
+            f"{fmt_nombre(global_value(df_global, 'equipements_rattaches_programme'))} exploitables"
+        )
+        equipements_help = (
+            f"{fmt_nombre(global_value(df_global, 'equipements_sans_programme'))} sans programme."
+        )
 
-    with k1:
+        contrats_label = "Contrats"
+        programmes_label = "Programmes / ESI"
+        logements_label = "Logements"
+        equipements_label = "Équipements"
+
+    elif statut_selectionne == "active":
+        contrats_value = len(liste_refs_valides(df_contrats_kpi, "contract_reference"))
+        programmes_value = len(liste_refs_valides(df_esi_context, "esi_reference"))
+        logements_value = int(serie_numerique(df_esi_context, "nb_logements").sum())
+        equipements_value = int(serie_numerique(df_esi_context, "nb_equipements").sum())
+
+        contrats_label = "Contrats actifs"
+        programmes_label = "ESI concernés"
+        logements_label = "Logements rattachés"
+        equipements_label = "Équipements rattachés"
+
+        contrats_pill = contrats_help = ""
+        programmes_pill = programmes_help = ""
+        logements_pill = logements_help = ""
+        equipements_pill = equipements_help = ""
+
+    elif statut_selectionne == "inactive":
+        contrats_value = len(liste_refs_valides(df_contrats_kpi, "contract_reference"))
+        programmes_value = len(liste_refs_valides(df_esi_context, "esi_reference"))
+        logements_value = int(serie_numerique(df_esi_context, "nb_logements").sum())
+        equipements_value = int(serie_numerique(df_esi_context, "nb_equipements").sum())
+
+        contrats_label = "Contrats inactifs"
+        programmes_label = "ESI concernés"
+        logements_label = "Logements rattachés"
+        equipements_label = "Équipements rattachés"
+
+        contrats_pill = contrats_help = ""
+        programmes_pill = programmes_help = ""
+        logements_pill = logements_help = ""
+        equipements_pill = equipements_help = ""
+
+    else:
+        contrats_value = len(liste_refs_valides(df_contrats_kpi, "contract_reference"))
+        contrats_pill = "Périmètre filtré"
+        contrats_help = "Contrats exploitables correspondant aux filtres actifs."
+
+        programmes_value = len(liste_refs_valides(df_esi_context, "esi_reference"))
+        programmes_couverts = int(serie_numerique(df_esi_context, "esi_couvert").sum())
+        programmes_pill = f"{fmt_nombre(programmes_couverts)} couverts"
+        programmes_help = "Programmes / ESI correspondant aux filtres actifs."
+
+        logements_value = int(serie_numerique(df_esi_context, "nb_logements").sum())
+        logements_pill = "Rattachés aux ESI"
+        logements_help = "Logements exploitables du périmètre filtré."
+
+        equipements_value = int(serie_numerique(df_esi_context, "nb_equipements").sum())
+        equipements_pill = "Rattachés aux ESI"
+        equipements_help = "Équipements exploitables du périmètre filtré."
+
+        contrats_label = "Contrats"
+        programmes_label = "Programmes / ESI"
+        logements_label = "Logements"
+        equipements_label = "Équipements"
+
+    cartes_compactes = statut_selectionne in {"active", "inactive"}
+
+    c1, c2, c3, c4 = st.columns(4)
+    with c1:
         kpi_card(
-            "ESI avec équipement",
-            synthese_couverture["avec_equipement"],
-            fmt_pourcentage(synthese_couverture["taux_avec_equipement"]),
-            f"Sur {fmt_nombre(synthese_couverture['total_esi'])} ESI.",
+            contrats_label,
+            contrats_value,
+            contrats_pill,
+            contrats_help,
             accent=C_NAVY,
+            compact=cartes_compactes,
         )
-
-    with k2:
+    with c2:
         kpi_card(
-            "ESI avec équipement et contrat",
-            synthese_couverture["esi_avec_equipement_contrat"],
-            fmt_pourcentage(synthese_couverture["taux_esi_avec_contrat"]),
-            "Calculé parmi les ESI ayant au moins un équipement.",
-            accent=C_RED,
+            programmes_label,
+            programmes_value,
+            programmes_pill,
+            programmes_help,
+            accent=C_NAVY,
+            compact=cartes_compactes,
         )
-
-    with k3:
+    with c3:
         kpi_card(
-            "ESI équipés sans contrat",
-            synthese_couverture["esi_equipes_sans_contrat"],
-            fmt_pourcentage(synthese_couverture["taux_esi_sans_contrat"]),
-            "Aucun contrat correspondant au statut sélectionné sur leurs équipements.",
+            logements_label,
+            logements_value,
+            logements_pill,
+            logements_help,
             accent=C_PINK,
+            compact=cartes_compactes,
+        )
+    with c4:
+        kpi_card(
+            equipements_label,
+            equipements_value,
+            equipements_pill,
+            equipements_help,
+            accent=C_VIOLET,
+            compact=cartes_compactes,
         )
 
-    with k4:
-        st.markdown(
-            f"""
-            <div class="vg-card" style="--accent:{C_VIOLET};">
-                <div class="vg-card-accent"></div>
-                <div class="vg-card-label">Contrats moyens par ESI</div>
-                <div class="vg-card-value">{synthese_couverture["moyenne_contrats"]:.1f}</div>
-                <div class="vg-card-pill">Moyenne du périmètre</div>
-                <div class="vg-card-help">Moyenne calculée sur l’ensemble des ESI affichés, y compris ceux sans contrat.</div>
-            </div>
-            """,
-            unsafe_allow_html=True,
-        )
-
-    st.markdown("<br>", unsafe_allow_html=True)
-    graphique_gauche, graphique_droite = st.columns([1, 1.15])
-
-    with graphique_gauche:
-        st.markdown(
-            '<div class="vg-mini-title">Situation des ESI</div>',
-            unsafe_allow_html=True,
-        )
-
-        situation = pd.DataFrame(
-            {
-                "Situation": [
-                    "Avec équipement",
-                    "Sans équipement",
-                    "Multi-contrats même métier",
-                ],
-                "ESI": [
-                    synthese_couverture["avec_equipement"],
-                    synthese_couverture["sans_equipement"],
-                    synthese_couverture["multi_meme_metier"],
-                ],
-                "Taux": [
-                    synthese_couverture["taux_avec_equipement"],
-                    synthese_couverture["taux_sans_equipement"],
-                    synthese_couverture["taux_multi"],
-                ],
-            }
-        ).sort_values("Taux", ascending=True)
-
-        if go is None:
-            st.bar_chart(
-                situation.set_index("Situation")["Taux"],
-                width="stretch",
-            )
-        else:
-            fig_situation = go.Figure(
-                go.Bar(
-                    x=situation["Taux"],
-                    y=situation["Situation"],
-                    orientation="h",
-                    text=situation["Taux"].map(
-                        lambda valeur: fmt_pourcentage(valeur)
-                    ),
-                    textposition="outside",
-                    customdata=situation["ESI"],
-                    marker=dict(color=C_NAVY),
-                    hovertemplate=(
-                        "<b>%{y}</b><br>"
-                        "ESI : %{customdata}<br>"
-                        "Taux : %{x:.1f} %<extra></extra>"
-                    ),
-                )
-            )
-            _layout_plotly(fig_situation, 300)
-            fig_situation.update_layout(
-                xaxis=dict(
-                    range=[0, max(100, situation["Taux"].max() + 10)],
-                    ticksuffix=" %",
-                    title=None,
-                    gridcolor=C_GRID,
-                ),
-                yaxis=dict(title=None, automargin=True),
-                margin=dict(l=10, r=45, t=10, b=30),
-            )
-            st.plotly_chart(
-                fig_situation,
-                use_container_width=True,
-                config=config_plotly("situation_esi"),
-            )
-
-    with graphique_droite:
-        st.markdown(
-            '<div class="vg-mini-title">Comparaison organisationnelle</div>',
-            unsafe_allow_html=True,
-        )
-
-        choix_maille, choix_indicateur = st.columns([1, 1.55])
-
-        with choix_maille:
-            maille_couverture = st.selectbox(
-                "Maille",
-                ["Société", "Agence", "Groupe", "Secteur"],
-                key="coverage_maille",
-            )
-
-        with choix_indicateur:
-            indicateur_couverture = st.selectbox(
-                "Indicateur",
-                [
-                    "Taux d’ESI avec équipement et contrat",
-                    "Taux d’ESI avec équipement",
-                    "Taux d’ESI sans équipement",
-                    "Taux d’ESI équipés sans contrat",
-                    "Taux de multi-contrats même métier",
-                    "Nombre moyen de contrats par ESI",
-                ],
-                key="coverage_indicateur",
-            )
-
-        comparaison = construire_comparaison_maille(
-            df_esi=df_esi_context,
-            maille=maille_couverture,
-            indicateur=indicateur_couverture,
-            statut=statut_selectionne,
-        )
-
-        if comparaison.empty:
-            st.info("Aucune donnée disponible pour cette comparaison.")
-        elif go is None:
-            st.bar_chart(
-                comparaison.set_index(maille_couverture)["Valeur"],
-                width="stretch",
-            )
-        else:
-            est_pourcentage = indicateur_couverture != (
-                "Nombre moyen de contrats par ESI"
-            )
-            suffixe = " %" if est_pourcentage else ""
-
-            fig_comparaison = go.Figure(
-                go.Bar(
-                    x=comparaison["Valeur"],
-                    y=comparaison[maille_couverture],
-                    orientation="h",
-                    text=comparaison["Valeur"].map(
-                        lambda valeur: (
-                            f"{valeur:.1f} %".replace(".", ",")
-                            if est_pourcentage
-                            else f"{valeur:.1f}".replace(".", ",")
-                        )
-                    ),
-                    textposition="outside",
-                    customdata=comparaison["Total ESI"],
-                    marker=dict(color=C_RED),
-                    hovertemplate=(
-                        "<b>%{y}</b><br>"
-                        "Valeur : %{x:.1f}" + suffixe + "<br>"
-                        "Total ESI : %{customdata}<extra></extra>"
-                    ),
-                )
-            )
-            hauteur = max(320, min(620, 31 * len(comparaison) + 115))
-            _layout_plotly(fig_comparaison, hauteur)
-            fig_comparaison.update_layout(
-                xaxis=dict(
-                    title=None,
-                    ticksuffix=suffixe,
-                    gridcolor=C_GRID,
-                ),
-                yaxis=dict(title=None, automargin=True),
-                margin=dict(l=10, r=55, t=10, b=30),
-            )
-            st.plotly_chart(
-                fig_comparaison,
-                use_container_width=True,
-                config=config_plotly(
-                    "comparaison_couverture_" + maille_couverture.lower()
-                ),
-            )
-
-    with st.expander("Consulter le détail des ESI", expanded=False):
-        recherche_col, filtre_col = st.columns([2.2, 1])
-
-        with recherche_col:
-            recherche_esi = st.text_input(
-                "Rechercher un ESI",
-                placeholder=(
-                    "Référence, libellé, société, agence, groupe ou secteur..."
-                ),
-                key="coverage_search_esi",
-            )
-
-        with filtre_col:
-            filtre_detail = st.selectbox(
-                "Afficher",
-                [
-                    "Tous les ESI",
-                    "ESI avec équipement",
-                    "ESI sans équipement",
-                    "ESI avec équipement et contrat",
-                    "ESI équipés sans contrat",
-                    "Multi-contrats même métier",
-                ],
-                key="coverage_filter_esi",
-            )
-
-        detail_source = df_esi_context.copy()
-
-        if filtre_detail == "ESI avec équipement":
-            detail_source = detail_source[
-                serie_numerique(detail_source, "nb_equipements") > 0
-            ]
-        elif filtre_detail == "ESI sans équipement":
-            detail_source = detail_source[
-                serie_numerique(detail_source, "nb_equipements") == 0
-            ]
-        elif filtre_detail == "ESI avec équipement et contrat":
-            colonne = (
-                "esi_avec_equipement_couvert_valide"
-                if statut_selectionne == "active"
-                else "esi_avec_equipement_et_contrat"
-            )
-            detail_source = detail_source[
-                serie_numerique(detail_source, colonne) > 0
-            ]
-        elif filtre_detail == "ESI équipés sans contrat":
-            colonne = (
-                "esi_avec_equipement_sans_couverture_valide"
-                if statut_selectionne == "active"
-                else "esi_avec_equipement_sans_contrat_equipement"
-            )
-            detail_source = detail_source[
-                serie_numerique(detail_source, colonne) > 0
-            ]
-        elif filtre_detail == "Multi-contrats même métier":
-            colonne = (
-                "esi_multi_meme_metier_valide"
-                if statut_selectionne == "active"
-                else "esi_multi_meme_metier"
-            )
-            detail_source = detail_source[
-                serie_numerique(detail_source, colonne) > 0
-            ]
-
-        table_detail = filtrer_table_recherche(
-            preparer_detail_couverture(detail_source),
-            recherche_esi,
-        )
-
-        st.caption(f"{fmt_nombre(len(table_detail))} ESI affiché(s).")
-        st.dataframe(
-            table_detail,
-            width="stretch",
-            hide_index=True,
-            height=440,
-        )
-        dataframe_download(
-            "Télécharger le détail en Excel",
-            table_detail,
-            "couverture_esi.xlsx",
+    if statut_selectionne is not None:
+        statut_texte = "actifs" if statut_selectionne == "active" else "inactifs"
+        info(
+            f"Les contrats {statut_texte} sélectionnés sont rattachés à "
+            f"{fmt_nombre(programmes_value)} ESI, représentant "
+            f"{fmt_nombre(logements_value)} logements et "
+            f"{fmt_nombre(equipements_value)} équipements. "
+            "Seuls les contrats rattachés à un ESI sont inclus."
         )
 
 
