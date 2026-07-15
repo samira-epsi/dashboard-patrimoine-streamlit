@@ -2674,7 +2674,7 @@ with nav_col:
     with st.container(key="dashboard_tabs"):
         vue_active = st.radio(
             "Navigation",
-            ["Vue globale", "Couverture", "Évolution des contrats", "Qualité et anomalies"],
+            ["Vue globale", "Couverture", "Qualité et anomalies"],
             horizontal=True,
             label_visibility="collapsed",
             key="dashboard_vue_active",
@@ -3507,6 +3507,14 @@ if vue_active == "Vue globale":
                     st.rerun()
 
 
+    st.markdown("<br>", unsafe_allow_html=True)
+
+    afficher_evolution_contrats(
+        df_contrats=df_contrats_kpi,
+        df_prestations=df_prestations_kpi,
+    )
+
+
 # =====================================================
 # VUE 2 — COUVERTURE
 # =====================================================
@@ -3700,18 +3708,7 @@ elif vue_active == "Couverture":
 
 
 # =====================================================
-# VUE 3 — ÉVOLUTION DES CONTRATS
-# =====================================================
-
-elif vue_active == "Évolution des contrats":
-    afficher_evolution_contrats(
-        df_contrats=df_contrats_filtre,
-        df_prestations=df_prestations_kpi,
-    )
-
-
-# =====================================================
-# VUE 4 — QUALITÉ ET ANOMALIES
+# VUE 3 — QUALITÉ ET ANOMALIES
 # =====================================================
 
 else:
