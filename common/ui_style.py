@@ -5,6 +5,7 @@ import streamlit as st
 # =====================================================
 # OUTILS HTML
 # =====================================================
+from common.charts_style import C_RED
 
 def _safe(value) -> str:
     """Évite les soucis si un texte contient des caractères HTML."""
