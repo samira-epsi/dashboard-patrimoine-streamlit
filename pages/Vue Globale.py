@@ -2354,10 +2354,7 @@ elif vue_active == "Couverture":
                     """
                 ).strip()
 
-                st.markdown(
-                    couverture_html,
-                    unsafe_allow_html=True,
-                )
+                st.html(couverture_html)
 
             definition_couverture = (
                 "un contrat actif valide"
