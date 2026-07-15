@@ -2027,11 +2027,63 @@ def apply_vue_globale_style():
 
         /* COUVERTURE DES ÉQUIPEMENTS */
         .vg-equipment-coverage {
-            display: grid;
-            grid-template-columns: minmax(0, 1.25fr) minmax(220px, 0.75fr);
-            gap: 16px;
-            align-items: stretch;
-            margin-top: 4px;
+            grid-template-columns: minmax(0, 1.15fr) minmax(190px, 0.65fr);
+            gap: 14px;
+        }
+
+        .vg-equipment-coverage-main {
+            min-height: 300px;
+            padding: 18px;
+        }
+
+        .vg-equipment-gauge {
+            width: min(205px, 72%);
+        }
+
+        .vg-equipment-gauge::after {
+            inset: 14px;
+        }
+
+        .vg-equipment-gauge-rate {
+            font-size: clamp(36px, 3.2vw, 44px);
+            letter-spacing: -1.4px;
+        }
+
+        .vg-equipment-gauge-label {
+            font-size: 13px;
+        }
+
+        .vg-equipment-gauge-total {
+            margin-top: 12px;
+            font-size: 15px;
+        }
+
+        .vg-equipment-gauge-note {
+            margin-top: 5px;
+            font-size: 10.5px;
+        }
+
+        .vg-equipment-coverage-stats {
+            gap: 12px;
+        }
+
+        .vg-equipment-stat {
+            min-height: 140px;
+            padding: 18px 20px;
+        }
+
+        .vg-equipment-stat-label {
+            font-size: 13px;
+        }
+
+        .vg-equipment-stat-value {
+            margin-top: 10px;
+            font-size: clamp(32px, 3vw, 40px);
+        }
+
+        .vg-equipment-stat-help {
+            margin-top: 12px;
+            font-size: 12px;
         }
 
         .vg-equipment-coverage-main,
