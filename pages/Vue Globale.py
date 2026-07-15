@@ -59,6 +59,18 @@ C_GRID = "#E8EEF5"
 C_INK = "#17243A"
 
 
+PALETTE_3F_GRAPHIQUES = [
+    "#173B69",  # bleu marine
+    "#63B9DF",  # bleu ciel
+    "#2F7C6D",  # vert profond
+    "#432ABD",  # violet
+    "#E89BC7",  # rose poudré
+    "#F4D84E",  # jaune
+    "#D83B55",  # rouge framboise
+    "#4C6FB1",  # bleu moyen
+]
+
+
 # =====================================================
 # PAGE + STYLE
 # =====================================================
@@ -4309,7 +4321,7 @@ elif vue_active == "Couverture":
                         "Part : %{percent}<extra></extra>"
                     ),
                     marker=dict(
-                        colors=[C_NAVY, C_BLUE_LIGHT],
+                        colors=["#173B69", "#63B9DF"],
                         line=dict(color="#FFFFFF", width=4),
                     ),
                 )
@@ -4364,10 +4376,10 @@ elif vue_active == "Couverture":
                     nb_esi_sans_contrat_programme,
                 ],
                 "Couleur": [
-                    C_RED,
-                    C_PINK,
-                    C_NAVY,
-                    C_YELLOW,
+                    "#2F7C6D",
+                    "#E89BC7",
+                    "#173B69",
+                    "#F4D84E",
                 ],
             }
         )
@@ -4451,7 +4463,16 @@ elif vue_active == "Couverture":
                 textposition="outside",
                 textfont=dict(size=13),
                 customdata=distribution_contrats["Taux"],
-                marker=dict(color=C_VIOLET),
+                marker=dict(
+                    color=[
+                        "#E89BC7",
+                        "#63B9DF",
+                        "#F4D84E",
+                        "#2F7C6D",
+                        "#432ABD",
+                    ],
+                    line=dict(color="#FFFFFF", width=1.5),
+                ),
                 hovertemplate=(
                     "<b>%{x}</b><br>"
                     "ESI : %{y:,}<br>"
@@ -4617,14 +4638,12 @@ elif vue_active == "Couverture":
                         ["ESI", "Part du parc"]
                     ].to_numpy(),
                     marker=dict(
-                        color=repartition_types["Part du parc"],
-                        colorscale=[
-                            [0.0, "#F0ECFF"],
-                            [0.35, "#C7B9FF"],
-                            [0.68, "#7A67E8"],
-                            [1.0, "#3422A6"],
+                        color=[
+                            PALETTE_3F_GRAPHIQUES[
+                                index % len(PALETTE_3F_GRAPHIQUES)
+                            ]
+                            for index in range(len(repartition_types))
                         ],
-                        showscale=False,
                         line=dict(color="#FFFFFF", width=1.5),
                     ),
                     hovertemplate=(
@@ -4679,9 +4698,9 @@ elif vue_active == "Couverture":
             )
         else:
             couleurs_couverture = {
-                "Aucun équipement avec contrat": "#F2D7E2",
-                "Une partie des équipements avec contrat": "#FFD36E",
-                "Tous les équipements avec contrat": "#4AAE8A",
+                "Aucun équipement avec contrat": "#D83B55",
+                "Une partie des équipements avec contrat": "#F4D84E",
+                "Tous les équipements avec contrat": "#2F7C6D",
             }
             fig_couverture_equipements = go.Figure(
                 go.Pie(
