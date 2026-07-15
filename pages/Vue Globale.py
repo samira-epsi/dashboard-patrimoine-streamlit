@@ -399,9 +399,27 @@ def inject_style():
             font-weight: 700 !important;
         }
 
+        /* ALIGNEMENT DES DEUX GRAPHIQUES DE LA VUE GLOBALE */
+        div[data-testid="stHorizontalBlock"]:has(.st-key-global_graph_status) {
+            align-items: stretch !important;
+        }
+
         .st-key-global_graph_status,
         .st-key-global_graph_metier {
-            min-height: 470px !important;
+            height: 100% !important;
+            display: flex !important;
+            flex-direction: column !important;
+        }
+
+        .st-key-global_graph_status > div,
+        .st-key-global_graph_metier > div {
+            width: 100% !important;
+        }
+
+        .st-key-global_graph_status div[data-testid="stPlotlyChart"],
+        .st-key-global_graph_metier div[data-testid="stPlotlyChart"] {
+            flex: 1 1 auto !important;
+            width: 100% !important;
         }
 
         /* BOUTONS */
@@ -1599,6 +1617,7 @@ def afficher_barres_horizontales(
     value_col: str,
     color=C_RED,
     height_base=320,
+    fixed_height=None,
 ):
     if df.empty:
         st.info("Aucune donnée disponible.")
@@ -1609,7 +1628,11 @@ def afficher_barres_horizontales(
         return
 
     max_value = max(float(df[value_col].max()), 1.0)
-    height = max(height_base, 34 * len(df) + 80)
+    height = (
+        int(fixed_height)
+        if fixed_height is not None
+        else max(height_base, 34 * len(df) + 80)
+    )
 
     fig = go.Figure()
     fig.add_trace(
@@ -2376,7 +2399,22 @@ if vue_active == "Vue globale":
         )
 
     st.markdown("<br>", unsafe_allow_html=True)
-    col_statut, col_metier = st.columns([0.82, 1.35])
+
+    df_graph_metier = construire_graph_metier(
+        df_contrats_kpi,
+        top_n=20,
+    )
+
+    HAUTEUR_GRAPHIQUES = max(
+        500,
+        min(620, 30 * len(df_graph_metier) + 100),
+    )
+
+    col_statut, col_metier = st.columns(
+        [0.82, 1.35],
+        gap="medium",
+        vertical_alignment="top",
+    )
 
     with col_statut:
         with st.container(key="global_graph_status"):
@@ -2385,9 +2423,15 @@ if vue_active == "Vue globale":
                 unsafe_allow_html=True,
             )
 
-            contrats_uniques = df_contrats_kpi.drop_duplicates("contract_reference").copy()
-            nb_actifs = int((contrats_uniques["contract_status_clean"] == "active").sum())
-            nb_inactifs = int((contrats_uniques["contract_status_clean"] != "active").sum())
+            contrats_uniques = df_contrats_kpi.drop_duplicates(
+                "contract_reference"
+            ).copy()
+            nb_actifs = int(
+                (contrats_uniques["contract_status_clean"] == "active").sum()
+            )
+            nb_inactifs = int(
+                (contrats_uniques["contract_status_clean"] != "active").sum()
+            )
 
             if go is None:
                 st.dataframe(
@@ -2399,6 +2443,7 @@ if vue_active == "Vue globale":
                     ),
                     width="stretch",
                     hide_index=True,
+                    height=HAUTEUR_GRAPHIQUES,
                 )
             else:
                 fig = go.Figure(
@@ -2415,18 +2460,19 @@ if vue_active == "Vue globale":
                             textposition="inside",
                             insidetextorientation="horizontal",
                             hovertemplate=(
-                                "<b>%{label}</b><br>%{value} contrat(s)<extra></extra>"
+                                "<b>%{label}</b><br>"
+                                "%{value} contrat(s)<extra></extra>"
                             ),
-                            domain=dict(x=[0.08, 0.92], y=[0.06, 0.94]),
+                            domain=dict(x=[0.05, 0.95], y=[0.10, 0.90]),
                             sort=False,
                         )
                     ]
                 )
-                _layout_plotly(fig, 420)
+                _layout_plotly(fig, HAUTEUR_GRAPHIQUES)
                 fig.update_layout(
-                    margin=dict(l=18, r=18, t=12, b=12),
+                    margin=dict(l=20, r=20, t=20, b=20),
                     showlegend=False,
-                    uniformtext_minsize=11,
+                    uniformtext_minsize=12,
                     uniformtext_mode="hide",
                 )
                 st.plotly_chart(
@@ -2442,11 +2488,12 @@ if vue_active == "Vue globale":
                 unsafe_allow_html=True,
             )
             afficher_barres_horizontales(
-                construire_graph_metier(df_contrats_kpi, top_n=20),
+                df_graph_metier,
                 "Métier",
                 "Contrats",
                 color=C_RED,
-                height_base=420,
+                height_base=HAUTEUR_GRAPHIQUES,
+                fixed_height=HAUTEUR_GRAPHIQUES,
             )
 
     with st.expander("Consulter la liste des contrats", expanded=False):
