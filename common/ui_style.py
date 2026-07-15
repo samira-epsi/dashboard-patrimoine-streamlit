@@ -5,21 +5,7 @@ import streamlit as st
 # =====================================================
 # OUTILS HTML
 # =====================================================
-C_RED = "#E5114D"
-C_RED_DARK = "#BF0F40"
-C_NAVY = "#173B69"
-C_NAVY_DEEP = "#102A4C"
-C_VIOLET = "#432ABD"
-C_YELLOW = "#FFDC55"
-C_TEAL = "#008080"
-C_BLUE = "#0074FF"
-C_BLUE_LIGHT = "#80CDFF"
-C_PINK = "#FFB7E3"
-C_PINK_SOFT = "#FFF3FA"
-C_BLUE_SOFT = "#EFF9FF"
-C_CANVAS = "#F7FAFD"
-C_GRID = "#E8EEF5"
-C_INK = "#17243A"
+
 def _safe(value) -> str:
     """Évite les soucis si un texte contient des caractères HTML."""
     if value is None:
@@ -1145,6 +1131,81 @@ def apply_vue_globale_style():
             border: none !important;
             border-top: 1px solid #E9EEF3 !important;
             margin: 22px 0 !important;
+        }
+
+
+        /* LOGO ET CHARGEMENT DE LA PAGE */
+        [data-testid="stSidebarHeader"] img {
+            max-height: 64px !important;
+            width: auto !important;
+            object-fit: contain !important;
+        }
+
+        .vg-loading-card {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            width: 100%;
+            box-sizing: border-box;
+            margin: 10px 0 18px 0;
+            padding: 16px 18px;
+            background: #FFFFFF;
+            border: 1px solid #E7E3E8;
+            border-radius: 15px;
+            box-shadow: 0 8px 20px -18px rgba(27, 36, 48, 0.24);
+        }
+
+        .vg-loading-mark {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            flex: 0 0 auto;
+        }
+
+        .vg-loading-mark span {
+            width: 7px;
+            height: 24px;
+            border-radius: 999px;
+            background: #E5114D;
+            animation: vg-loading-pulse 1s ease-in-out infinite;
+        }
+
+        .vg-loading-mark span:nth-child(2) {
+            height: 17px;
+            background: #80CDFF;
+            animation-delay: .12s;
+        }
+
+        .vg-loading-mark span:nth-child(3) {
+            height: 11px;
+            background: #432ABD;
+            animation-delay: .24s;
+        }
+
+        .vg-loading-title {
+            color: #17243A;
+            font-size: 13px;
+            font-weight: 800;
+            line-height: 1.3;
+        }
+
+        .vg-loading-subtitle {
+            color: #8A94A6;
+            font-size: 11.5px;
+            font-weight: 600;
+            line-height: 1.4;
+            margin-top: 2px;
+        }
+
+        @keyframes vg-loading-pulse {
+            0%, 100% {
+                transform: scaleY(.72);
+                opacity: .55;
+            }
+            50% {
+                transform: scaleY(1);
+                opacity: 1;
+            }
         }
 
         /* HERO */
