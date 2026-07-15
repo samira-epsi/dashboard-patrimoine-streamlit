@@ -2378,7 +2378,7 @@ def dataframe_download(label: str, df: pd.DataFrame, filename: str):
             export[colonne] = serie
 
     fichier = BytesIO()
-    with pd.ExcelWriter(fichier, engine="openpxl") as writer:
+    with pd.ExcelWriter(fichier, engine="openpyxl") as writer:
         export.to_excel(writer, index=False, sheet_name="Données")
         feuille = writer.sheets["Données"]
         feuille.freeze_panes = "A2"
