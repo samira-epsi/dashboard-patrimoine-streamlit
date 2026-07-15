@@ -9,7 +9,8 @@ from sqlalchemy import create_engine, text
 from sqlalchemy.exc import SQLAlchemyError
 
 from config import DB_URL
-
+from common.app_config import setup_page
+from common.ui_style import apply_3f_page_style, apply_vue_globale_style
 
 # =====================================================
 # SOURCES SUPABASE / POSTGRESQL
