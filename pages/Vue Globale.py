@@ -1,4 +1,5 @@
 import html
+from io import BytesIO
 from datetime import datetime
 from zoneinfo import ZoneInfo
 
@@ -928,12 +929,56 @@ def libelle_mois_fr(date_value) -> str:
     return f"{MOIS_FR_COURTS[date_value.month]} {date_value.year}"
 
 
+PLOTLY_FR_DICTIONARY = {
+    "Download plot as a png": "Télécharger le graphique en PNG",
+    "Download plot": "Télécharger le graphique",
+    "Zoom": "Zoomer",
+    "Pan": "Déplacer",
+    "Zoom in": "Zoom avant",
+    "Zoom out": "Zoom arrière",
+    "Autoscale": "Ajustement automatique",
+    "Reset axes": "Réinitialiser les axes",
+    "Reset camera to default": "Réinitialiser la vue",
+    "Reset camera to last save": "Restaurer la dernière vue",
+    "Orbit rotation": "Rotation orbitale",
+    "Turntable rotation": "Rotation horizontale",
+    "Show closest data on hover": "Afficher la donnée la plus proche",
+    "Compare data on hover": "Comparer les données",
+    "Toggle Spike Lines": "Afficher ou masquer les lignes de repère",
+    "Snapshot succeeded": "Image téléchargée",
+    "Sorry, there was a problem downloading your snapshot!": (
+        "Le téléchargement de l’image a échoué."
+    ),
+}
+
+
 def config_plotly(nom_fichier: str, afficher_barre: bool = True) -> dict:
     return {
         "displayModeBar": afficher_barre,
         "displaylogo": False,
         "responsive": True,
         "locale": "fr",
+        "locales": {
+            "fr": {
+                "dictionary": PLOTLY_FR_DICTIONARY,
+                "format": {
+                    "days": [
+                        "dimanche", "lundi", "mardi", "mercredi",
+                        "jeudi", "vendredi", "samedi",
+                    ],
+                    "shortDays": ["dim.", "lun.", "mar.", "mer.", "jeu.", "ven.", "sam."],
+                    "months": [
+                        "janvier", "février", "mars", "avril", "mai", "juin",
+                        "juillet", "août", "septembre", "octobre", "novembre", "décembre",
+                    ],
+                    "shortMonths": [
+                        "janv.", "févr.", "mars", "avr.", "mai", "juin",
+                        "juil.", "août", "sept.", "oct.", "nov.", "déc.",
+                    ],
+                    "date": "%d/%m/%Y",
+                },
+            }
+        },
         "modeBarButtonsToRemove": [
             "select2d",
             "lasso2d",
@@ -948,6 +993,18 @@ def config_plotly(nom_fichier: str, afficher_barre: bool = True) -> dict:
             "scale": 2,
         },
     }
+
+
+def graduations_periodes(evolution: pd.DataFrame, maximum: int = 6):
+    periodes = evolution["Période"].astype(str).tolist()
+    if len(periodes) <= maximum:
+        return periodes
+
+    pas = max(1, (len(periodes) - 1) // (maximum - 1))
+    graduations = periodes[::pas]
+    if graduations[-1] != periodes[-1]:
+        graduations.append(periodes[-1])
+    return graduations[:maximum - 1] + [periodes[-1]] if len(graduations) > maximum else graduations
 
 
 def nettoyer_df(df: pd.DataFrame) -> pd.DataFrame:
@@ -1397,6 +1454,66 @@ def filtrer_prestations_depuis_contrats(
     return df
 
 
+def construire_contrats_uniques_source(
+    df_prestations: pd.DataFrame,
+    df_contrats_rattaches: pd.DataFrame,
+) -> pd.DataFrame:
+    """
+    Retourne une ligne par contrat Intent.
+
+    La source prestations contient les 576 contrats. Les données de rattachement
+    sont utilisées uniquement en complément lorsqu'elles existent, sans créer
+    artificiellement de rattachement pour les 9 contrats non rattachés.
+    """
+    if df_prestations.empty:
+        return (
+            df_contrats_rattaches.drop_duplicates("contract_reference").copy()
+            if not df_contrats_rattaches.empty
+            else pd.DataFrame()
+        )
+
+    source = df_prestations.copy()
+    if "contract_reference_3f" not in source.columns:
+        return pd.DataFrame()
+
+    source = source[source["contract_reference_3f"].notna()].copy()
+    source = source.sort_values(
+        ["contract_reference_3f", "contract_last_update_date"]
+        if "contract_last_update_date" in source.columns
+        else ["contract_reference_3f"],
+        na_position="last",
+    ).drop_duplicates("contract_reference_3f", keep="last")
+
+    source = source.rename(
+        columns={"contract_reference_3f": "contract_reference"}
+    )
+
+    # On complète seulement avec les informations patrimoniales réellement présentes.
+    if not df_contrats_rattaches.empty and "contract_reference" in df_contrats_rattaches.columns:
+        rattachements = (
+            df_contrats_rattaches.sort_values(
+                [c for c in ["contract_reference", "esi_reference"] if c in df_contrats_rattaches.columns],
+                na_position="last",
+            )
+            .drop_duplicates("contract_reference")
+            .copy()
+        )
+        colonnes_rattachement = [
+            c for c in [
+                "contract_reference", "societe", "agence", "groupe",
+                "secteur", "esi_reference", "esi_label",
+            ]
+            if c in rattachements.columns
+        ]
+        source = source.merge(
+            rattachements[colonnes_rattachement],
+            on="contract_reference",
+            how="left",
+        )
+
+    return source
+
+
 def calcul_nouveaux_ce_mois(df_creations, objet_type, object_refs=None, esi_refs=None):
     if df_creations.empty or "objet_type" not in df_creations.columns:
         return 0
@@ -1829,7 +1946,10 @@ def afficher_evolution_contrats(
                 type="category",
                 categoryorder="array",
                 categoryarray=evolution["Période"].tolist(),
-                tickangle=-45 if len(evolution) > 18 else 0,
+                tickmode="array",
+                tickvals=graduations_periodes(evolution, maximum=6),
+                ticktext=graduations_periodes(evolution, maximum=6),
+                tickangle=-25 if len(evolution) > 12 else 0,
                 showgrid=False,
                 automargin=True,
             ),
@@ -1896,7 +2016,10 @@ def afficher_evolution_contrats(
                 type="category",
                 categoryorder="array",
                 categoryarray=evolution["Période"].tolist(),
-                tickangle=-45 if len(evolution) > 18 else 0,
+                tickmode="array",
+                tickvals=graduations_periodes(evolution, maximum=6),
+                ticktext=graduations_periodes(evolution, maximum=6),
+                tickangle=-25 if len(evolution) > 12 else 0,
                 showgrid=False,
                 automargin=True,
             ),
@@ -1928,7 +2051,7 @@ def afficher_evolution_contrats(
     dataframe_download(
         "Télécharger les données d’évolution des contrats",
         export,
-        "evolution_contrats.csv",
+        "evolution_contrats.xlsx",
     )
 
     st.caption(
@@ -2242,13 +2365,41 @@ def dataframe_download(label: str, df: pd.DataFrame, filename: str):
     if df.empty:
         return
 
-    csv_bytes = df.to_csv(index=False, lineterminator="\n").encode("utf-8-sig")
+    export = df.copy()
+
+    for colonne in export.columns:
+        serie = export[colonne]
+        if pd.api.types.is_datetime64_any_dtype(serie):
+            serie = pd.to_datetime(serie, errors="coerce")
+            try:
+                serie = serie.dt.tz_localize(None)
+            except (TypeError, AttributeError):
+                pass
+            export[colonne] = serie
+
+    fichier = BytesIO()
+    with pd.ExcelWriter(fichier, engine="openpyxl") as writer:
+        export.to_excel(writer, index=False, sheet_name="Données")
+        feuille = writer.sheets["Données"]
+        feuille.freeze_panes = "A2"
+        feuille.auto_filter.ref = feuille.dimensions
+
+        for cellules in feuille.columns:
+            valeurs = [
+                len(str(cellule.value)) if cellule.value is not None else 0
+                for cellule in cellules
+            ]
+            largeur = min(max(valeurs, default=0) + 3, 55)
+            feuille.column_dimensions[cellules[0].column_letter].width = largeur
+
+    fichier.seek(0)
+    nom_excel = filename.rsplit(".", 1)[0] + ".xlsx"
 
     st.download_button(
         label,
-        data=csv_bytes,
-        file_name=filename,
-        mime="text/csv",
+        data=fichier.getvalue(),
+        file_name=nom_excel,
+        mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
         width="stretch",
     )
 
@@ -2559,7 +2710,7 @@ def afficher_detail_qualite(
             dataframe_download(
                 "Télécharger les contrats expirés",
                 table,
-                "contrats_actifs_expires.csv",
+                "contrats_actifs_expires.xlsx",
             )
 
     elif focus == "unlinked_contracts":
@@ -2581,7 +2732,7 @@ def afficher_detail_qualite(
             dataframe_download(
                 "Télécharger les contrats non rattachés",
                 table,
-                "contrats_non_rattaches.csv",
+                "contrats_non_rattaches.xlsx",
             )
 
     elif focus == "housing":
@@ -2603,7 +2754,7 @@ def afficher_detail_qualite(
             dataframe_download(
                 "Télécharger les logements sans programme",
                 table,
-                "logements_sans_programme.csv",
+                "logements_sans_programme.xlsx",
             )
             if len(table) > 500:
                 st.caption(f"Affichage limité à 500 lignes sur {fmt_nombre(len(table))}.")
@@ -2630,7 +2781,7 @@ def afficher_detail_qualite(
             dataframe_download(
                 "Télécharger les ESI multi même métier",
                 table,
-                "esi_multi_meme_metier.csv",
+                "esi_multi_meme_metier.xlsx",
             )
 
     elif focus == "no_contract":
@@ -2649,7 +2800,7 @@ def afficher_detail_qualite(
             dataframe_download(
                 "Télécharger les ESI sans contrat actif",
                 table,
-                "esi_sans_contrat_actif.csv",
+                "esi_sans_contrat_actif.xlsx",
             )
 
 
@@ -2756,6 +2907,11 @@ df_prestations_kpi = filtrer_prestations_depuis_contrats(
     df_contrats_kpi=df_contrats_kpi,
     perimetre_filtre_actif=perimetre_filtre_actif,
     statut_selectionne=statut_selectionne,
+)
+
+df_contrats_source_kpi = construire_contrats_uniques_source(
+    df_prestations=df_prestations_kpi,
+    df_contrats_rattaches=df_contrats_kpi,
 )
 
 
@@ -2929,7 +3085,7 @@ if vue_active == "Vue globale":
     st.markdown("<br>", unsafe_allow_html=True)
 
     df_graph_metier = construire_graph_metier(
-        df_contrats_kpi,
+        df_contrats_source_kpi,
         top_n=20,
     )
 
@@ -2951,7 +3107,7 @@ if vue_active == "Vue globale":
                 unsafe_allow_html=True,
             )
 
-            contrats_uniques = df_contrats_kpi.drop_duplicates(
+            contrats_uniques = df_contrats_source_kpi.drop_duplicates(
                 "contract_reference"
             ).copy()
             nb_actifs = int(
@@ -3112,18 +3268,10 @@ if vue_active == "Vue globale":
             )
 
         if mode_tableau == "Contrats uniques":
-            colonnes_tri = [
-                col
-                for col in ["contract_reference", "esi_reference"]
-                if col in df_contrats_kpi.columns
-            ]
-            source_tableau = df_contrats_kpi.copy()
-            if colonnes_tri:
-                source_tableau = source_tableau.sort_values(
-                    by=colonnes_tri,
-                    na_position="last",
-                )
-            source_tableau = source_tableau.drop_duplicates("contract_reference")
+            source_tableau = construire_contrats_uniques_source(
+                df_prestations=df_prestations_kpi,
+                df_contrats_rattaches=df_contrats_kpi,
+            )
             table_contrats_complete = preparer_contrats_table(source_tableau)
 
         elif mode_tableau == "Contrats et rattachements":
@@ -3466,11 +3614,11 @@ if vue_active == "Vue globale":
             )
 
             if mode_tableau == "Contrats uniques":
-                nom_export = "contrats_uniques_complets.csv"
+                nom_export = "contrats_uniques_complets.xlsx"
             elif mode_tableau == "Contrats et rattachements":
-                nom_export = "contrats_rattachements_complets.csv"
+                nom_export = "contrats_rattachements_complets.xlsx"
             else:
-                nom_export = "contrats_codes_prestation_complets.csv"
+                nom_export = "contrats_codes_prestation_complets.xlsx"
 
             cle_export = f"export_complet_{cle_mode}"
             if cle_export not in st.session_state:
@@ -3510,7 +3658,7 @@ if vue_active == "Vue globale":
     st.markdown("<br>", unsafe_allow_html=True)
 
     afficher_evolution_contrats(
-        df_contrats=df_contrats_kpi,
+        df_contrats=df_contrats_source_kpi,
         df_prestations=df_prestations_kpi,
     )
 
@@ -3703,7 +3851,7 @@ elif vue_active == "Couverture":
         dataframe_download(
             "Télécharger le détail",
             table_esi,
-            "couverture_esi.csv",
+            "couverture_esi.xlsx",
         )
 
 
@@ -3885,7 +4033,7 @@ else:
         dataframe_download(
             "Télécharger les anomalies",
             table_qualite,
-            "anomalies_patrimoine.csv",
+            "anomalies_patrimoine.xlsx",
         )
 
 
