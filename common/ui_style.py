@@ -5,7 +5,21 @@ import streamlit as st
 # =====================================================
 # OUTILS HTML
 # =====================================================
-
+C_RED = "#E5114D"
+C_RED_DARK = "#BF0F40"
+C_NAVY = "#173B69"
+C_NAVY_DEEP = "#102A4C"
+C_VIOLET = "#432ABD"
+C_YELLOW = "#FFDC55"
+C_TEAL = "#008080"
+C_BLUE = "#0074FF"
+C_BLUE_LIGHT = "#80CDFF"
+C_PINK = "#FFB7E3"
+C_PINK_SOFT = "#FFF3FA"
+C_BLUE_SOFT = "#EFF9FF"
+C_CANVAS = "#F7FAFD"
+C_GRID = "#E8EEF5"
+C_INK = "#17243A"
 def _safe(value) -> str:
     """Évite les soucis si un texte contient des caractères HTML."""
     if value is None:
