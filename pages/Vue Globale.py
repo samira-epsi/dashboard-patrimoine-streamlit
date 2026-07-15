@@ -26,6 +26,8 @@ from config import DB_URL
 SOURCE_ESI = "dashboard.esi_couverture"
 SOURCE_CONTRATS = "dashboard.contrats_patrimoine"
 SOURCE_PRESTATIONS = "dashboard.contrats_prestations"
+SOURCE_EQUIPEMENTS_COUVERTURE = "dashboard.equipements_couverture"
+SOURCE_EQUIPEMENTS_CONTRATS = "dashboard.equipements_contrats"
 SOURCE_GLOBAL = "dashboard.kpi_globale"
 SOURCE_CREATIONS = "dashboard.kpi_creation_detail"
 SOURCE_QUALITE = "dashboard.qualite_donnees"
@@ -871,6 +873,8 @@ def verifier_sources(conn):
         SOURCE_ESI,
         SOURCE_CONTRATS,
         SOURCE_PRESTATIONS,
+        SOURCE_EQUIPEMENTS_COUVERTURE,
+        SOURCE_EQUIPEMENTS_CONTRATS,
         SOURCE_GLOBAL,
     ]
     return [source for source in required if not table_exists(conn, source)]
@@ -1277,6 +1281,12 @@ def charger_donnees():
             df_esi = pd.read_sql_query(text(f"SELECT * FROM {SOURCE_ESI}"), conn)
             df_contrats = pd.read_sql_query(text(f"SELECT * FROM {SOURCE_CONTRATS}"), conn)
             df_prestations = pd.read_sql_query(text(f"SELECT * FROM {SOURCE_PRESTATIONS}"), conn)
+            df_equipements_couverture = pd.read_sql_query(
+                text(f"SELECT * FROM {SOURCE_EQUIPEMENTS_COUVERTURE}"), conn
+            )
+            df_equipements_contrats = pd.read_sql_query(
+                text(f"SELECT * FROM {SOURCE_EQUIPEMENTS_CONTRATS}"), conn
+            )
 
             if table_exists(conn, SOURCE_CREATIONS):
                 df_creations = pd.read_sql_query(text(f"SELECT * FROM {SOURCE_CREATIONS}"), conn)
@@ -1299,6 +1309,8 @@ def charger_donnees():
     df_esi = nettoyer_df(df_esi)
     df_contrats = normaliser_contrats(df_contrats)
     df_prestations = normaliser_prestations(df_prestations)
+    df_equipements_couverture = nettoyer_df(df_equipements_couverture)
+    df_equipements_contrats = nettoyer_df(df_equipements_contrats)
     df_creations = normaliser_creations(df_creations)
     df_qualite = nettoyer_df(df_qualite) if not df_qualite.empty else df_qualite
     if not df_qualite.empty and "contract_end_date" in df_qualite.columns:
@@ -1312,6 +1324,8 @@ def charger_donnees():
         df_esi,
         df_contrats,
         df_prestations,
+        df_equipements_couverture,
+        df_equipements_contrats,
         df_creations,
         df_qualite,
         df_qualite_resume,
@@ -1568,6 +1582,240 @@ def global_value(df_global: pd.DataFrame, col: str, default=0):
     except Exception:
         return default
 
+
+
+
+# =====================================================
+# MÉTIERS ET ÉQUIPEMENTS
+# =====================================================
+
+
+def filtrer_table_par_esi(
+    dataframe: pd.DataFrame,
+    df_esi_perimetre: pd.DataFrame,
+) -> pd.DataFrame:
+    """Restreint une table au périmètre réel des ESI sélectionnés."""
+    if dataframe.empty or "esi_reference" not in dataframe.columns:
+        return dataframe.copy()
+
+    refs = set(liste_refs_valides(df_esi_perimetre, "esi_reference"))
+    if not refs:
+        return dataframe.iloc[0:0].copy()
+
+    return dataframe[dataframe["esi_reference"].isin(refs)].copy()
+
+
+def construire_presence_metiers(
+    df_contrats: pd.DataFrame,
+    total_esi: int,
+    top_n: int = 15,
+) -> pd.DataFrame:
+    """
+    Une présence métier = au moins un contrat DISTINCT du métier sur l'ESI.
+    Le pourcentage est calculé sur tous les ESI du périmètre.
+    """
+    colonnes = ["Métier", "ESI", "Taux"]
+    if (
+        df_contrats.empty
+        or "esi_reference" not in df_contrats.columns
+        or "contract_topic" not in df_contrats.columns
+    ):
+        return pd.DataFrame(columns=colonnes)
+
+    df = df_contrats[
+        df_contrats["esi_reference"].notna()
+    ].copy()
+    df["contract_topic"] = (
+        df["contract_topic"]
+        .fillna("Non renseigné")
+        .astype(str)
+        .str.strip()
+        .replace("", "Non renseigné")
+    )
+
+    resultat = (
+        df.groupby("contract_topic", as_index=False)
+        .agg(ESI=("esi_reference", "nunique"))
+        .rename(columns={"contract_topic": "Métier"})
+    )
+    resultat["Taux"] = (
+        resultat["ESI"] / total_esi * 100
+        if total_esi
+        else 0.0
+    )
+
+    return (
+        resultat.sort_values(["ESI", "Métier"], ascending=[False, True])
+        .head(top_n)
+        .sort_values("ESI", ascending=True)
+        .reset_index(drop=True)
+    )
+
+
+def construire_repartition_types_equipement(
+    df_equipements: pd.DataFrame,
+    top_n: int = 12,
+) -> pd.DataFrame:
+    """
+    Répartition du parc par type d'équipement.
+    Une ligne source = un équipement distinct.
+    """
+    colonnes = ["Type d’équipement", "Équipements", "ESI", "Part du parc"]
+    if df_equipements.empty:
+        return pd.DataFrame(columns=colonnes)
+
+    colonne_type = None
+    for candidate in ["equipment_type", "equipment_asset_type"]:
+        if candidate in df_equipements.columns:
+            colonne_type = candidate
+            break
+
+    if colonne_type is None or "equipment_reference" not in df_equipements.columns:
+        return pd.DataFrame(columns=colonnes)
+
+    df = df_equipements.copy()
+    df["Type d’équipement"] = (
+        df[colonne_type]
+        .fillna("Non renseigné")
+        .astype(str)
+        .str.strip()
+        .replace("", "Non renseigné")
+    )
+
+    # Un équipement ne doit compter qu'une seule fois, même s'il existe plusieurs liens.
+    df = df.drop_duplicates("equipment_reference")
+
+    agg = {
+        "equipment_reference": "nunique",
+    }
+    if "esi_reference" in df.columns:
+        agg["esi_reference"] = "nunique"
+
+    resultat = (
+        df.groupby("Type d’équipement", as_index=False)
+        .agg(agg)
+        .rename(
+            columns={
+                "equipment_reference": "Équipements",
+                "esi_reference": "ESI",
+            }
+        )
+    )
+    if "ESI" not in resultat.columns:
+        resultat["ESI"] = 0
+
+    total = int(resultat["Équipements"].sum())
+    resultat["Part du parc"] = (
+        resultat["Équipements"] / total * 100
+        if total
+        else 0.0
+    )
+
+    resultat = resultat.sort_values(
+        ["Équipements", "Type d’équipement"],
+        ascending=[False, True],
+    )
+
+    if len(resultat) > top_n:
+        principaux = resultat.head(top_n - 1).copy()
+        autres = resultat.iloc[top_n - 1:]
+        ligne_autres = pd.DataFrame(
+            {
+                "Type d’équipement": ["Autres types"],
+                "Équipements": [int(autres["Équipements"].sum())],
+                "ESI": [int(autres["ESI"].sum())],
+                "Part du parc": [float(autres["Part du parc"].sum())],
+            }
+        )
+        resultat = pd.concat(
+            [principaux, ligne_autres],
+            ignore_index=True,
+        )
+
+    return resultat.sort_values(
+        "Équipements",
+        ascending=True,
+    ).reset_index(drop=True)
+
+
+def construire_couverture_reelle_equipements(
+    df_equipements: pd.DataFrame,
+    statut: str | None,
+) -> pd.DataFrame:
+    """
+    Classe chaque ESI équipé selon le lien réel équipement → contrat :
+    aucun, partiel ou total.
+
+    Tous      : tout contrat directement rattaché.
+    Actifs    : contrat actif valide.
+    Inactifs  : au moins un contrat inactif rattaché.
+    """
+    colonnes = ["Niveau de couverture", "ESI", "Taux"]
+    requis = {"esi_reference", "equipment_reference"}
+    if df_equipements.empty or not requis.issubset(df_equipements.columns):
+        return pd.DataFrame(columns=colonnes)
+
+    df = df_equipements.drop_duplicates("equipment_reference").copy()
+
+    if statut == "active":
+        indicateur = (
+            serie_numerique(df, "equipment_covered_valid") > 0
+        )
+    elif statut == "inactive":
+        indicateur = (
+            serie_numerique(df, "nb_contrats_inactifs") > 0
+        )
+    else:
+        indicateur = (
+            serie_numerique(df, "equipment_has_contract_link") > 0
+        )
+
+    df["_couvert"] = indicateur.astype(int)
+
+    par_esi = (
+        df.groupby("esi_reference", as_index=False)
+        .agg(
+            nb_equipements=("equipment_reference", "nunique"),
+            nb_equipements_couverts=("_couvert", "sum"),
+        )
+    )
+
+    par_esi["Niveau de couverture"] = "Partiellement couvert"
+    par_esi.loc[
+        par_esi["nb_equipements_couverts"] == 0,
+        "Niveau de couverture",
+    ] = "Aucun équipement couvert"
+    par_esi.loc[
+        (
+            par_esi["nb_equipements"] > 0
+        )
+        & (
+            par_esi["nb_equipements_couverts"]
+            == par_esi["nb_equipements"]
+        ),
+        "Niveau de couverture",
+    ] = "Tous les équipements couverts"
+
+    ordre = [
+        "Aucun équipement couvert",
+        "Partiellement couvert",
+        "Tous les équipements couverts",
+    ]
+
+    resultat = (
+        par_esi["Niveau de couverture"]
+        .value_counts()
+        .reindex(ordre, fill_value=0)
+        .rename_axis("Niveau de couverture")
+        .reset_index(name="ESI")
+    )
+    total = int(resultat["ESI"].sum())
+    resultat["Taux"] = (
+        resultat["ESI"] / total * 100
+        if total
+        else 0.0
+    )
+    return resultat
 
 
 # =====================================================
@@ -2843,6 +3091,8 @@ try:
             df_esi,
             df_contrats,
             df_prestations,
+            df_equipements_couverture,
+            df_equipements_contrats,
             df_creations,
             df_qualite,
             df_qualite_resume,
@@ -2912,6 +3162,16 @@ df_prestations_kpi = filtrer_prestations_depuis_contrats(
 df_contrats_source_kpi = construire_contrats_uniques_source(
     df_prestations=df_prestations_kpi,
     df_contrats_rattaches=df_contrats_kpi,
+)
+
+
+df_equipements_couverture_kpi = filtrer_table_par_esi(
+    df_equipements_couverture,
+    df_esi_context,
+)
+df_equipements_contrats_kpi = filtrer_table_par_esi(
+    df_equipements_contrats,
+    df_esi_context,
 )
 
 
@@ -4289,6 +4549,293 @@ elif vue_active == "Couverture":
         "Calcul : les références de contrats sont dédupliquées pour chaque ESI. "
         "Les ESI sans contrat sont conservés avec la valeur zéro."
     )
+
+
+    # =====================================================
+    # MÉTIERS ET ÉQUIPEMENTS
+    # =====================================================
+
+    st.markdown("<br>", unsafe_allow_html=True)
+    section(
+        "Métiers et équipements",
+        "Les métiers indiquent la présence contractuelle sur les ESI. "
+        "La couverture des équipements repose uniquement sur les liens réellement enregistrés dans Intent.",
+    )
+
+    presence_metiers = construire_presence_metiers(
+        df_contrats=df_contrats_kpi,
+        total_esi=total_esi_situation,
+        top_n=15,
+    )
+
+    repartition_types = construire_repartition_types_equipement(
+        df_equipements=df_equipements_couverture_kpi,
+        top_n=12,
+    )
+
+    couverture_equipements = construire_couverture_reelle_equipements(
+        df_equipements=df_equipements_couverture_kpi,
+        statut=statut_selectionne,
+    )
+
+    # -----------------------------------------------------
+    # 1. PRÉSENCE DES CONTRATS PAR MÉTIER — PLEINE LARGEUR
+    # -----------------------------------------------------
+    st.markdown(
+        '<div class="vg-mini-title">Présence des contrats par métier</div>',
+        unsafe_allow_html=True,
+    )
+
+    if presence_metiers.empty:
+        st.info("Aucune donnée métier disponible sur le périmètre sélectionné.")
+    elif go is None:
+        st.bar_chart(
+            presence_metiers.set_index("Métier")["Taux"],
+            width="stretch",
+        )
+    else:
+        fig_metiers = go.Figure(
+            go.Bar(
+                x=presence_metiers["Taux"],
+                y=presence_metiers["Métier"],
+                orientation="h",
+                text=[
+                    (
+                        f"{fmt_nombre(nb)} ESI · "
+                        f"{fmt_pourcentage(taux)}"
+                    )
+                    for nb, taux in zip(
+                        presence_metiers["ESI"],
+                        presence_metiers["Taux"],
+                    )
+                ],
+                textposition="outside",
+                customdata=presence_metiers["ESI"],
+                marker=dict(color=C_RED),
+                hovertemplate=(
+                    "<b>%{y}</b><br>"
+                    "ESI concernés : %{customdata:,}<br>"
+                    "Part du patrimoine : %{x:.1f} %"
+                    "<extra></extra>"
+                ),
+            )
+        )
+        hauteur_metiers = max(
+            430,
+            min(720, 34 * len(presence_metiers) + 125),
+        )
+        _layout_plotly(fig_metiers, hauteur_metiers)
+        fig_metiers.update_layout(
+            xaxis=dict(
+                title="Part des ESI du périmètre",
+                ticksuffix=" %",
+                range=[
+                    0,
+                    max(
+                        100,
+                        float(presence_metiers["Taux"].max()) + 12,
+                    ),
+                ],
+                gridcolor=C_GRID,
+                tickfont=dict(size=11),
+            ),
+            yaxis=dict(
+                title=None,
+                automargin=True,
+                tickfont=dict(size=12),
+            ),
+            margin=dict(l=15, r=120, t=15, b=55),
+            bargap=0.28,
+            showlegend=False,
+        )
+        st.plotly_chart(
+            fig_metiers,
+            use_container_width=True,
+            config=config_plotly("presence_contrats_par_metier"),
+        )
+
+    st.caption(
+        "Lecture : un ESI est compté une seule fois par métier, même s’il possède "
+        "plusieurs contrats du même métier."
+    )
+
+    # -----------------------------------------------------
+    # 2. TYPES D'ÉQUIPEMENT + COUVERTURE RÉELLE
+    # -----------------------------------------------------
+    st.markdown("<br>", unsafe_allow_html=True)
+    col_types, col_couverture_equipements = st.columns(
+        [1.25, 0.85],
+        gap="large",
+    )
+
+    with col_types:
+        st.markdown(
+            '<div class="vg-mini-title">Répartition des types d’équipement</div>',
+            unsafe_allow_html=True,
+        )
+
+        if repartition_types.empty:
+            st.info("Aucun type d’équipement disponible sur ce périmètre.")
+        elif go is None:
+            st.bar_chart(
+                repartition_types.set_index(
+                    "Type d’équipement"
+                )["Équipements"],
+                width="stretch",
+            )
+        else:
+            fig_types = go.Figure(
+                go.Bar(
+                    x=repartition_types["Équipements"],
+                    y=repartition_types["Type d’équipement"],
+                    orientation="h",
+                    text=[
+                        (
+                            f"{fmt_nombre(nb)} · "
+                            f"{fmt_pourcentage(part)}"
+                        )
+                        for nb, part in zip(
+                            repartition_types["Équipements"],
+                            repartition_types["Part du parc"],
+                        )
+                    ],
+                    textposition="outside",
+                    customdata=repartition_types[
+                        ["ESI", "Part du parc"]
+                    ].to_numpy(),
+                    marker=dict(color=C_NAVY),
+                    hovertemplate=(
+                        "<b>%{y}</b><br>"
+                        "Équipements : %{x:,}<br>"
+                        "ESI concernés : %{customdata[0]:,}<br>"
+                        "Part du parc : %{customdata[1]:.1f} %"
+                        "<extra></extra>"
+                    ),
+                )
+            )
+            hauteur_types = max(
+                420,
+                min(650, 35 * len(repartition_types) + 120),
+            )
+            _layout_plotly(fig_types, hauteur_types)
+            fig_types.update_layout(
+                xaxis=dict(
+                    title="Nombre d’équipements",
+                    gridcolor=C_GRID,
+                    tickfont=dict(size=11),
+                ),
+                yaxis=dict(
+                    title=None,
+                    automargin=True,
+                    tickfont=dict(size=11.5),
+                ),
+                margin=dict(l=15, r=105, t=15, b=55),
+                bargap=0.3,
+                showlegend=False,
+            )
+            st.plotly_chart(
+                fig_types,
+                use_container_width=True,
+                config=config_plotly("repartition_types_equipement"),
+            )
+
+    with col_couverture_equipements:
+        st.markdown(
+            '<div class="vg-mini-title">Couverture réelle des équipements</div>',
+            unsafe_allow_html=True,
+        )
+
+        if couverture_equipements.empty:
+            st.info("Aucune donnée de couverture équipement disponible.")
+        elif go is None:
+            st.bar_chart(
+                couverture_equipements.set_index(
+                    "Niveau de couverture"
+                )["ESI"],
+                width="stretch",
+            )
+        else:
+            couleurs_couverture = {
+                "Aucun équipement couvert": C_PINK,
+                "Partiellement couvert": C_YELLOW,
+                "Tous les équipements couverts": C_TEAL,
+            }
+            fig_couverture_equipements = go.Figure(
+                go.Pie(
+                    labels=couverture_equipements[
+                        "Niveau de couverture"
+                    ],
+                    values=couverture_equipements["ESI"],
+                    hole=0.60,
+                    sort=False,
+                    textinfo="percent",
+                    textfont=dict(size=13),
+                    marker=dict(
+                        colors=[
+                            couleurs_couverture.get(label, C_NAVY)
+                            for label in couverture_equipements[
+                                "Niveau de couverture"
+                            ]
+                        ],
+                        line=dict(color="#FFFFFF", width=3),
+                    ),
+                    customdata=couverture_equipements["Taux"],
+                    hovertemplate=(
+                        "<b>%{label}</b><br>"
+                        "ESI : %{value:,}<br>"
+                        "Part des ESI équipés : %{customdata:.1f} %"
+                        "<extra></extra>"
+                    ),
+                )
+            )
+
+            total_esi_equipes = int(
+                couverture_equipements["ESI"].sum()
+            )
+            fig_couverture_equipements.add_annotation(
+                text=(
+                    f"<b>{fmt_nombre(total_esi_equipes)}</b>"
+                    "<br><span style='font-size:11px'>ESI équipés</span>"
+                ),
+                x=0.5,
+                y=0.5,
+                showarrow=False,
+                font=dict(color=C_INK, size=19),
+            )
+            _layout_plotly(fig_couverture_equipements, 470)
+            fig_couverture_equipements.update_layout(
+                showlegend=True,
+                legend=dict(
+                    orientation="h",
+                    yanchor="top",
+                    y=-0.08,
+                    xanchor="center",
+                    x=0.5,
+                    font=dict(size=11),
+                ),
+                margin=dict(l=10, r=10, t=20, b=110),
+            )
+            st.plotly_chart(
+                fig_couverture_equipements,
+                use_container_width=True,
+                config=config_plotly(
+                    "couverture_reelle_des_equipements"
+                ),
+            )
+
+        statut_couverture = (
+            "contrats actifs valides"
+            if statut_selectionne == "active"
+            else "contrats inactifs"
+            if statut_selectionne == "inactive"
+            else "tous les contrats rattachés"
+        )
+        st.caption(
+            f"Classification selon les {statut_couverture}. "
+            "« Partiellement couvert » signifie qu’au moins un équipement de "
+            "l’ESI est couvert, mais pas tous."
+        )
+
 
 
 # =====================================================
