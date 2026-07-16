@@ -4278,28 +4278,62 @@ if vue_active == "Vue globale":
         equipements_pill = equipements_help = ""
 
     # Tous les contrats avec un filtre patrimoine ou métier/prestataire actif.
+    # Tous les contrats avec un filtre actif :
+    # contrat, société, agence, groupe, secteur,
+    # programme / ESI, métier ou prestataire.
     else:
-        contrats_value = len(liste_refs_valides(df_contrats_kpi, "contract_reference"))
-        contrats_pill = "Périmètre filtré"
-        contrats_help = "Contrats exploitables correspondant aux filtres actifs."
+        contrats_value = len(
+            liste_refs_valides(
+                df_contrats_kpi,
+                "contract_reference",
+            )
+        )
 
-        programmes_value = len(liste_refs_valides(df_esi_context, "esi_reference"))
-        programmes_couverts = int(serie_numerique(df_esi_context, "esi_couvert").sum())
-        programmes_pill = f"{fmt_nombre(programmes_couverts)} couverts"
-        programmes_help = "Programmes / ESI correspondant aux filtres actifs."
+        programmes_value = len(
+            liste_refs_valides(
+                df_esi_context,
+                "esi_reference",
+            )
+        )
 
-        logements_value = int(serie_numerique(df_esi_context, "nb_logements").sum())
-        logements_pill = "Rattachés aux ESI"
-        logements_help = "Logements exploitables du périmètre filtré."
+        logements_value = int(
+            serie_numerique(
+                df_esi_context,
+                "nb_logements",
+            ).sum()
+        )
 
-        equipements_value = int(serie_numerique(df_esi_context, "nb_equipements").sum())
-        equipements_pill = "Rattachés aux ESI"
-        equipements_help = "Équipements exploitables du périmètre filtré."
+        equipements_value = int(
+            serie_numerique(
+                df_esi_context,
+                "nb_equipements",
+            ).sum()
+        )
 
-        contrats_label = "Contrats"
-        programmes_label = "Programmes / ESI"
-        logements_label = "Logements"
-        equipements_label = "Équipements"
+        contrats_label = "Contrats concernés"
+        programmes_label = "ESI concernés"
+        logements_label = "Logements rattachés"
+        equipements_label = "Équipements rattachés"
+
+        contrats_pill = ""
+        contrats_help = ""
+
+        programmes_pill = ""
+        programmes_help = ""
+
+        logements_pill = ""
+        logements_help = ""
+
+        equipements_pill = ""
+        equipements_help = ""
+
+    cartes_compactes = (
+        statut_selectionne in {
+            "active",
+            "inactive",
+        }
+        or perimetre_filtre_actif
+    )
 
     cartes_compactes = statut_selectionne in {"active", "inactive"}
 
