@@ -2738,8 +2738,8 @@ def afficher_evolution_couverture_esi(
         # seulement les 5 premières pour les mailles plus détaillées.
         if maille_selectionnee == "Société":
             selection_par_defaut = entites_disponibles
-        else:
-            selection_par_defaut = entites_disponibles[:5]
+        # else:
+        #     selection_par_defaut = entites_disponibles[:5]
 
         cle_selection_entites = (
             f"couverture_entites_{maille_selectionnee.lower()}"
