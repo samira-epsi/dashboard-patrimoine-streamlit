@@ -4327,7 +4327,13 @@ if vue_active == "Vue globale":
         equipements_pill = ""
         equipements_help = ""
 
-        cartes_compactes = False
+    cartes_compactes = (
+        statut_selectionne in {
+            "active",
+            "inactive",
+        }
+        or perimetre_filtre_actif
+    )
 
 
 
@@ -5229,7 +5235,13 @@ elif vue_active == "Couverture":
         logements_pill = logements_help = ""
         equipements_pill = equipements_help = ""
 
-        cartes_compactes = False
+        cartes_compactes = (
+        statut_selectionne in {
+            "active",
+            "inactive",
+        }
+        or perimetre_filtre_actif
+    )
 
     c1, c2, c3, c4 = st.columns(4)
     with c1:
