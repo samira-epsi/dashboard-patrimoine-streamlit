@@ -5644,119 +5644,263 @@ elif vue_active == "Couverture":
             unsafe_allow_html=True,
         )
 
-        if go is None:
-            st.bar_chart(
-                distribution_contrats.set_index("Tranche")["ESI"],
-                width="stretch",
-            )
-        else:
-            fig_contrats = go.Figure(
-                go.Bar(
-                    x=distribution_contrats["Tranche"].astype(str),
-                    y=distribution_contrats["ESI"],
-                    text=distribution_contrats["Taux"].map(
-                        lambda valeur: fmt_pourcentage(valeur)
-                    ),
-                    textposition="outside",
-                    textfont=dict(size=13),
-                    customdata=distribution_contrats["Taux"],
-                    marker=dict(
-                        color=[
-                            "#E89BC7",
-                            "#63B9DF",
-                            "#F4D84E",
-                            "#2F7C6D",
-                            "#432ABD",
-                        ],
-                        line=dict(color="#FFFFFF", width=1.5),
-                    ),
-                    hovertemplate=(
-                        "<b>%{x}</b><br>"
-                        "ESI : %{y:,}<br>"
-                        "Part : %{customdata:.1f} %<extra></extra>"
-                    ),
-                )
-            )
-            _layout_plotly(fig_contrats, 410)
-            fig_contrats.update_layout(
-                xaxis=dict(
-                    title=None,
-                    tickangle=0,
-                    automargin=True,
-                    tickfont=dict(size=12),
-                ),
-                yaxis=dict(
-                    title="Nombre d’ESI",
-                    gridcolor=C_GRID,
-                    tickfont=dict(size=11),
-                ),
-                margin=dict(l=55, r=25, t=18, b=55),
-                showlegend=False,
-                bargap=0.28,
-            )
-            st.plotly_chart(
-                fig_contrats,
-                use_container_width=True,
-                config=config_plotly("distribution_contrats_par_esi"),
-            )
+        st.markdown("<br>", unsafe_allow_html=True)
 
-        moyenne_texte = f"{moyenne_contrats_esi:.2f}".replace(".", ",")
-        mediane_texte = f"{mediane_contrats_esi:.0f}".replace(".", ",")
-
-        indicateur_1, indicateur_2, indicateur_3 = st.columns(
-            [1, 1, 1.45],
-            gap="large",
+        moyenne_texte = (
+            f"{moyenne_contrats_esi:.2f}"
+            .replace(".", ",")
         )
 
-        with indicateur_1:
+        mediane_texte = (
+            f"{mediane_contrats_esi:.0f}"
+            .replace(".", ",")
+        )
+
+        colonne_graphique, colonne_indicateurs = st.columns(
+            [2.35, 1],
+            gap="large",
+            vertical_alignment="top",
+        )
+
+        # =================================================
+        # GRAPHIQUE À GAUCHE
+        # =================================================
+
+        with colonne_graphique:
+            st.markdown(
+                (
+                    '<div class="vg-mini-title">'
+                    "Répartition des contrats par ESI"
+                    "</div>"
+                ),
+                unsafe_allow_html=True,
+            )
+
+            if go is None:
+                st.bar_chart(
+                    distribution_contrats.set_index(
+                        "Tranche"
+                    )["ESI"],
+                    width="stretch",
+                    height=420,
+                )
+
+            else:
+                fig_contrats = go.Figure(
+                    go.Bar(
+                        x=distribution_contrats[
+                            "Tranche"
+                        ].astype(str),
+                        y=distribution_contrats[
+                            "ESI"
+                        ],
+                        text=distribution_contrats[
+                            "Taux"
+                        ].map(
+                            lambda valeur: (
+                                fmt_pourcentage(valeur)
+                            )
+                        ),
+                        textposition="outside",
+                        textfont=dict(
+                            size=12,
+                        ),
+                        cliponaxis=False,
+                        customdata=(
+                            distribution_contrats[
+                                "Taux"
+                            ]
+                        ),
+                        marker=dict(
+                            color=[
+                                "#E89BC7",
+                                "#63B9DF",
+                                "#F4D84E",
+                                "#2F7C6D",
+                                "#432ABD",
+                            ],
+                            line=dict(
+                                color="#FFFFFF",
+                                width=1.5,
+                            ),
+                        ),
+                        hovertemplate=(
+                            "<b>%{x}</b><br>"
+                            "ESI : %{y:,}<br>"
+                            "Part : %{customdata:.1f} %"
+                            "<extra></extra>"
+                        ),
+                    )
+                )
+
+                _layout_plotly(
+                    fig_contrats,
+                    420,
+                )
+
+                fig_contrats.update_layout(
+                    xaxis=dict(
+                        title=None,
+                        tickangle=0,
+                        automargin=True,
+                        tickfont=dict(
+                            size=10,
+                        ),
+                    ),
+                    yaxis=dict(
+                        title="Nombre d’ESI",
+                        gridcolor=C_GRID,
+                        tickfont=dict(
+                            size=10,
+                        ),
+                    ),
+                    margin=dict(
+                        l=52,
+                        r=18,
+                        t=28,
+                        b=55,
+                    ),
+                    showlegend=False,
+                    bargap=0.30,
+                )
+
+                st.plotly_chart(
+                    fig_contrats,
+                    use_container_width=True,
+                    config=config_plotly(
+                        "distribution_contrats_par_esi"
+                    ),
+                )
+
+        # =================================================
+        # INDICATEURS À DROITE
+        # =================================================
+
+        with colonne_indicateurs:
+            st.markdown(
+                (
+                    '<div class="vg-mini-title">'
+                    "Indicateurs"
+                    "</div>"
+                ),
+                unsafe_allow_html=True,
+            )
+
             st.markdown(
                 f"""
-                <div class="vg-card vg-card-compact"
-                     style="--accent:{C_TEAL};">
-                    <div class="vg-card-accent"></div>
-                    <div class="vg-card-label">Moyenne</div>
-                    <div class="vg-card-value">{_safe(moyenne_texte)}</div>
+                <div class="vg-card"
+                     style="
+                        --accent:{C_TEAL};
+                        height:128px;
+                        min-height:128px;
+                        padding:14px 16px;
+                        margin-bottom:10px;
+                     ">
+                    <div class="vg-card-accent"
+                         style="margin-bottom:10px;">
+                    </div>
+
+                    <div class="vg-card-label"
+                         style="margin-bottom:7px;">
+                        Moyenne
+                    </div>
+
+                    <div class="vg-card-value"
+                         style="font-size:27px;">
+                        {_safe(moyenne_texte)}
+                    </div>
+
                     <div class="vg-card-help">
-                        Contrats distincts par ESI, en incluant les ESI à zéro.
+                        Contrats distincts par ESI,
+                        zéro inclus.
                     </div>
                 </div>
                 """,
                 unsafe_allow_html=True,
             )
 
-        with indicateur_2:
             st.markdown(
                 f"""
-                <div class="vg-card vg-card-compact"
-                     style="--accent:{C_NAVY};">
-                    <div class="vg-card-accent"></div>
-                    <div class="vg-card-label">Médiane</div>
-                    <div class="vg-card-value">{_safe(mediane_texte)}</div>
+                <div class="vg-card"
+                     style="
+                        --accent:{C_NAVY};
+                        height:128px;
+                        min-height:128px;
+                        padding:14px 16px;
+                        margin-bottom:10px;
+                     ">
+                    <div class="vg-card-accent"
+                         style="margin-bottom:10px;">
+                    </div>
+
+                    <div class="vg-card-label"
+                         style="margin-bottom:7px;">
+                        Médiane
+                    </div>
+
+                    <div class="vg-card-value"
+                         style="font-size:27px;">
+                        {_safe(mediane_texte)}
+                    </div>
+
                     <div class="vg-card-help">
-                        La moitié des ESI possède ce nombre de contrats ou moins.
+                        50 % des ESI ont ce nombre
+                        de contrats ou moins.
                     </div>
                 </div>
                 """,
                 unsafe_allow_html=True,
             )
 
-        with indicateur_3:
             st.markdown(
                 f"""
-                <div class="vg-card vg-card-compact"
-                     style="--accent:{C_RED};">
-                    <div class="vg-card-accent"></div>
-                    <div class="vg-card-label">
+                <div class="vg-card"
+                     style="
+                        --accent:{C_RED};
+                        height:144px;
+                        min-height:144px;
+                        padding:14px 16px;
+                     ">
+                    <div class="vg-card-accent"
+                         style="margin-bottom:9px;">
+                    </div>
+
+                    <div class="vg-card-label"
+                         style="
+                            margin-bottom:6px;
+                            line-height:1.25;
+                         ">
                         Multi-contrats sur un même métier
                     </div>
-                    <div class="vg-card-value">
-                        {fmt_nombre(nb_esi_multi_metier)}
+
+                    <div style="
+                        display:flex;
+                        align-items:center;
+                        gap:10px;
+                     ">
+                        <div class="vg-card-value"
+                             style="
+                                font-size:27px;
+                                margin-bottom:0;
+                             ">
+                            {fmt_nombre(nb_esi_multi_metier)}
+                        </div>
+
+                        <div class="vg-card-pill"
+                             style="margin-bottom:0;">
+                            {
+                                fmt_pourcentage(
+                                    taux_esi(
+                                        nb_esi_multi_metier
+                                    )
+                                )
+                            }
+                        </div>
                     </div>
-                    <div class="vg-card-pill">
-                        {fmt_pourcentage(taux_esi(nb_esi_multi_metier))}
-                    </div>
+
                     <div class="vg-card-help">
-                        ESI ayant plusieurs contrats rattachés au même métier.
+                        ESI avec plusieurs contrats
+                        sur un même métier.
                     </div>
                 </div>
                 """,
@@ -5764,9 +5908,11 @@ elif vue_active == "Couverture":
             )
 
         st.caption(
-            "Calcul : les références de contrats sont dédupliquées pour chaque ESI. "
-            "Les ESI sans contrat sont conservés avec la valeur zéro."
+            "Calcul : les références de contrats sont "
+            "dédupliquées pour chaque ESI. Les ESI sans "
+            "contrat sont conservés avec la valeur zéro."
         )
+        
 
         presence_metiers = construire_presence_metiers(
             df_contrats=df_contrats_kpi,
