@@ -4734,15 +4734,34 @@ if vue_active == "Vue globale":
             colonnes_disponibles = [
                 col
                 for col in (
-                    colonnes_prestation_principales + colonnes_prestation_detail
+                    colonnes_prestation_principales
+                    + colonnes_prestation_detail
                 )
                 if col in table_contrats_complete.columns
             ]
+
             colonnes_par_defaut = [
                 col
                 for col in colonnes_prestation_principales
                 if col in colonnes_disponibles
             ]
+
+        elif mode_tableau == "Contrats uniques":
+            colonnes_disponibles = [
+                col
+                for col in (
+                    colonnes_contrat
+                    + colonnes_contrat_detail
+                )
+                if col in table_contrats_complete.columns
+            ]
+
+            colonnes_par_defaut = [
+                col
+                for col in colonnes_contrat
+                if col in colonnes_disponibles
+            ]
+
         else:
             colonnes_disponibles = [
                 col
@@ -4753,19 +4772,15 @@ if vue_active == "Vue globale":
                 )
                 if col in table_contrats_complete.columns
             ]
-            if mode_tableau == "Contrats uniques":
-                colonnes_par_defaut = [
-                    col for col in colonnes_contrat if col in colonnes_disponibles
-                ]
-            else:
-                colonnes_par_defaut = [
-                    col
-                    for col in (
-                        colonnes_contrat + ["Référence ESI", "Libellé ESI"]
-                    )
-                    if col in colonnes_disponibles
-                ]
 
+            colonnes_par_defaut = [
+                col
+                for col in (
+                    colonnes_contrat
+                    + ["Référence ESI", "Libellé ESI"]
+                )
+                if col in colonnes_disponibles
+            ]
         with colonnes_col:
             st.markdown(
                 '<div class="vg-column-title">Colonnes affichées</div>',
