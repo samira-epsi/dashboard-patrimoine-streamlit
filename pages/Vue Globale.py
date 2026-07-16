@@ -6097,8 +6097,8 @@ elif vue_active == "Couverture":
                 )
             else:
                 couleurs_couverture = {
-                "Équipements avec contrat": "#008080",
-                "Équipements sans contrat": "#FFB7E3",
+                "Équipements avec contrat": "#9FD8CF",
+                "Équipements sans contrat": "#F7D6E6",
                 }
 
                 fig_couverture = go.Figure(
