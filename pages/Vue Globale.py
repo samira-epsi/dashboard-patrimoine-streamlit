@@ -5638,11 +5638,11 @@ elif vue_active == "Couverture":
                     config=config_plotly("couverture_reelle_esi"),
                 )
 
-        st.markdown("<br>", unsafe_allow_html=True)
-        st.markdown(
-            '<div class="vg-mini-title">Répartition des contrats par ESI</div>',
-            unsafe_allow_html=True,
-        )
+        # st.markdown("<br>", unsafe_allow_html=True)
+        # st.markdown(
+        #     '<div class="vg-mini-title">Répartition des contrats par ESI</div>',
+        #     unsafe_allow_html=True,
+        # )
 
         st.markdown("<br>", unsafe_allow_html=True)
 
@@ -5655,6 +5655,60 @@ elif vue_active == "Couverture":
             f"{mediane_contrats_esi:.0f}"
             .replace(".", ",")
         )
+
+        def afficher_carte_indicateur(
+            label: str,
+            valeur: str,
+            aide: str,
+            accent: str,
+            pourcentage: str | None = None,
+            hauteur: int = 128,
+        ):
+            if pourcentage:
+                contenu_valeur = (
+                    '<div style="display:flex;align-items:center;gap:10px;">'
+                    f'<div class="vg-card-value" '
+                    f'style="font-size:27px;margin-bottom:0;">'
+                    f'{_safe(valeur)}'
+                    '</div>'
+                    f'<div class="vg-card-pill" style="margin-bottom:0;">'
+                    f'{_safe(pourcentage)}'
+                    '</div>'
+                    '</div>'
+                )
+            else:
+                contenu_valeur = (
+                    f'<div class="vg-card-value" '
+                    f'style="font-size:27px;">'
+                    f'{_safe(valeur)}'
+                    '</div>'
+                )
+
+            carte_html = (
+                f'<div class="vg-card" '
+                f'style="--accent:{accent};'
+                f'height:{hauteur}px;'
+                f'min-height:{hauteur}px;'
+                f'padding:14px 16px;'
+                f'margin-bottom:10px;">'
+                f'<div class="vg-card-accent" '
+                f'style="margin-bottom:10px;"></div>'
+                f'<div class="vg-card-label" '
+                f'style="margin-bottom:7px;line-height:1.25;">'
+                f'{_safe(label)}'
+                f'</div>'
+                f'{contenu_valeur}'
+                f'<div class="vg-card-help">'
+                f'{_safe(aide)}'
+                f'</div>'
+                f'</div>'
+            )
+
+            st.markdown(
+                carte_html,
+                unsafe_allow_html=True,
+            )
+
 
         colonne_graphique, colonne_indicateurs = st.columns(
             [2.35, 1],
@@ -5776,136 +5830,64 @@ elif vue_active == "Couverture":
         # INDICATEURS À DROITE
         # =================================================
 
+                # =================================================
+        # INDICATEURS À DROITE
+        # =================================================
+
         with colonne_indicateurs:
             st.markdown(
-                (
-                    '<div class="vg-mini-title">'
-                    "Indicateurs"
-                    "</div>"
+                '<div class="vg-mini-title">Indicateurs</div>',
+                unsafe_allow_html=True,
+            )
+
+            afficher_carte_indicateur(
+                label="Moyenne",
+                valeur=moyenne_texte,
+                aide=(
+                    "Contrats distincts par ESI, "
+                    "zéro inclus."
                 ),
-                unsafe_allow_html=True,
+                accent=C_TEAL,
+                hauteur=128,
             )
 
-            st.markdown(
-                f"""
-                <div class="vg-card"
-                     style="
-                        --accent:{C_TEAL};
-                        height:128px;
-                        min-height:128px;
-                        padding:14px 16px;
-                        margin-bottom:10px;
-                     ">
-                    <div class="vg-card-accent"
-                         style="margin-bottom:10px;">
-                    </div>
-
-                    <div class="vg-card-label"
-                         style="margin-bottom:7px;">
-                        Moyenne
-                    </div>
-
-                    <div class="vg-card-value"
-                         style="font-size:27px;">
-                        {_safe(moyenne_texte)}
-                    </div>
-
-                    <div class="vg-card-help">
-                        Contrats distincts par ESI,
-                        zéro inclus.
-                    </div>
-                </div>
-                """,
-                unsafe_allow_html=True,
+            afficher_carte_indicateur(
+                label="Médiane",
+                valeur=mediane_texte,
+                aide=(
+                    "50 % des ESI ont ce nombre "
+                    "de contrats ou moins."
+                ),
+                accent=C_NAVY,
+                hauteur=128,
             )
 
-            st.markdown(
-                f"""
-                <div class="vg-card"
-                     style="
-                        --accent:{C_NAVY};
-                        height:128px;
-                        min-height:128px;
-                        padding:14px 16px;
-                        margin-bottom:10px;
-                     ">
-                    <div class="vg-card-accent"
-                         style="margin-bottom:10px;">
-                    </div>
-
-                    <div class="vg-card-label"
-                         style="margin-bottom:7px;">
-                        Médiane
-                    </div>
-
-                    <div class="vg-card-value"
-                         style="font-size:27px;">
-                        {_safe(mediane_texte)}
-                    </div>
-
-                    <div class="vg-card-help">
-                        50 % des ESI ont ce nombre
-                        de contrats ou moins.
-                    </div>
-                </div>
-                """,
-                unsafe_allow_html=True,
+            afficher_carte_indicateur(
+                label=(
+                    "Multi-contrats sur un même métier"
+                ),
+                valeur=fmt_nombre(
+                    nb_esi_multi_metier
+                ),
+                pourcentage=fmt_pourcentage(
+                    taux_esi(
+                        nb_esi_multi_metier
+                    )
+                ),
+                aide=(
+                    "ESI avec plusieurs contrats "
+                    "sur un même métier."
+                ),
+                accent=C_RED,
+                hauteur=144,
             )
 
-            st.markdown(
-                f"""
-                <div class="vg-card"
-                     style="
-                        --accent:{C_RED};
-                        height:144px;
-                        min-height:144px;
-                        padding:14px 16px;
-                     ">
-                    <div class="vg-card-accent"
-                         style="margin-bottom:9px;">
-                    </div>
-
-                    <div class="vg-card-label"
-                         style="
-                            margin-bottom:6px;
-                            line-height:1.25;
-                         ">
-                        Multi-contrats sur un même métier
-                    </div>
-
-                    <div style="
-                        display:flex;
-                        align-items:center;
-                        gap:10px;
-                     ">
-                        <div class="vg-card-value"
-                             style="
-                                font-size:27px;
-                                margin-bottom:0;
-                             ">
-                            {fmt_nombre(nb_esi_multi_metier)}
-                        </div>
-
-                        <div class="vg-card-pill"
-                             style="margin-bottom:0;">
-                            {
-                                fmt_pourcentage(
-                                    taux_esi(
-                                        nb_esi_multi_metier
-                                    )
-                                )
-                            }
-                        </div>
-                    </div>
-
-                    <div class="vg-card-help">
-                        ESI avec plusieurs contrats
-                        sur un même métier.
-                    </div>
-                </div>
-                """,
-                unsafe_allow_html=True,
-            )
+        st.caption(
+            "Calcul : les références de contrats sont "
+            "dédupliquées pour chaque ESI. Les ESI sans "
+            "contrat sont conservés avec la valeur zéro."
+        )
+            
 
         st.caption(
             "Calcul : les références de contrats sont "
