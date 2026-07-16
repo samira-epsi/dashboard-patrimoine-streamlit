@@ -5980,18 +5980,18 @@ elif vue_active == "Couverture":
                 )
             else:
                 couleurs_types_3f = [
-                    "#173B69",
-                    "#63B9DF",
-                    "#2F7C6D",
-                    "#E89BC7",
-                    "#432ABD",
-                    "#F4D84E",
-                    "#8CC8BC",
-                    "#7B9BC3",
-                    "#D83B55",
-                    "#B8DFF1",
-                    "#A99BE8",
-                    "#D8C95B",
+                "#F8D8EA",  # rose très doux
+                "#CDEBFA",  # bleu ciel doux
+                "#FFF0A6",  # jaune doux
+                "#B8DDD6",  # vert doux
+                "#FFB7E3",  # rose 3F
+                "#80CDFF",  # bleu ciel 3F
+                "#FFDC55",  # jaune 3F
+                "#008080",  # vert 3F
+                "#0074FF",  # bleu vif 3F
+                "#432ABD",  # violet 3F
+                "#173B69",  # bleu marine 3F
+                "#E5114D",  # rouge 3F pour la catégorie principale
                 ]
 
                 fig_types = go.Figure(
