@@ -5971,10 +5971,10 @@ elif vue_active == "Couverture":
                         hole=0.68,
                         sort=False,
                         textinfo="percent",
-                        textposition="inside",
+                        textposition="outside",
                         textfont=dict(
                             size=14,
-                            color="#FFFFFF",
+                            color="#201E1E",
                         ),
                         marker=dict(
                             colors=[
