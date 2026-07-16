@@ -2741,15 +2741,39 @@ def afficher_evolution_couverture_esi(
         else:
             selection_par_defaut = entites_disponibles[:5]
 
+        cle_selection_entites = (
+            f"couverture_entites_{maille_selectionnee.lower()}"
+        )
+
+        # Initialise automatiquement la sélection si elle est vide.
+        selection_actuelle = st.session_state.get(
+            cle_selection_entites,
+            [],
+        )
+
+        selection_actuelle_valide = [
+            entite
+            for entite in selection_actuelle
+            if entite in entites_disponibles
+        ]
+
+        if not selection_actuelle_valide:
+            st.session_state[cle_selection_entites] = (
+                selection_par_defaut
+            )
+        else:
+            st.session_state[cle_selection_entites] = (
+                selection_actuelle_valide
+            )
+
         entites_selectionnees = st.multiselect(
             f"{maille_selectionnee}(s) à comparer",
             options=entites_disponibles,
-            default=selection_par_defaut,
             placeholder=(
                 f"Sélectionner une ou plusieurs "
                 f"{maille_selectionnee.lower()}s"
             ),
-            key=f"couverture_entites_{maille_selectionnee.lower()}",
+            key=cle_selection_entites,
         )
 
         if not entites_selectionnees:
