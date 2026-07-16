@@ -1901,10 +1901,10 @@ def construire_couverture_reelle_equipements(
 
     resultat = pd.DataFrame(
         {
-            "Couverture": [
-                "Équipements avec contrat",
-                "Équipements sans contrat",
-            ],
+            # "Couverture": [
+            #     # "Équipements avec contrat",
+            #     # "Équipements sans contrat",
+            # ],
             "Équipements": [
                 nb_couverts,
                 nb_non_couverts,
@@ -5966,7 +5966,7 @@ elif vue_active == "Couverture":
 
                 fig_couverture = go.Figure(
                     go.Pie(
-                        labels=couverture_equipements["Couverture"],
+                        # labels=couverture_equipements["Couverture"],
                         values=couverture_equipements["Équipements"],
                         hole=0.68,
                         sort=False,
