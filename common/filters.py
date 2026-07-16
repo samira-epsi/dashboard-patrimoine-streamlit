@@ -808,32 +808,136 @@ def reinitialiser_filtres_dashboard():
             del st.session_state[cle]
 
 
+def _selection_session(key: str) -> list:
+    """Retourne une sélection Streamlit propre sous forme de liste."""
+    valeur = st.session_state.get(key, [])
+    if not isinstance(valeur, list):
+        return []
+
+    valeurs_invalides = {
+        "",
+        "nan",
+        "None",
+        "<NA>",
+        "Non renseigné",
+    }
+
+    return [
+        str(element).strip()
+        for element in valeur
+        if str(element).strip() not in valeurs_invalides
+    ]
+
+
+def _normaliser_colonne_filtre(df: pd.DataFrame, colonne: str) -> pd.Series:
+    """Normalise une colonne utilisée par les filtres synchronisés."""
+    if colonne not in df.columns:
+        return pd.Series(pd.NA, index=df.index, dtype="string")
+
+    return (
+        df[colonne]
+        .astype("string")
+        .str.strip()
+        .replace(
+            {
+                "": pd.NA,
+                "nan": pd.NA,
+                "None": pd.NA,
+                "<NA>": pd.NA,
+            }
+        )
+    )
+
+
+def construire_base_filtres_synchronises(
+    df_esi: pd.DataFrame,
+    df_contrats: pd.DataFrame,
+    inclure_esi_sans_contrat: bool = True,
+) -> pd.DataFrame:
+    """
+    Construit une base commune à tous les filtres.
+
+    Cette base permet à n'importe quelle sélection de réduire les options
+    de tous les autres filtres : contrat, société, agence, groupe, secteur,
+    référence ESI, métier et prestataire.
+    """
+    colonnes = [
+        "contract_reference",
+        "societe",
+        "agence",
+        "groupe",
+        "secteur",
+        "esi_reference",
+        "contract_topic",
+        "third_party_label",
+    ]
+
+    contrats = df_contrats.copy()
+    for colonne in colonnes:
+        contrats[colonne] = _normaliser_colonne_filtre(contrats, colonne)
+    contrats = contrats[colonnes].copy()
+
+    morceaux = [contrats]
+
+    if inclure_esi_sans_contrat:
+        esi = df_esi.copy()
+        for colonne in colonnes:
+            esi[colonne] = _normaliser_colonne_filtre(esi, colonne)
+        morceaux.append(esi[colonnes].copy())
+
+    return (
+        pd.concat(morceaux, ignore_index=True)
+        .drop_duplicates()
+        .reset_index(drop=True)
+    )
+
+
+def filtrer_base_synchronisee(
+    base: pd.DataFrame,
+    selections: dict,
+    colonne_ignoree: str | None = None,
+) -> pd.DataFrame:
+    """
+    Applique toutes les sélections à la base, sauf éventuellement le filtre
+    dont on est en train de calculer les options.
+    """
+    out = base.copy()
+
+    for colonne, valeurs in selections.items():
+        if colonne == colonne_ignoree:
+            continue
+        if valeurs and colonne in out.columns:
+            out = out[out[colonne].isin(valeurs)].copy()
+
+    return out
+
+
+def options_filtre_synchronisees(
+    base: pd.DataFrame,
+    colonne_cible: str,
+    selections: dict,
+) -> list:
+    """Calcule les options d'un filtre selon toutes les autres sélections."""
+    contexte = filtrer_base_synchronisee(
+        base,
+        selections,
+        colonne_ignoree=colonne_cible,
+    )
+    return options_triees(contexte, colonne_cible)
+
+
 def render_filtres_patrimoine(
     df_esi: pd.DataFrame,
     df_contrats: pd.DataFrame,
     reset_keys=None,
 ):
     """
-    Bloc de filtres réutilisable.
+    Affiche les filtres patrimoine totalement synchronisés.
 
-    Entrées
-    -------
-    df_esi :
-        DataFrame au niveau ESI.
-
-    df_contrats :
-        DataFrame au niveau contrat x ESI.
-
-    reset_keys :
-        Clés Streamlit à réinitialiser.
-
-    Retour
-    ------
-    df_esi_filtre
-    df_contrats_filtre
-    filtres_selectionnes
+    Chaque filtre agit sur tous les autres, quelle que soit sa position :
+    contrat, société, agence, groupe, secteur, référence ESI, métier et
+    prestataire.
     """
-
     inject_filters_style()
 
     if reset_keys is None:
@@ -853,8 +957,8 @@ def render_filtres_patrimoine(
         <div class="filters-header">
             <div class="filters-title">Filtres patrimoine</div>
             <div class="filters-subtitle">
-                Affinez le périmètre par contrat, société,
-                agence, programme / ESI, métier et prestataire.
+                Tous les filtres sont synchronisés : chaque sélection
+                met à jour les autres listes disponibles.
             </div>
         </div>
         """,
@@ -869,14 +973,11 @@ def render_filtres_patrimoine(
     )
 
     # =====================================================
-    # CONTRAT
+    # STATUT DES CONTRATS : FILTRE PARENT
     # =====================================================
 
     base_contrats = df_contrats.copy()
 
-    # Le statut choisi dans la vue globale devient aussi un filtre parent
-    # de la sidebar. Ainsi, la liste Contrat et toutes les mailles
-    # patrimoniales ne proposent que les valeurs compatibles avec le statut.
     statut_vue_globale = st.session_state.get(
         "vg_filtre_statut_contrat",
         "Tous les contrats",
@@ -909,23 +1010,26 @@ def render_filtres_patrimoine(
         base_contrats = base_contrats[
             statut_normalise == "active"
         ].copy()
-
     elif statut_vue_globale == "Contrats inactifs":
         base_contrats = base_contrats[
             statut_normalise != "active"
         ].copy()
 
-    contrat_options, contrat_labels = construire_options_contrat(
-        base_contrats
+    # Avec "Tous les contrats", on conserve aussi les ESI sans contrat.
+    inclure_esi_sans_contrat = statut_vue_globale == "Tous les contrats"
+
+    base_synchro = construire_base_filtres_synchronises(
+        df_esi=df_esi,
+        df_contrats=base_contrats,
+        inclure_esi_sans_contrat=inclure_esi_sans_contrat,
     )
 
-    # La recherche du tableau est lue avant la création du multiselect.
-    # Cela permet de synchroniser visuellement le filtre Contrat.
+    # =====================================================
+    # RECHERCHE DU TABLEAU -> FILTRE CONTRAT
+    # =====================================================
+
     recherche_tableau = str(
-        st.session_state.get(
-            "global_search_contract",
-            "",
-        )
+        st.session_state.get("global_search_contract", "") or ""
     ).strip().lower()
 
     contrats_recherche = []
@@ -955,10 +1059,7 @@ def render_filtres_patrimoine(
                     .fillna("")
                     .astype(str)
                     .str.lower()
-                    .str.contains(
-                        recherche_tableau,
-                        regex=False,
-                    )
+                    .str.contains(recherche_tableau, regex=False)
                 )
 
             contrats_recherche = (
@@ -977,32 +1078,45 @@ def render_filtres_patrimoine(
                 & (contrats_recherche != "None")
             ].unique().tolist()
 
-    # Synchronise le multiselect uniquement lorsque la recherche change.
-    # On évite ainsi d'écraser une modification manuelle de la sidebar
-    # à chaque rerun.
     derniere_recherche = st.session_state.get(
-        "_derniere_recherche_contrat_synchro",
-        None,
+        "_derniere_recherche_contrat_synchro"
     )
 
     if recherche_tableau != derniere_recherche:
         st.session_state["_derniere_recherche_contrat_synchro"] = (
             recherche_tableau
         )
+        st.session_state["filtre_contrat"] = (
+            contrats_recherche if recherche_tableau else []
+        )
 
-        if recherche_tableau:
-            st.session_state["filtre_contrat"] = [
-                reference
-                for reference in contrats_recherche
-                if reference in contrat_options
-            ]
-        else:
-            st.session_state["filtre_contrat"] = []
+    # =====================================================
+    # SÉLECTIONS ACTUELLES
+    # =====================================================
 
-    nettoyer_session_state(
-        "filtre_contrat",
-        contrat_options,
+    def selections_session() -> dict:
+        return {
+            "contract_reference": _selection_session("filtre_contrat"),
+            "societe": _selection_session("filtre_societe"),
+            "agence": _selection_session("filtre_agence"),
+            "groupe": _selection_session("filtre_groupe"),
+            "secteur": _selection_session("filtre_secteur"),
+            "esi_reference": _selection_session("filtre_programme"),
+            "contract_topic": _selection_session("filtre_metier"),
+            "third_party_label": _selection_session("filtre_prestataire"),
+        }
+
+    # =====================================================
+    # CONTRAT
+    # =====================================================
+
+    selections = selections_session()
+    contrat_options = options_filtre_synchronisees(
+        base_synchro,
+        "contract_reference",
+        selections,
     )
+    nettoyer_session_state("filtre_contrat", contrat_options)
 
     selected_contrats = render_multiselect(
         label="Contrat",
@@ -1011,55 +1125,30 @@ def render_filtres_patrimoine(
         placeholder="Tous les contrats",
     )
 
-    # Fusion des deux sources de filtrage contrat :
-    # - sélection dans la sidebar ;
-    # - recherche dans le tableau.
-    if selected_contrats:
-        contrats_actifs = selected_contrats
-    else:
-        contrats_actifs = contrats_recherche
+    # La sélection manuelle est prioritaire. Si elle est vide, la recherche
+    # du tableau continue d'agir comme filtre contrat.
+    contrats_actifs = (
+        selected_contrats
+        if selected_contrats
+        else [
+            reference
+            for reference in contrats_recherche
+            if reference in contrat_options
+        ]
+    )
 
-    # Le contrat devient le filtre parent :
-    # il réduit les lignes contrat x ESI puis les options patrimoniales.
-    if contrats_actifs:
-        df_contrats_parent = filtrer_df(
-            base_contrats,
-            {
-                "contract_reference": contrats_actifs,
-            },
-        )
+    # =====================================================
+    # SOCIÉTÉ
+    # =====================================================
 
-        if "esi_reference" in df_contrats_parent.columns:
-            esi_autorises = (
-                df_contrats_parent["esi_reference"]
-                .dropna()
-                .astype(str)
-                .str.strip()
-            )
+    selections = selections_session()
+    selections["contract_reference"] = contrats_actifs
 
-            esi_autorises = esi_autorises[
-                (esi_autorises != "")
-                & (esi_autorises != "nan")
-                & (esi_autorises != "None")
-            ].unique().tolist()
-
-            base_geo = df_esi[
-                df_esi["esi_reference"]
-                .astype(str)
-                .isin(esi_autorises)
-            ].copy()
-        else:
-            base_geo = df_esi.iloc[0:0].copy()
-
-    else:
-        df_contrats_parent = base_contrats.copy()
-        base_geo = df_esi.copy()
-
-    # -------------------------------
-    # Société
-    # -------------------------------
-
-    societe_options = options_triees(base_geo, "societe")
+    societe_options = options_filtre_synchronisees(
+        base_synchro,
+        "societe",
+        selections,
+    )
     nettoyer_session_state("filtre_societe", societe_options)
 
     selected_societes = render_multiselect(
@@ -1069,16 +1158,18 @@ def render_filtres_patrimoine(
         placeholder="Toutes les sociétés",
     )
 
-    df_apres_societe = filtrer_df(
-        base_geo,
-        {"societe": selected_societes},
+    # =====================================================
+    # AGENCE
+    # =====================================================
+
+    selections = selections_session()
+    selections["contract_reference"] = contrats_actifs
+
+    agence_options = options_filtre_synchronisees(
+        base_synchro,
+        "agence",
+        selections,
     )
-
-    # -------------------------------
-    # Agence
-    # -------------------------------
-
-    agence_options = options_triees(df_apres_societe, "agence")
     nettoyer_session_state("filtre_agence", agence_options)
 
     selected_agences = render_multiselect(
@@ -1088,16 +1179,18 @@ def render_filtres_patrimoine(
         placeholder="Toutes les agences",
     )
 
-    df_apres_agence = filtrer_df(
-        df_apres_societe,
-        {"agence": selected_agences},
+    # =====================================================
+    # GROUPE
+    # =====================================================
+
+    selections = selections_session()
+    selections["contract_reference"] = contrats_actifs
+
+    groupe_options = options_filtre_synchronisees(
+        base_synchro,
+        "groupe",
+        selections,
     )
-
-    # -------------------------------
-    # Groupe
-    # -------------------------------
-
-    groupe_options = options_triees(df_apres_agence, "groupe")
     nettoyer_session_state("filtre_groupe", groupe_options)
 
     selected_groupes = render_multiselect(
@@ -1107,16 +1200,18 @@ def render_filtres_patrimoine(
         placeholder="Tous les groupes",
     )
 
-    df_apres_groupe = filtrer_df(
-        df_apres_agence,
-        {"groupe": selected_groupes},
+    # =====================================================
+    # SECTEUR
+    # =====================================================
+
+    selections = selections_session()
+    selections["contract_reference"] = contrats_actifs
+
+    secteur_options = options_filtre_synchronisees(
+        base_synchro,
+        "secteur",
+        selections,
     )
-
-    # -------------------------------
-    # Secteur
-    # -------------------------------
-
-    secteur_options = options_triees(df_apres_groupe, "secteur")
     nettoyer_session_state("filtre_secteur", secteur_options)
 
     selected_secteurs = render_multiselect(
@@ -1126,57 +1221,38 @@ def render_filtres_patrimoine(
         placeholder="Tous les secteurs",
     )
 
-    df_apres_secteur = filtrer_df(
-        df_apres_groupe,
-        {"secteur": selected_secteurs},
-    )
+    # =====================================================
+    # RÉFÉRENCE ESI
+    # =====================================================
 
-    # -------------------------------
-    # Programme / ESI
-    # -------------------------------
+    selections = selections_session()
+    selections["contract_reference"] = contrats_actifs
 
-    programme_options, programme_labels = construire_options_programme(
-        df_apres_secteur
+    programme_options = options_filtre_synchronisees(
+        base_synchro,
+        "esi_reference",
+        selections,
     )
     nettoyer_session_state("filtre_programme", programme_options)
 
     selected_programmes = render_multiselect(
-        label="Programme / ESI",
+        label="Référence ESI",
         options=programme_options,
         key="filtre_programme",
-        placeholder="Tous les programmes / ESI",
-        format_func=lambda ref: (
-            f"{ref} — {programme_labels.get(ref, '')}"
-            if programme_labels.get(ref, "")
-            else str(ref)
-        ),
+        placeholder="Toutes les références ESI",
     )
 
-    # -------------------------------
-    # Filtres géographiques
-    # -------------------------------
+    # =====================================================
+    # MÉTIER
+    # =====================================================
 
-    filtres_geo = {
-        "societe": selected_societes,
-        "agence": selected_agences,
-        "groupe": selected_groupes,
-        "secteur": selected_secteurs,
-        "esi_reference": selected_programmes,
-    }
+    selections = selections_session()
+    selections["contract_reference"] = contrats_actifs
 
-    df_esi_filtre = filtrer_df(df_esi, filtres_geo)
-    df_contrats_geo = filtrer_df(
-        df_contrats_parent,
-        filtres_geo,
-    )
-
-    # -------------------------------
-    # Métier
-    # -------------------------------
-
-    metier_options = options_triees(
-        df_contrats_geo,
+    metier_options = options_filtre_synchronisees(
+        base_synchro,
         "contract_topic",
+        selections,
     )
     nettoyer_session_state("filtre_metier", metier_options)
 
@@ -1187,18 +1263,17 @@ def render_filtres_patrimoine(
         placeholder="Tous les métiers",
     )
 
-    df_apres_metier = filtrer_df(
-        df_contrats_geo,
-        {"contract_topic": selected_metiers},
-    )
+    # =====================================================
+    # PRESTATAIRE
+    # =====================================================
 
-    # -------------------------------
-    # Prestataire
-    # -------------------------------
+    selections = selections_session()
+    selections["contract_reference"] = contrats_actifs
 
-    prestataire_options = options_triees(
-        df_apres_metier,
+    prestataire_options = options_filtre_synchronisees(
+        base_synchro,
         "third_party_label",
+        selections,
     )
     nettoyer_session_state(
         "filtre_prestataire",
@@ -1212,9 +1287,9 @@ def render_filtres_patrimoine(
         placeholder="Tous les prestataires",
     )
 
-    # -------------------------------
-    # Filtres contrats complets
-    # -------------------------------
+    # =====================================================
+    # APPLICATION FINALE DES FILTRES
+    # =====================================================
 
     filtres_contrats = {
         "contract_reference": contrats_actifs,
@@ -1228,18 +1303,32 @@ def render_filtres_patrimoine(
     }
 
     df_contrats_filtre = filtrer_df(
-        df_contrats_parent,
+        base_contrats,
         filtres_contrats,
     )
 
-    # Si métier ou prestataire est sélectionné,
-    # on réduit aussi les ESI au périmètre contractuel restant.
+    filtres_geo = {
+        "societe": selected_societes,
+        "agence": selected_agences,
+        "groupe": selected_groupes,
+        "secteur": selected_secteurs,
+        "esi_reference": selected_programmes,
+    }
 
-    if (
+    df_esi_filtre = filtrer_df(
+        df_esi,
+        filtres_geo,
+    )
+
+    # Un filtre contractuel réduit également le patrimoine aux ESI restant
+    # réellement dans les lignes contrat x ESI.
+    filtre_contractuel_actif = bool(
         contrats_actifs
         or selected_metiers
         or selected_prestataires
-    ):
+    )
+
+    if filtre_contractuel_actif:
         if "esi_reference" in df_contrats_filtre.columns:
             esi_restants = (
                 df_contrats_filtre["esi_reference"]
@@ -1252,13 +1341,17 @@ def render_filtres_patrimoine(
                 (esi_restants != "")
                 & (esi_restants != "nan")
                 & (esi_restants != "None")
+                & (esi_restants != "<NA>")
             ].unique().tolist()
 
             df_esi_filtre = df_esi_filtre[
                 df_esi_filtre["esi_reference"]
                 .astype(str)
+                .str.strip()
                 .isin(esi_restants)
-            ]
+            ].copy()
+        else:
+            df_esi_filtre = df_esi_filtre.iloc[0:0].copy()
 
     filtres_selectionnes = {
         "contrat": contrats_actifs,
