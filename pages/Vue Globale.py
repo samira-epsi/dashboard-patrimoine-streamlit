@@ -6269,39 +6269,39 @@ elif vue_active == "Couverture":
                     hovermode="y unified",
                 )
 
-                fig_couverture.add_annotation(
-                    x=0,
-                    y=1.24,
-                    xref="paper",
-                    yref="paper",
-                    xanchor="left",
-                    # text=(
-                    #     f"<b>{fmt_pourcentage(part_avec)}</b> "
-                    #     "avec contrat"
-                    # ),
-                    showarrow=False,
-                    font=dict(
-                        color=C_NAVY,
-                        size=20,
-                    ),
-                )
+                # fig_couverture.add_annotation(
+                #     x=0,
+                #     y=1.24,
+                #     xref="paper",
+                #     yref="paper",
+                #     xanchor="left",
+                #     # text=(
+                #     #     f"<b>{fmt_pourcentage(part_avec)}</b> "
+                #     #     "avec contrat"
+                #     # ),
+                #     showarrow=False,
+                #     font=dict(
+                #         color=C_NAVY,
+                #         size=20,
+                #     ),
+                # )
 
-                fig_couverture.add_annotation(
-                    x=1,
-                    y=1.24,
-                    xref="paper",
-                    yref="paper",
-                    xanchor="right",
-                    # text=(
-                    #     f"<b>{fmt_nombre(sans_contrat)}</b> "
-                    #     "sans contrat"
-                    # ),
-                    showarrow=False,
-                    font=dict(
-                        color="#A94F7A",
-                        size=13,
-                    ),
-                )
+                # fig_couverture.add_annotation(
+                #     x=1,
+                #     y=1.24,
+                #     xref="paper",
+                #     yref="paper",
+                #     xanchor="right",
+                #     # text=(
+                #     #     f"<b>{fmt_nombre(sans_contrat)}</b> "
+                #     #     "sans contrat"
+                #     # ),
+                #     showarrow=False,
+                #     font=dict(
+                #         color="#A94F7A",
+                #         size=13,
+                #     ),
+                # )
 
                 st.plotly_chart(
                     fig_couverture,
