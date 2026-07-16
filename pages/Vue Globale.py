@@ -2585,7 +2585,7 @@ def afficher_evolution_couverture_esi(
                     "24 mois",
                     "36 mois",
                 ],
-                index=1,
+                index=0,
                 horizontal=True,
                 key="couverture_evolution_periode",
             )
@@ -2632,7 +2632,52 @@ def afficher_evolution_couverture_esi(
                 "reconstruire cette évolution."
             )
             return
+        entites_disponibles = (
+            historique["Entité"]
+            .dropna()
+            .astype(str)
+            .drop_duplicates()
+            .sort_values()
+            .tolist()
+        )
 
+        if not entites_disponibles:
+            st.info(
+                "Aucune entité organisationnelle disponible "
+                "pour cette maille."
+            )
+            return
+
+        # Par défaut :
+        # toutes les sociétés si elles sont peu nombreuses ;
+        # seulement les 5 premières pour les mailles plus détaillées.
+        if maille_selectionnee == "Société":
+            selection_par_defaut = entites_disponibles
+        else:
+            selection_par_defaut = entites_disponibles[:5]
+
+        entites_selectionnees = st.multiselect(
+            f"{maille_selectionnee}(s) à comparer",
+            options=entites_disponibles,
+            default=selection_par_defaut,
+            placeholder=(
+                f"Sélectionner une ou plusieurs "
+                f"{maille_selectionnee.lower()}s"
+            ),
+            key=f"couverture_entites_{maille_selectionnee.lower()}",
+        )
+
+        if not entites_selectionnees:
+            st.info(
+                "Sélectionne au moins une entité à comparer."
+            )
+            return
+
+        historique = historique[
+            historique["Entité"].isin(
+                entites_selectionnees
+            )
+        ].copy()
         # -------------------------------------------------
         # Graphique
         # -------------------------------------------------
@@ -2722,10 +2767,7 @@ def afficher_evolution_couverture_esi(
                 .sort_values("Mois")
             )
 
-            graduations = graduations_periodes(
-                periodes_uniques,
-                maximum=8,
-            )
+
 
             _layout_plotly(
                 fig,
@@ -2737,11 +2779,11 @@ def afficher_evolution_couverture_esi(
                 showlegend=True,
                 legend=dict(
                     title=maille_selectionnee,
-                    orientation="v",
+                    orientation="h",
                     yanchor="top",
-                    y=1,
-                    xanchor="left",
-                    x=1.01,
+                    y=-0.22,
+                    xanchor="center",
+                    x=0.5,
                     font=dict(
                         size=10,
                     ),
@@ -2750,9 +2792,9 @@ def afficher_evolution_couverture_esi(
                 ),
                 margin=dict(
                     l=65,
-                    r=240,
+                    r=35,
                     t=15,
-                    b=65,
+                    b=145,
                 ),
                 xaxis=dict(
                     title=None,
@@ -2764,8 +2806,18 @@ def afficher_evolution_couverture_esi(
                         ].tolist()
                     ),
                     tickmode="array",
-                    tickvals=graduations,
-                    ticktext=graduations,
+                    tickvals=(
+                        periodes_uniques[
+                            "Période"
+                        ].tolist()
+                    ),
+                    ticktext=(
+                        periodes_uniques[
+                            "Période"
+                        ].tolist()
+                    ),
+                    tickangle=-45,
+                    automargin=True,
                     gridcolor=C_GRID,
                 ),
                 yaxis=dict(
