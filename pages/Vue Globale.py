@@ -5966,11 +5966,11 @@ elif vue_active == "Couverture":
 
                 fig_couverture = go.Figure(
                     go.Pie(
-                        # labels=couverture_equipements["Couverture"],
+                        labels=couverture_equipements["Couverture"],
                         values=couverture_equipements["Équipements"],
                         hole=0.68,
                         sort=False,
-                        textinfo="label+percent",
+                        textinfo="percent",
                         textposition="inside",
                         textfont=dict(
                             size=14,
