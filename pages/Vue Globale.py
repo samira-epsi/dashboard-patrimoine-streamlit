@@ -6107,12 +6107,17 @@ elif vue_active == "Couverture":
                         values=couverture_equipements["Équipements"],
                         hole=0.68,
                         sort=False,
-                        textinfo="percent",
+                        textinfo="none",
                         textposition="inside",
                         textfont=dict(
                             size=14,
                             color="#201E1E",
                         ),
+                        font=dict(
+                        family="Arial, sans-serif",
+                        size=14,
+                        color="#173B69",
+                    )
                         marker=dict(
                             colors=[
                                 couleurs_couverture.get(
