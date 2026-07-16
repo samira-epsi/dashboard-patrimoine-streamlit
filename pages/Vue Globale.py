@@ -3619,16 +3619,22 @@ def dataframe_download(
 # =====================================================
 
 
-def preparer_contrats_table(df: pd.DataFrame) -> pd.DataFrame:
+def preparer_contrats_table(
+    df: pd.DataFrame,
+) -> pd.DataFrame:
     if df.empty:
         return pd.DataFrame()
 
     cols = [
         "contract_reference",
         "contract_label",
+        "contract_description",
         "third_party_label",
         "contract_start_date",
         "contract_end_date",
+        "contract_creation_date",
+        "contract_deactivation_date",
+        "contract_last_update_date",
         "contract_topic",
         "contract_status",
         "societe",
@@ -3638,14 +3644,43 @@ def preparer_contrats_table(df: pd.DataFrame) -> pd.DataFrame:
         "esi_reference",
         "esi_label",
     ]
-    cols = [col for col in cols if col in df.columns]
+
+    cols = [
+        col
+        for col in cols
+        if col in df.columns
+    ]
+
     out = df[cols].copy()
 
-    for col in ["contract_start_date", "contract_end_date"]:
+    # Dates contractuelles : jour uniquement.
+    for col in [
+        "contract_start_date",
+        "contract_end_date",
+    ]:
         if col in out.columns:
             out[col] = (
-                pd.to_datetime(out[col], errors="coerce")
+                pd.to_datetime(
+                    out[col],
+                    errors="coerce",
+                )
                 .dt.strftime("%d/%m/%Y")
+                .fillna("")
+            )
+
+    # Dates techniques Intent : date et heure.
+    for col in [
+        "contract_creation_date",
+        "contract_deactivation_date",
+        "contract_last_update_date",
+    ]:
+        if col in out.columns:
+            out[col] = (
+                pd.to_datetime(
+                    out[col],
+                    errors="coerce",
+                )
+                .dt.strftime("%d/%m/%Y %H:%M")
                 .fillna("")
             )
 
@@ -3653,9 +3688,13 @@ def preparer_contrats_table(df: pd.DataFrame) -> pd.DataFrame:
         columns={
             "contract_reference": "Référence contrat",
             "contract_label": "Libellé contrat",
+            "contract_description": "Description contrat",
             "third_party_label": "Prestataire",
             "contract_start_date": "Date de début",
             "contract_end_date": "Date de fin",
+            "contract_creation_date": "Date de création Intent",
+            "contract_deactivation_date": "Date de désactivation Intent",
+            "contract_last_update_date": "Dernière modification",
             "contract_topic": "Métier",
             "contract_status": "Statut",
             "societe": "Société",
@@ -4499,15 +4538,117 @@ if vue_active == "Vue globale":
         elif mode_tableau == "Contrats et rattachements":
             cles_dedoublonnage = [
                 col
-                for col in ["contract_reference", "esi_reference"]
+                for col in [
+                    "contract_reference",
+                    "esi_reference",
+                ]
                 if col in df_contrats_kpi.columns
             ]
+
             source_tableau = (
-                df_contrats_kpi.drop_duplicates(cles_dedoublonnage)
+                df_contrats_kpi.drop_duplicates(
+                    cles_dedoublonnage
+                ).copy()
                 if cles_dedoublonnage
                 else df_contrats_kpi.copy()
             )
-            table_contrats_complete = preparer_contrats_table(source_tableau)
+
+            # Informations contractuelles complémentaires provenant
+            # de dashboard.contrats_prestations.
+            if (
+                not df_prestations_kpi.empty
+                and "contract_reference_3f"
+                in df_prestations_kpi.columns
+                and "contract_reference"
+                in source_tableau.columns
+            ):
+                colonnes_complementaires = [
+                    colonne
+                    for colonne in [
+                        "contract_reference_3f",
+                        "contract_description",
+                        "contract_creation_date",
+                        "contract_deactivation_date",
+                        "contract_last_update_date",
+                    ]
+                    if colonne
+                    in df_prestations_kpi.columns
+                ]
+
+                complements_contrats = (
+                    df_prestations_kpi[
+                        colonnes_complementaires
+                    ]
+                    .copy()
+                )
+
+                # On garde la ligne la plus récente de chaque contrat.
+                if (
+                    "contract_last_update_date"
+                    in complements_contrats.columns
+                ):
+                    complements_contrats = (
+                        complements_contrats
+                        .sort_values(
+                            [
+                                "contract_reference_3f",
+                                "contract_last_update_date",
+                            ],
+                            na_position="last",
+                        )
+                        .drop_duplicates(
+                            "contract_reference_3f",
+                            keep="last",
+                        )
+                    )
+                else:
+                    complements_contrats = (
+                        complements_contrats
+                        .drop_duplicates(
+                            "contract_reference_3f",
+                            keep="last",
+                        )
+                    )
+
+                complements_contrats = (
+                    complements_contrats.rename(
+                        columns={
+                            "contract_reference_3f":
+                            "contract_reference",
+                        }
+                    )
+                )
+
+                # On retire d'abord les éventuelles colonnes existantes
+                # pour éviter les suffixes _x et _y.
+                colonnes_a_remplacer = [
+                    colonne
+                    for colonne in [
+                        "contract_description",
+                        "contract_creation_date",
+                        "contract_deactivation_date",
+                        "contract_last_update_date",
+                    ]
+                    if colonne in source_tableau.columns
+                ]
+
+                source_tableau = (
+                    source_tableau.drop(
+                        columns=colonnes_a_remplacer,
+                        errors="ignore",
+                    )
+                    .merge(
+                        complements_contrats,
+                        on="contract_reference",
+                        how="left",
+                    )
+                )
+
+            table_contrats_complete = (
+                preparer_contrats_table(
+                    source_tableau
+                )
+            )
 
         else:
             cles_dedoublonnage = [
@@ -4536,6 +4677,12 @@ if vue_active == "Vue globale":
             "Métier",
             "Statut",
         ]
+        colonnes_contrat_detail = [
+            "Description contrat",
+            "Date de création Intent",
+            "Date de désactivation Intent",
+            "Dernière modification",
+            ]       
 
         colonnes_rattachement = [
             "Société",
@@ -4599,7 +4746,11 @@ if vue_active == "Vue globale":
         else:
             colonnes_disponibles = [
                 col
-                for col in (colonnes_contrat + colonnes_rattachement)
+                for col in (
+                    colonnes_contrat
+                    + colonnes_contrat_detail
+                    + colonnes_rattachement
+                )
                 if col in table_contrats_complete.columns
             ]
             if mode_tableau == "Contrats uniques":
