@@ -3099,6 +3099,14 @@ def afficher_evolution_contrats(
         )
 
         _layout_plotly(fig_flux, 360)
+
+
+        periodes_affichees = (
+            evolution["Période"]
+            .astype(str)
+            .tolist()
+        )
+
         fig_flux.update_layout(
             barmode="group",
             bargap=0.28,
@@ -3112,16 +3120,22 @@ def afficher_evolution_contrats(
                 x=0,
                 title=None,
             ),
-            margin=dict(l=55, r=18, t=50, b=70),
+            margin=dict(
+                l=55,
+                r=18,
+                t=50,
+                b=110,
+            ),
             xaxis=dict(
                 title=None,
                 type="category",
                 categoryorder="array",
-                categoryarray=evolution["Période"].tolist(),
+                categoryarray=periodes_affichees,
                 tickmode="array",
-                tickvals=graduations_periodes(evolution, maximum=6),
-                ticktext=graduations_periodes(evolution, maximum=6),
-                tickangle=-25 if len(evolution) > 12 else 0,
+                tickvals=periodes_affichees,
+                ticktext=periodes_affichees,
+                tickangle=-45,
+                tickfont=dict(size=10),
                 showgrid=False,
                 automargin=True,
             ),
@@ -3132,6 +3146,9 @@ def afficher_evolution_contrats(
                 zeroline=False,
             ),
         )
+
+
+
 
         st.plotly_chart(
             fig_flux,
@@ -3171,6 +3188,13 @@ def afficher_evolution_contrats(
             )
 
         _layout_plotly(fig_stock, 360)
+
+        periodes_affichees = (
+            evolution["Période"]
+            .astype(str)
+            .tolist()
+        )
+
         fig_stock.update_layout(
             showlegend=True,
             legend=dict(
@@ -3181,17 +3205,23 @@ def afficher_evolution_contrats(
                 x=0,
                 title=None,
             ),
-            margin=dict(l=55, r=18, t=50, b=70),
+            margin=dict(
+                l=55,
+                r=18,
+                t=50,
+                b=110,
+            ),
             hovermode="x unified",
             xaxis=dict(
                 title=None,
                 type="category",
                 categoryorder="array",
-                categoryarray=evolution["Période"].tolist(),
+                categoryarray=periodes_affichees,
                 tickmode="array",
-                tickvals=graduations_periodes(evolution, maximum=6),
-                ticktext=graduations_periodes(evolution, maximum=6),
-                tickangle=-25 if len(evolution) > 12 else 0,
+                tickvals=periodes_affichees,
+                ticktext=periodes_affichees,
+                tickangle=-45,
+                tickfont=dict(size=10),
                 showgrid=False,
                 automargin=True,
             ),
@@ -3202,6 +3232,8 @@ def afficher_evolution_contrats(
                 zeroline=False,
             ),
         )
+
+
 
         st.plotly_chart(
             fig_stock,
