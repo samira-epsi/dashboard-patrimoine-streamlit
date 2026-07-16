@@ -874,6 +874,47 @@ def render_filtres_patrimoine(
 
     base_contrats = df_contrats.copy()
 
+    # Le statut choisi dans la vue globale devient aussi un filtre parent
+    # de la sidebar. Ainsi, la liste Contrat et toutes les mailles
+    # patrimoniales ne proposent que les valeurs compatibles avec le statut.
+    statut_vue_globale = st.session_state.get(
+        "vg_filtre_statut_contrat",
+        "Tous les contrats",
+    )
+
+    if "contract_status_clean" in base_contrats.columns:
+        statut_normalise = (
+            base_contrats["contract_status_clean"]
+            .fillna("")
+            .astype(str)
+            .str.lower()
+            .str.strip()
+        )
+    elif "contract_status" in base_contrats.columns:
+        statut_normalise = (
+            base_contrats["contract_status"]
+            .fillna("")
+            .astype(str)
+            .str.lower()
+            .str.strip()
+        )
+    else:
+        statut_normalise = pd.Series(
+            "",
+            index=base_contrats.index,
+            dtype="string",
+        )
+
+    if statut_vue_globale == "Contrats actifs":
+        base_contrats = base_contrats[
+            statut_normalise == "active"
+        ].copy()
+
+    elif statut_vue_globale == "Contrats inactifs":
+        base_contrats = base_contrats[
+            statut_normalise != "active"
+        ].copy()
+
     contrat_options, contrat_labels = construire_options_contrat(
         base_contrats
     )
@@ -1229,6 +1270,7 @@ def render_filtres_patrimoine(
         "programme": selected_programmes,
         "metier": selected_metiers,
         "prestataire": selected_prestataires,
+        "statut_contrat": statut_vue_globale,
     }
 
     return (
