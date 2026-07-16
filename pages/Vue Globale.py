@@ -5834,11 +5834,6 @@ elif vue_active == "Couverture":
         # INDICATEURS À DROITE
         # =================================================
 
-        with colonne_indicateurs:
-            st.markdown(
-                '<div class="vg-mini-title"></div>',
-                unsafe_allow_html=True,
-            )
 
             afficher_carte_indicateur(
                 label="Moyenne",
@@ -5881,12 +5876,6 @@ elif vue_active == "Couverture":
                 accent=C_RED,
                 hauteur=144,
             )
-
-        st.caption(
-            "Calcul : les références de contrats sont "
-            "dédupliquées pour chaque ESI. Les ESI sans "
-            "contrat sont conservés avec la valeur zéro."
-        )
             
 
         st.caption(
