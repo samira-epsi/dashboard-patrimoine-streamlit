@@ -1292,10 +1292,17 @@ def _refs_esi_depuis_contrats(
 
 def reinitialiser_filtres_dashboard():
     """
-    Réinitialise tous les filtres du dashboard.
+    Réinitialise les filtres sans changer l'onglet actif.
     """
 
-    cles_exactes = {
+    # On conserve l'onglet dans lequel se trouve l'utilisateur.
+    vue_active = st.session_state.get(
+        "dashboard_vue_active",
+        "Vue globale",
+    )
+
+    # Les multiselects doivent recevoir une liste vide.
+    cles_multiselect = [
         "filtre_contrat",
         "filtre_societe",
         "filtre_agence",
@@ -1304,17 +1311,39 @@ def reinitialiser_filtres_dashboard():
         "filtre_programme",
         "filtre_metier",
         "filtre_prestataire",
-        "global_search_contract",
-        "vg_filtre_statut_contrat",
-        "global_contract_table_mode",
-        "dashboard_vue_active",
+    ]
+
+    for cle in cles_multiselect:
+        st.session_state[cle] = []
+
+    # Réinitialisation explicite des autres filtres.
+    st.session_state["global_search_contract"] = ""
+    st.session_state["vg_filtre_statut_contrat"] = (
+        "Tous les contrats"
+    )
+    st.session_state["global_contract_table_mode"] = (
+        "Contrats uniques"
+    )
+
+    # On conserve impérativement l'onglet actif.
+    st.session_state["dashboard_vue_active"] = vue_active
+
+    # Nettoyage des états techniques.
+    cles_techniques = [
         "_derniere_recherche_contrat_synchro",
         "_dernier_filtre_modifie",
-    }
+    ]
+
+    for cle in cles_techniques:
+        st.session_state.pop(
+            cle,
+            None,
+        )
 
     prefixes = (
         "colonne_uniques_",
         "colonne_rattachements_",
+        "colonne_prestations_",
         "page_table_contrats_",
         "page_precedente_",
         "page_suivante_",
@@ -1329,10 +1358,7 @@ def reinitialiser_filtres_dashboard():
     for cle in list(
         st.session_state.keys()
     ):
-        if (
-            cle in cles_exactes
-            or cle.startswith(prefixes)
-        ):
+        if cle.startswith(prefixes):
             del st.session_state[cle]
 
 
