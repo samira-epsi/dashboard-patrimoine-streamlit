@@ -6095,183 +6095,219 @@ elif vue_active == "Couverture":
                     )["Équipements"],
                     width="stretch",
                 )
+            
+
             else:
-                couleurs_couverture = {
-                "Équipements avec contrat": "#9FD8CF",
-                "Équipements sans contrat": "#F7D6E6",
-                }
+                def lire_valeur_couverture(
+                    libelle: str,
+                    colonne: str,
+                    valeur_par_defaut: float = 0.0,
+                ) -> float:
+                    valeurs = couverture_equipements.loc[
+                        couverture_equipements["Couverture"] == libelle,
+                        colonne,
+                    ]
 
-                fig_couverture = go.Figure(
-                    go.Pie(
-                        avec_contrat = int(
-                            couverture_equipements.loc[
-                                couverture_equipements["Couverture"] == "Équipements avec contrat",
-                                "Équipements",
-                            ].iloc[0]
-                        )
+                    if valeurs.empty:
+                        return valeur_par_defaut
 
-                        sans_contrat = int(
-                            couverture_equipements.loc[
-                                couverture_equipements["Couverture"] == "Équipements sans contrat",
-                                "Équipements",
-                            ].iloc[0]
-                        )
+                    valeur = pd.to_numeric(
+                        valeurs.iloc[0],
+                        errors="coerce",
+                    )
 
-                        part_avec = float(
-                            couverture_equipements.loc[
-                                couverture_equipements["Couverture"] == "Équipements avec contrat",
-                                "Part du parc",
-                            ].iloc[0]
-                        )
+                    return (
+                        valeur_par_defaut
+                        if pd.isna(valeur)
+                        else float(valeur)
+                    )
 
-                        part_sans = float(
-                            couverture_equipements.loc[
-                                couverture_equipements["Couverture"] == "Équipements sans contrat",
-                                "Part du parc",
-                            ].iloc[0]
-                        )
-
-                        fig_couverture = go.Figure()
-
-                        fig_couverture.add_trace(
-                            go.Bar(
-                                y=["Couverture"],
-                                x=[part_avec],
-                                name="Équipements avec contrat",
-                                orientation="h",
-                                marker=dict(
-                                    color="#9FD8CF",
-                                ),
-                                text=[f"{part_avec:.1f} %".replace(".", ",")],
-                                textposition="inside",
-                                insidetextanchor="middle",
-                                hovertemplate=(
-                                    "<b>Équipements avec contrat</b><br>"
-                                    f"Équipements : {avec_contrat:,}<br>"
-                                    "Part du parc : %{x:.1f} %<extra></extra>"
-                                ),
-                            )
-                        )
-
-                        fig_couverture.add_trace(
-                            go.Bar(
-                                y=["Couverture"],
-                                x=[part_sans],
-                                name="Équipements sans contrat",
-                                orientation="h",
-                                marker=dict(
-                                    color="#F7D6E6",
-                                ),
-                                text=[f"{part_sans:.1f} %".replace(".", ",")],
-                                textposition="inside",
-                                insidetextanchor="middle",
-                                hovertemplate=(
-                                    "<b>Équipements sans contrat</b><br>"
-                                    f"Équipements : {sans_contrat:,}<br>"
-                                    "Part du parc : %{x:.1f} %<extra></extra>"
-                                ),
-                            )
-                        )
-
-                        _layout_plotly(fig_couverture, 340)
-
-                        fig_couverture.update_layout(
-                            barmode="stack",
-                            showlegend=True,
-                            legend=dict(
-                                orientation="h",
-                                yanchor="bottom",
-                                y=-0.28,
-                                xanchor="center",
-                                x=0.5,
-                                title=None,
-                            ),
-                            margin=dict(
-                                l=10,
-                                r=10,
-                                t=70,
-                                b=80,
-                            ),
-                            xaxis=dict(
-                                title=None,
-                                range=[0, 100],
-                                ticksuffix=" %",
-                                showgrid=False,
-                                zeroline=False,
-                                fixedrange=True,
-                            ),
-                            yaxis=dict(
-                                title=None,
-                                showticklabels=False,
-                                showgrid=False,
-                                zeroline=False,
-                                fixedrange=True,
-                            ),
-                        )
-
-                        fig_couverture.add_annotation(
-                            x=50,
-                            y=0,
-                            xref="x",
-                            yref="y",
-                            text=(
-                                f"<b style='font-size:26px;color:#173B69;'>"
-                                f"{str(round(part_avec, 1)).replace('.', ',')} %"
-                                f"</b><br>"
-                                f"<span style='font-size:13px;color:#5F6F86;'>"
-                                f"avec contrat"
-                                f"</span>"
-                            ),
-                            showarrow=False,
-                        )
-
-                        st.plotly_chart(
-                            fig_couverture,
-                            use_container_width=True,
-                            config=config_plotly(
-                                "couverture_equipements"
-                            ),
-                        )
+                avec_contrat = int(
+                    lire_valeur_couverture(
+                        "Équipements avec contrat",
+                        "Équipements",
                     )
                 )
-                fig_couverture.add_annotation(
-                    text=(
-                        f"<b>{fmt_nombre(total_equipements_couverture)}</b>"
-                        "<br><span style='font-size:11px'>équipements</span>"
-                    ),
-                    x=0.5,
-                    y=0.5,
-                    showarrow=False,
-                    font=dict(
-                        color=C_INK,
-                        size=20,
-                    ),
+
+                sans_contrat = int(
+                    lire_valeur_couverture(
+                        "Équipements sans contrat",
+                        "Équipements",
+                    )
                 )
-                _layout_plotly(fig_couverture, 340)
+
+                part_avec = lire_valeur_couverture(
+                    "Équipements avec contrat",
+                    "Taux",
+                )
+
+                part_sans = lire_valeur_couverture(
+                    "Équipements sans contrat",
+                    "Taux",
+                )
+
+                fig_couverture = go.Figure()
+
+                fig_couverture.add_trace(
+                    go.Bar(
+                        y=["Parc équipements"],
+                        x=[part_avec],
+                        name="Équipements avec contrat",
+                        orientation="h",
+                        width=0.54,
+                        marker=dict(
+                            color="#A9DCD4",
+                            line=dict(
+                                color="#FFFFFF",
+                                width=2,
+                            ),
+                        ),
+                        text=[
+                            fmt_pourcentage(
+                                part_avec
+                            )
+                        ],
+                        textposition="inside",
+                        insidetextanchor="middle",
+                        textfont=dict(
+                            color=C_NAVY,
+                            size=16,
+                        ),
+                        customdata=[
+                            avec_contrat
+                        ],
+                        hovertemplate=(
+                            "<b>Équipements avec contrat</b><br>"
+                            "Équipements : %{customdata:,}<br>"
+                            "Part du parc : %{x:.1f} %"
+                            "<extra></extra>"
+                        ),
+                    )
+                )
+
+                fig_couverture.add_trace(
+                    go.Bar(
+                        y=["Parc équipements"],
+                        x=[part_sans],
+                        name="Équipements sans contrat",
+                        orientation="h",
+                        width=0.54,
+                        marker=dict(
+                            color="#F6CFE2",
+                            line=dict(
+                                color="#FFFFFF",
+                                width=2,
+                            ),
+                        ),
+                        customdata=[
+                            sans_contrat
+                        ],
+                        hovertemplate=(
+                            "<b>Équipements sans contrat</b><br>"
+                            "Équipements : %{customdata:,}<br>"
+                            "Part du parc : %{x:.1f} %"
+                            "<extra></extra>"
+                        ),
+                    )
+                )
+
+                _layout_plotly(
+                    fig_couverture,
+                    340,
+                )
+
                 fig_couverture.update_layout(
+                    barmode="stack",
                     showlegend=True,
                     legend=dict(
                         orientation="h",
                         yanchor="top",
-                        y=-0.04,
+                        y=-0.12,
                         xanchor="center",
                         x=0.5,
-                        font=dict(size=11),
+                        title=None,
+                        font=dict(
+                            size=11
+                        ),
                         itemclick=False,
                         itemdoubleclick=False,
                     ),
                     margin=dict(
-                        l=8,
-                        r=8,
-                        t=4,
-                        b=72,
+                        l=22,
+                        r=22,
+                        t=82,
+                        b=78,
+                    ),
+                    xaxis=dict(
+                        title=None,
+                        range=[0, 100],
+                        tickvals=[
+                            0,
+                            25,
+                            50,
+                            75,
+                            100,
+                        ],
+                        ticktext=[
+                            "0 %",
+                            "25 %",
+                            "50 %",
+                            "75 %",
+                            "100 %",
+                        ],
+                        showgrid=False,
+                        zeroline=False,
+                        fixedrange=True,
+                    ),
+                    yaxis=dict(
+                        title=None,
+                        showticklabels=False,
+                        showgrid=False,
+                        zeroline=False,
+                        fixedrange=True,
+                    ),
+                    hovermode="y unified",
+                )
+
+                fig_couverture.add_annotation(
+                    x=0,
+                    y=1.24,
+                    xref="paper",
+                    yref="paper",
+                    xanchor="left",
+                    text=(
+                        f"<b>{fmt_pourcentage(part_avec)}</b> "
+                        "avec contrat"
+                    ),
+                    showarrow=False,
+                    font=dict(
+                        color=C_NAVY,
+                        size=20,
                     ),
                 )
+
+                fig_couverture.add_annotation(
+                    x=1,
+                    y=1.24,
+                    xref="paper",
+                    yref="paper",
+                    xanchor="right",
+                    text=(
+                        f"<b>{fmt_nombre(sans_contrat)}</b> "
+                        "sans contrat"
+                    ),
+                    showarrow=False,
+                    font=dict(
+                        color="#A94F7A",
+                        size=13,
+                    ),
+                )
+
                 st.plotly_chart(
                     fig_couverture,
                     use_container_width=True,
                     config=config_plotly(
-                        "part_equipements_avec_contrat"
+                        "couverture_equipements"
                     ),
                 )
 
