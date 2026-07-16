@@ -2170,7 +2170,660 @@ def construire_evolution_contrats(
         )
 
     return pd.DataFrame(lignes)
+# =====================================================
+# ÉVOLUTION MENSUELLE DE LA COUVERTURE DES ESI
+# =====================================================
 
+
+def _dates_sans_fuseau(serie: pd.Series) -> pd.Series:
+    return (
+        pd.to_datetime(
+            serie,
+            errors="coerce",
+            utc=True,
+        )
+        .dt.tz_convert(None)
+    )
+
+
+def construire_evolution_couverture_esi(
+    df_esi_base: pd.DataFrame,
+    df_contrats_base: pd.DataFrame,
+    df_prestations: pd.DataFrame,
+    maille: str,
+    nb_mois: int,
+) -> pd.DataFrame:
+    """
+    Reconstruit, à la fin de chaque mois, le nombre et le taux
+    d'ESI couverts par au moins un contrat actif.
+
+    Le total d'ESI correspond au parc actuel du périmètre filtré.
+    """
+
+    colonnes_sortie = [
+        "Mois",
+        "Période",
+        "Maille",
+        "Entité",
+        "ESI totaux",
+        "ESI couverts",
+        "ESI non couverts",
+        "Taux de couverture",
+    ]
+
+    if (
+        df_esi_base.empty
+        or "esi_reference" not in df_esi_base.columns
+        or maille not in df_esi_base.columns
+    ):
+        return pd.DataFrame(columns=colonnes_sortie)
+
+    # -------------------------------------------------
+    # 1. Population actuelle des ESI par maille
+    # -------------------------------------------------
+
+    esi = dedupliquer_esi(df_esi_base)
+
+    esi = esi[
+        esi["esi_reference"].notna()
+    ].copy()
+
+    esi["esi_reference"] = (
+        esi["esi_reference"]
+        .astype("string")
+        .str.strip()
+    )
+
+    esi["Entité"] = (
+        esi[maille]
+        .fillna("Non renseigné")
+        .astype(str)
+        .str.strip()
+        .replace(
+            {
+                "": "Non renseigné",
+                "nan": "Non renseigné",
+                "None": "Non renseigné",
+                "<NA>": "Non renseigné",
+            }
+        )
+    )
+
+    esi = esi[
+        esi["esi_reference"].notna()
+        & (esi["esi_reference"] != "")
+    ].copy()
+
+    if esi.empty:
+        return pd.DataFrame(columns=colonnes_sortie)
+
+    population = (
+        esi.groupby(
+            "Entité",
+            as_index=False,
+        )["esi_reference"]
+        .nunique()
+        .rename(
+            columns={
+                "esi_reference": "ESI totaux",
+            }
+        )
+    )
+
+    # -------------------------------------------------
+    # 2. Création des 12, 24 ou 36 mois continus
+    # -------------------------------------------------
+
+    periodes = construire_periodes_continues(
+        base=pd.DataFrame(),
+        granularite="Mensuel",
+        nb_mois=int(nb_mois),
+    ).copy()
+
+    # Pour le mois actuel, la date de photographie est aujourd'hui,
+    # pas le dernier jour futur du mois.
+    aujourd_hui = pd.Timestamp(
+        aujourd_hui_france()
+    )
+
+    periodes.loc[
+        periodes["periode_fin"] > aujourd_hui,
+        "periode_fin",
+    ] = aujourd_hui
+
+    # -------------------------------------------------
+    # 3. Relations contrat x ESI
+    # -------------------------------------------------
+
+    colonnes_contrats = [
+        colonne
+        for colonne in [
+            "contract_reference",
+            "esi_reference",
+            "contract_start_date",
+            "contract_end_date",
+        ]
+        if colonne in df_contrats_base.columns
+    ]
+
+    if not {
+        "contract_reference",
+        "esi_reference",
+    }.issubset(colonnes_contrats):
+        relations = pd.DataFrame(
+            columns=[
+                "contract_reference",
+                "esi_reference",
+                "contract_start_date",
+                "contract_end_date",
+            ]
+        )
+    else:
+        relations = df_contrats_base[
+            colonnes_contrats
+        ].copy()
+
+    for colonne in [
+        "contract_start_date",
+        "contract_end_date",
+    ]:
+        if colonne not in relations.columns:
+            relations[colonne] = pd.NaT
+
+        relations[colonne] = _dates_sans_fuseau(
+            relations[colonne]
+        )
+
+    relations["contract_reference"] = (
+        relations["contract_reference"]
+        .astype("string")
+        .str.strip()
+    )
+
+    relations["esi_reference"] = (
+        relations["esi_reference"]
+        .astype("string")
+        .str.strip()
+    )
+
+    relations = relations[
+        relations["contract_reference"].notna()
+        & relations["esi_reference"].notna()
+        & relations["esi_reference"].isin(
+            esi["esi_reference"]
+        )
+    ].drop_duplicates(
+        [
+            "contract_reference",
+            "esi_reference",
+        ]
+    )
+
+    # -------------------------------------------------
+    # 4. Dates provenant de contrats_prestations
+    # -------------------------------------------------
+
+    dates_contrats = preparer_base_evolution_contrats(
+        df_contrats=df_contrats_base,
+        df_prestations=df_prestations,
+    ).copy()
+
+    for colonne in [
+        "contract_creation_date",
+        "contract_deactivation_date",
+        "contract_end_date",
+    ]:
+        if colonne not in dates_contrats.columns:
+            dates_contrats[colonne] = pd.NaT
+
+        dates_contrats[colonne] = _dates_sans_fuseau(
+            dates_contrats[colonne]
+        )
+
+    relations = relations.merge(
+        dates_contrats[
+            [
+                "contract_reference",
+                "contract_creation_date",
+                "contract_deactivation_date",
+                "contract_end_date",
+            ]
+        ],
+        on="contract_reference",
+        how="left",
+        suffixes=(
+            "_rattachement",
+            "_source",
+        ),
+    )
+
+    # Priorité :
+    # 1. date de début contractuelle ;
+    # 2. date de création dans Intent ;
+    # 3. début de la période si aucune date n'existe.
+    relations["date_debut_effective"] = (
+        relations["contract_start_date"]
+        .fillna(
+            relations["contract_creation_date"]
+        )
+        .fillna(
+            periodes["periode_debut"].min()
+        )
+    )
+
+    # La première date connue met fin à la couverture :
+    # date de fin contractuelle ou date de désactivation.
+    relations["date_fin_effective"] = pd.concat(
+        [
+            relations[
+                "contract_end_date_rattachement"
+            ],
+            relations[
+                "contract_end_date_source"
+            ],
+            relations[
+                "contract_deactivation_date"
+            ],
+        ],
+        axis=1,
+    ).min(axis=1)
+
+    # Ajout de l'entité organisationnelle depuis la base ESI.
+    relations = relations.merge(
+        esi[
+            [
+                "esi_reference",
+                "Entité",
+            ]
+        ],
+        on="esi_reference",
+        how="inner",
+    )
+
+    # -------------------------------------------------
+    # 5. Photographie de la couverture à chaque fin de mois
+    # -------------------------------------------------
+
+    lignes = []
+
+    for periode in periodes.itertuples(
+        index=False
+    ):
+        fin_mois = pd.Timestamp(
+            periode.periode_fin
+        )
+
+        contrats_actifs = relations[
+            (
+                relations[
+                    "date_debut_effective"
+                ] <= fin_mois
+            )
+            & (
+                relations[
+                    "date_fin_effective"
+                ].isna()
+                | (
+                    relations[
+                        "date_fin_effective"
+                    ] >= fin_mois
+                )
+            )
+        ]
+
+        couverts = (
+            contrats_actifs.groupby(
+                "Entité",
+                as_index=False,
+            )["esi_reference"]
+            .nunique()
+            .rename(
+                columns={
+                    "esi_reference": (
+                        "ESI couverts"
+                    ),
+                }
+            )
+        )
+
+        situation_mois = population.merge(
+            couverts,
+            on="Entité",
+            how="left",
+        )
+
+        situation_mois["ESI couverts"] = (
+            situation_mois[
+                "ESI couverts"
+            ]
+            .fillna(0)
+            .astype(int)
+        )
+
+        situation_mois[
+            "ESI non couverts"
+        ] = (
+            situation_mois["ESI totaux"]
+            - situation_mois["ESI couverts"]
+        ).clip(lower=0)
+
+        situation_mois[
+            "Taux de couverture"
+        ] = (
+            situation_mois["ESI couverts"]
+            .div(
+                situation_mois[
+                    "ESI totaux"
+                ].replace(0, pd.NA)
+            )
+            .mul(100)
+            .fillna(0)
+            .round(1)
+        )
+
+        situation_mois["Mois"] = pd.Timestamp(
+            periode.periode_debut
+        )
+
+        situation_mois["Période"] = (
+            periode.libelle
+        )
+
+        situation_mois["Maille"] = maille
+
+        lignes.append(situation_mois)
+
+    if not lignes:
+        return pd.DataFrame(
+            columns=colonnes_sortie
+        )
+
+    historique = pd.concat(
+        lignes,
+        ignore_index=True,
+    )
+
+    return (
+        historique[colonnes_sortie]
+        .sort_values(
+            [
+                "Mois",
+                "Entité",
+            ]
+        )
+        .reset_index(drop=True)
+    )
+
+
+def afficher_evolution_couverture_esi(
+    df_esi_base: pd.DataFrame,
+    df_contrats_base: pd.DataFrame,
+    df_prestations: pd.DataFrame,
+):
+    with st.expander(
+        "Évolution mensuelle de la couverture",
+        expanded=True,
+    ):
+        section(
+            "Évolution mensuelle du taux de couverture",
+            (
+                "Part des ESI couverts par au moins "
+                "un contrat actif à la fin de chaque mois."
+            ),
+        )
+
+        col_periode, col_maille = st.columns(
+            2,
+            gap="large",
+        )
+
+        with col_periode:
+            periode_selectionnee = st.radio(
+                "Période analysée",
+                [
+                    "12 mois",
+                    "24 mois",
+                    "36 mois",
+                ],
+                index=1,
+                horizontal=True,
+                key="couverture_evolution_periode",
+            )
+
+        with col_maille:
+            maille_selectionnee = st.selectbox(
+                "Maille de comparaison",
+                [
+                    "Société",
+                    "Agence",
+                    "Groupe",
+                    "Secteur",
+                ],
+                index=0,
+                key="couverture_evolution_maille",
+            )
+
+        correspondance_maille = {
+            "Société": "societe",
+            "Agence": "agence",
+            "Groupe": "groupe",
+            "Secteur": "secteur",
+        }
+
+        historique = (
+            construire_evolution_couverture_esi(
+                df_esi_base=df_esi_base,
+                df_contrats_base=(
+                    df_contrats_base
+                ),
+                df_prestations=df_prestations,
+                maille=correspondance_maille[
+                    maille_selectionnee
+                ],
+                nb_mois=int(
+                    periode_selectionnee.split()[0]
+                ),
+            )
+        )
+
+        if historique.empty:
+            st.info(
+                "Aucune donnée exploitable pour "
+                "reconstruire cette évolution."
+            )
+            return
+
+        # -------------------------------------------------
+        # Graphique
+        # -------------------------------------------------
+
+        if go is None:
+            graphique_simple = historique.pivot(
+                index="Période",
+                columns="Entité",
+                values="Taux de couverture",
+            )
+
+            st.line_chart(
+                graphique_simple,
+                width="stretch",
+            )
+
+        else:
+            fig = go.Figure()
+
+            entites = (
+                historique["Entité"]
+                .drop_duplicates()
+                .tolist()
+            )
+
+            for index, entite in enumerate(
+                entites
+            ):
+                serie_entite = historique[
+                    historique["Entité"] == entite
+                ].sort_values("Mois")
+
+                fig.add_trace(
+                    go.Scatter(
+                        x=serie_entite[
+                            "Période"
+                        ],
+                        y=serie_entite[
+                            "Taux de couverture"
+                        ],
+                        mode="lines+markers",
+                        name=str(entite),
+                        line=dict(
+                            width=2.2,
+                            color=(
+                                PALETTE_3F_GRAPHIQUES[
+                                    index
+                                    % len(
+                                        PALETTE_3F_GRAPHIQUES
+                                    )
+                                ]
+                            ),
+                        ),
+                        marker=dict(
+                            size=5,
+                        ),
+                        customdata=serie_entite[
+                            [
+                                "ESI couverts",
+                                "ESI totaux",
+                                "ESI non couverts",
+                            ]
+                        ].to_numpy(),
+                        hovertemplate=(
+                            "<b>%{fullData.name}</b><br>"
+                            "Mois : %{x}<br>"
+                            "Taux : %{y:.1f} %<br>"
+                            "ESI couverts : "
+                            "%{customdata[0]:,.0f}<br>"
+                            "ESI totaux : "
+                            "%{customdata[1]:,.0f}<br>"
+                            "ESI non couverts : "
+                            "%{customdata[2]:,.0f}"
+                            "<extra></extra>"
+                        ),
+                    )
+                )
+
+            periodes_uniques = (
+                historique[
+                    [
+                        "Mois",
+                        "Période",
+                    ]
+                ]
+                .drop_duplicates()
+                .sort_values("Mois")
+            )
+
+            graduations = graduations_periodes(
+                periodes_uniques,
+                maximum=8,
+            )
+
+            _layout_plotly(
+                fig,
+                610,
+            )
+
+            fig.update_layout(
+                hovermode="closest",
+                showlegend=True,
+                legend=dict(
+                    title=maille_selectionnee,
+                    orientation="v",
+                    yanchor="top",
+                    y=1,
+                    xanchor="left",
+                    x=1.01,
+                    font=dict(
+                        size=10,
+                    ),
+                    itemclick="toggle",
+                    itemdoubleclick="toggleothers",
+                ),
+                margin=dict(
+                    l=65,
+                    r=240,
+                    t=15,
+                    b=65,
+                ),
+                xaxis=dict(
+                    title=None,
+                    type="category",
+                    categoryorder="array",
+                    categoryarray=(
+                        periodes_uniques[
+                            "Période"
+                        ].tolist()
+                    ),
+                    tickmode="array",
+                    tickvals=graduations,
+                    ticktext=graduations,
+                    gridcolor=C_GRID,
+                ),
+                yaxis=dict(
+                    title="Taux de couverture",
+                    ticksuffix=" %",
+                    range=[
+                        0,
+                        100,
+                    ],
+                    gridcolor=C_GRID,
+                ),
+            )
+
+            st.plotly_chart(
+                fig,
+                use_container_width=True,
+                config=config_plotly(
+                    "evolution_mensuelle_couverture_esi"
+                ),
+            )
+
+        st.caption(
+            "Toutes les entités de la maille sélectionnée "
+            "sont affichées. Le total d’ESI correspond au "
+            "parc actuel du périmètre filtré. Les contrats "
+            "actifs sont reconstruits à la fin de chaque "
+            "mois avec leurs dates de début, de fin et de "
+            "désactivation."
+        )
+
+        # -------------------------------------------------
+        # Toutes les données + export Excel
+        # -------------------------------------------------
+
+        with st.expander(
+            "Consulter toutes les données mensuelles",
+            expanded=False,
+        ):
+            table_historique = historique.copy()
+
+            table_historique["Mois"] = (
+                table_historique["Mois"]
+                .map(libelle_mois_fr)
+            )
+
+            st.dataframe(
+                table_historique,
+                width="stretch",
+                hide_index=True,
+                height=460,
+            )
+
+            dataframe_download(
+                "Télécharger toutes les données en Excel",
+                historique,
+                "evolution_couverture_esi.xlsx",
+                cle="export_evolution_couverture_esi",
+            )
 
 def afficher_evolution_contrats(
     df_contrats: pd.DataFrame,
@@ -5336,6 +5989,14 @@ elif vue_active == "Couverture":
                     "detail_metier.xlsx",
                     cle="export_detail_metier",
                 )
+
+
+
+    afficher_evolution_couverture_esi(
+        df_esi_base=df_esi_base,
+        df_contrats_base=df_contrats_filtre,
+        df_prestations=df_prestations,
+    )
 
 
 # =====================================================
