@@ -6275,10 +6275,10 @@ elif vue_active == "Couverture":
                     xref="paper",
                     yref="paper",
                     xanchor="left",
-                    text=(
-                        f"<b>{fmt_pourcentage(part_avec)}</b> "
-                        "avec contrat"
-                    ),
+                    # text=(
+                    #     f"<b>{fmt_pourcentage(part_avec)}</b> "
+                    #     "avec contrat"
+                    # ),
                     showarrow=False,
                     font=dict(
                         color=C_NAVY,
@@ -6292,10 +6292,10 @@ elif vue_active == "Couverture":
                     xref="paper",
                     yref="paper",
                     xanchor="right",
-                    text=(
-                        f"<b>{fmt_nombre(sans_contrat)}</b> "
-                        "sans contrat"
-                    ),
+                    # text=(
+                    #     f"<b>{fmt_nombre(sans_contrat)}</b> "
+                    #     "sans contrat"
+                    # ),
                     showarrow=False,
                     font=dict(
                         color="#A94F7A",
