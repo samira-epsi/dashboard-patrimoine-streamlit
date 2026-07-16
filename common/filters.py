@@ -825,6 +825,12 @@ def construire_options_programme(
 
     return options, {}
 
+def marquer_filtre_modifie(key: str):
+    """
+    Mémorise le filtre que l'utilisateur vient réellement de modifier.
+    Ce filtre devient prioritaire lors de la synchronisation.
+    """
+    st.session_state["_dernier_filtre_modifie"] = key
 
 def render_multiselect(
     label,
@@ -840,18 +846,18 @@ def render_multiselect(
         placeholder=placeholder,
         format_func=(
             format_func
-            if format_func
+            if format_func is not None
             else lambda valeur: valeur
         ),
+        on_change=marquer_filtre_modifie,
+        args=(key,),
     )
 
     nb_selected = len(selected)
     nb_options = len(options)
 
     if nb_selected == 0:
-        meta = (
-            f"{nb_options} option(s) disponible(s)"
-        )
+        meta = f"{nb_options} option(s) disponible(s)"
     else:
         meta = (
             f"{nb_selected} sélection(s) · "
@@ -859,11 +865,7 @@ def render_multiselect(
         )
 
     st.sidebar.markdown(
-        (
-            '<div class="filter-meta">'
-            f"{meta}"
-            "</div>"
-        ),
+        f'<div class="filter-meta">{meta}</div>',
         unsafe_allow_html=True,
     )
 
@@ -1048,53 +1050,73 @@ def _stabiliser_selections_filtres(
     max_iterations: int = 12,
 ):
     """
-    Retire les valeurs devenues incompatibles.
+    Synchronise les filtres en conservant en priorité
+    celui que l'utilisateur vient de modifier.
 
-    La boucle est répétée jusqu'à obtenir un état
-    cohérent entre tous les filtres.
+    Les autres sélections incompatibles sont supprimées.
     """
+
+    derniere_cle = st.session_state.get(
+        "_dernier_filtre_modifie"
+    )
+
+    colonne_prioritaire = next(
+        (
+            colonne
+            for colonne, cle in correspondance.items()
+            if cle == derniere_cle
+        ),
+        None,
+    )
 
     for _ in range(max_iterations):
         changements = False
 
         selections = {
             colonne: _selection_session(cle)
-            for colonne, cle
-            in correspondance.items()
+            for colonne, cle in correspondance.items()
         }
 
-        for colonne, cle in correspondance.items():
-            options_valides = (
-                options_filtre_synchronisees(
-                    base=base,
-                    colonne_cible=colonne,
-                    selections=selections,
-                )
+        # Le filtre modifié est toujours traité en dernier
+        # afin de ne pas être supprimé par un ancien filtre.
+        colonnes_ordonnees = [
+            colonne
+            for colonne in correspondance
+            if colonne != colonne_prioritaire
+        ]
+
+        if colonne_prioritaire is not None:
+            colonnes_ordonnees.append(
+                colonne_prioritaire
             )
 
-            selection_actuelle = (
-                _selection_session(cle)
+        for colonne in colonnes_ordonnees:
+            cle = correspondance[colonne]
+
+            selection_actuelle = _selection_session(
+                cle
+            )
+
+            # On ne supprime jamais la sélection du filtre
+            # que l'utilisateur vient de modifier.
+            if colonne == colonne_prioritaire:
+                continue
+
+            options_valides = options_filtre_synchronisees(
+                base=base,
+                colonne_cible=colonne,
+                selections=selections,
             )
 
             selection_valide = [
                 valeur
-                for valeur
-                in selection_actuelle
+                for valeur in selection_actuelle
                 if valeur in options_valides
             ]
 
-            if (
-                selection_valide
-                != selection_actuelle
-            ):
-                st.session_state[cle] = (
-                    selection_valide
-                )
-
-                selections[colonne] = (
-                    selection_valide
-                )
-
+            if selection_valide != selection_actuelle:
+                st.session_state[cle] = selection_valide
+                selections[colonne] = selection_valide
                 changements = True
 
         if not changements:
@@ -1287,6 +1309,7 @@ def reinitialiser_filtres_dashboard():
         "global_contract_table_mode",
         "dashboard_vue_active",
         "_derniere_recherche_contrat_synchro",
+        "_dernier_filtre_modifie",
     }
 
     prefixes = (
@@ -1351,14 +1374,8 @@ def render_filtres_patrimoine(
     st.sidebar.markdown(
         """
         <div class="filters-header">
-            <div class="filters-title">
-                Filtres patrimoine
-            </div>
-
-            <div class="filters-subtitle">
-                Chaque sélection actualise toutes
-                les autres listes disponibles.
-            </div>
+            <div class="filters-title">Filtres patrimoine</div>
+            <div class="filters-subtitle">Chaque sélection actualise toutes les autres listes disponibles.</div>
         </div>
         """,
         unsafe_allow_html=True,
