@@ -1902,9 +1902,8 @@ def construire_couverture_reelle_equipements(
     resultat = pd.DataFrame(
         {
             "Couverture": [
-                # "Équipements avec contrat",
-                # "Équipements sans contrat",
-                "",
+                "Équipements avec contrat",
+                "Équipements sans contrat",
             ],
             "Équipements": [
                 nb_couverts,
