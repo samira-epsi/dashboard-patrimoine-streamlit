@@ -5973,7 +5973,7 @@ elif vue_active == "Couverture":
                         textinfo="percent",
                         textposition="outside",
                         textfont=dict(
-                            size=10,
+                            size=14,
                             color="#201E1E",
                         ),
                         marker=dict(
@@ -5988,7 +5988,7 @@ elif vue_active == "Couverture":
                             ],
                             line=dict(
                                 color="#FFFFFF",
-                                width=4,
+                                width=2,
                             ),
                         ),
                         customdata=couverture_equipements["Taux"],
