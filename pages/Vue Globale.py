@@ -2192,6 +2192,7 @@ def construire_evolution_couverture_esi(
     df_prestations: pd.DataFrame,
     maille: str,
     nb_mois: int,
+    metier: str | None = None,
 ) -> pd.DataFrame:
     """
     Reconstruit, à la fin de chaque mois, le nombre et le taux
@@ -2300,6 +2301,7 @@ def construire_evolution_couverture_esi(
         for colonne in [
             "contract_reference",
             "esi_reference",
+            "contract_topic",
             "contract_start_date",
             "contract_end_date",
         ]
@@ -2322,11 +2324,32 @@ def construire_evolution_couverture_esi(
         relations = df_contrats_base[
             colonnes_contrats
         ].copy()
+  
+
+    # Dans le mode par métier, seuls les contrats du métier
+    # sélectionné participent au calcul de la couverture.
+    if metier is not None:
+        if "contract_topic" not in relations.columns:
+            return pd.DataFrame(
+                columns=colonnes_sortie
+            )
+
+        relations["contract_topic"] = (
+            relations["contract_topic"]
+            .fillna("Non renseigné")
+            .astype(str)
+            .str.strip()
+        )
+
+        relations = relations[
+            relations["contract_topic"] == metier
+        ].copy()
 
     for colonne in [
         "contract_start_date",
         "contract_end_date",
     ]:
+
         if colonne not in relations.columns:
             relations[colonne] = pd.NaT
 
@@ -2569,7 +2592,16 @@ def afficher_evolution_couverture_esi(
             (
                 "Part des ESI couverts par au moins "
                 "un contrat actif à la fin de chaque mois."
-            ),
+            ),)
+        
+        type_analyse = st.radio(
+            "Type d’analyse",
+            [
+                "Couverture globale",
+                "Couverture par métier",
+            ],
+            horizontal=True,
+            key="couverture_evolution_type_analyse",
         )
 
         col_periode, col_maille = st.columns(
@@ -2610,12 +2642,64 @@ def afficher_evolution_couverture_esi(
             "Secteur": "secteur",
         }
 
+        metier_selectionne = None
+
+        if type_analyse == "Couverture par métier":
+            if "contract_topic" not in df_contrats_base.columns:
+                st.info(
+                    "La colonne métier n’est pas disponible "
+                    "dans les contrats."
+                )
+                return
+
+            metiers_disponibles = (
+                df_contrats_base["contract_topic"]
+                .dropna()
+                .astype(str)
+                .str.strip()
+            )
+
+            metiers_disponibles = (
+                metiers_disponibles[
+                    ~metiers_disponibles.isin(
+                        [
+                            "",
+                            "Non renseigné",
+                            "nan",
+                            "None",
+                            "<NA>",
+                        ]
+                    )
+                ]
+                .drop_duplicates()
+                .sort_values()
+                .tolist()
+            )
+
+            if not metiers_disponibles:
+                st.info(
+                    "Aucun métier disponible sur le "
+                    "périmètre sélectionné."
+                )
+                return
+
+            metier_selectionne = st.selectbox(
+                "Métier analysé",
+                options=metiers_disponibles,
+                key="couverture_evolution_metier",
+            )
+
+
+
+
+
+
+
+
         historique = (
             construire_evolution_couverture_esi(
                 df_esi_base=df_esi_base,
-                df_contrats_base=(
-                    df_contrats_base
-                ),
+                df_contrats_base=df_contrats_base,
                 df_prestations=df_prestations,
                 maille=correspondance_maille[
                     maille_selectionnee
@@ -2623,6 +2707,7 @@ def afficher_evolution_couverture_esi(
                 nb_mois=int(
                     periode_selectionnee.split()[0]
                 ),
+                metier=metier_selectionne,
             )
         )
 
@@ -2681,6 +2766,27 @@ def afficher_evolution_couverture_esi(
         # -------------------------------------------------
         # Graphique
         # -------------------------------------------------
+
+
+        if metier_selectionne is None:
+            titre_analyse = (
+                "ESI ayant au moins un contrat actif"
+            )
+        else:
+            titre_analyse = (
+                "ESI ayant au moins un contrat actif "
+                f"du métier « {metier_selectionne} »"
+            )
+
+        st.markdown(
+            f"""
+            <div class="vg-info">
+                Analyse : <strong>{_safe(titre_analyse)}</strong>
+            </div>
+            """,
+            unsafe_allow_html=True,
+        )
+
 
         if go is None:
             graphique_simple = historique.pivot(
@@ -2839,13 +2945,23 @@ def afficher_evolution_couverture_esi(
                 ),
             )
 
+        if metier_selectionne is None:
+            definition_indicateur = (
+                "au moins un contrat actif, tous métiers confondus"
+            )
+        else:
+            definition_indicateur = (
+                "au moins un contrat actif du métier "
+                f"« {metier_selectionne} »"
+            )
+
         st.caption(
-            "Toutes les entités de la maille sélectionnée "
-            "sont affichées. Le total d’ESI correspond au "
-            "parc actuel du périmètre filtré. Les contrats "
-            "actifs sont reconstruits à la fin de chaque "
-            "mois avec leurs dates de début, de fin et de "
-            "désactivation."
+            "Le taux correspond à la part des ESI du périmètre "
+            f"ayant {definition_indicateur}. "
+            "Le dénominateur reste l’ensemble des ESI de chaque "
+            "entité sélectionnée. Les contrats sont reconstruits "
+            "à la fin de chaque mois selon leurs dates de début, "
+            "de fin et de désactivation."
         )
 
         # -------------------------------------------------
