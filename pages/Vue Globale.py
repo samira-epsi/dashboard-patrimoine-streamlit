@@ -5834,6 +5834,8 @@ elif vue_active == "Couverture":
         # INDICATEURS À DROITE
         # =================================================
 
+        with colonne_indicateurs:
+
 
             afficher_carte_indicateur(
                 label="Moyenne",
