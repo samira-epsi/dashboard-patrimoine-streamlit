@@ -1,7 +1,12 @@
-from pathlib import Path
-from textwrap import dedent
+import html
+from io import BytesIO
+from datetime import datetime
+from zoneinfo import ZoneInfo
+
 import pandas as pd
 import streamlit as st
+from sqlalchemy import create_engine, text
+from sqlalchemy.exc import SQLAlchemyError
 
 try:
     import plotly.graph_objects as go
@@ -9,40 +14,2162 @@ except ImportError:
     go = None
 
 from common.app_config import setup_page
-from common.charts_style import *
-from common.charts_style import _layout_plotly
+from common.ui_style import apply_3f_page_style
 from common.filters import render_filtres_patrimoine
-from common.export_utils import dataframe_download
-from common.ui_style import (
-    _safe,
-    apply_3f_page_style,
-    apply_vue_globale_style,
-    vg_alert_card as alert_card,
-    vg_hero as hero,
-    vg_info as info,
-    vg_kpi_card as kpi_card,
-    vg_section as section,
-)
-from common.vue_globale_data import *
-from common.vue_globale_tables import *
+from config import DB_URL
 
+
+# =====================================================
+# SOURCES SUPABASE / POSTGRESQL
+# =====================================================
+
+SOURCE_ESI = "dashboard.esi_couverture"
+SOURCE_CONTRATS = "dashboard.contrats_patrimoine"
+SOURCE_PRESTATIONS = "dashboard.contrats_prestations"
+SOURCE_EQUIPEMENTS_COUVERTURE = "dashboard.equipements_couverture"
+SOURCE_EQUIPEMENTS_CONTRATS = "dashboard.equipements_contrats"
+SOURCE_GLOBAL = "dashboard.kpi_globale"
+SOURCE_CREATIONS = "dashboard.kpi_creation_detail"
+SOURCE_QUALITE = "dashboard.qualite_donnees"
+SOURCE_QUALITE_RESUME = "dashboard.qualite_donnees_resume"
+
+CACHE_TTL = 3600
+SQL_TIMEOUT_MS = 20000
+
+
+# =====================================================
+# PALETTE 3F
+# =====================================================
+
+C_RED = "#E5114D"
+C_NAVY = "#173B69"
+C_VIOLET = "#432ABD"
+C_YELLOW = "#FFDC55"
+C_TEAL = "#008080"
+C_BLUE = "#0074FF"
+C_BLUE_LIGHT = "#80CDFF"
+C_PINK = "#FFB7E3"
+
+C_RED_DARK = "#BF0F40"
+C_NAVY_DEEP = "#102A4C"
+C_PINK_SOFT = "#FFF3FA"
+C_BLUE_SOFT = "#EFF9FF"
+C_CANVAS = "#F7FAFD"
+C_GRID = "#E8EEF5"
+C_INK = "#17243A"
+
+
+PALETTE_3F_GRAPHIQUES = [
+    "#173B69",  # bleu marine
+    "#63B9DF",  # bleu ciel
+    "#2F7C6D",  # vert profond
+    "#432ABD",  # violet
+    "#E89BC7",  # rose poudré
+    "#F4D84E",  # jaune
+    "#D83B55",  # rouge framboise
+    "#4C6FB1",  # bleu moyen
+]
+
+
+# =====================================================
+# PAGE + STYLE
+# =====================================================
 
 setup_page("Vue Globale", None)
-
-logo_path = Path("assets/Logo.png")
-if logo_path.exists():
-    st.logo(str(logo_path))
-
 apply_3f_page_style()
-apply_vue_globale_style()
+
+
+def _safe(value) -> str:
+    if value is None:
+        return ""
+    return html.escape(str(value))
+
+
+def format_nombre(value) -> str:
+    try:
+        return f"{int(value):,}".replace(",", " ")
+    except (TypeError, ValueError):
+        return "0"
 
 
 def effacer_recherche_contrat():
     st.session_state["global_search_contract"] = ""
 
+
+def inject_style():
+    st.markdown(
+        r"""
+        <style>
+        :root {
+            --3f-red: #E5114D;
+            --3f-red-dark: #BF0F40;
+            --3f-pink-soft: #FFF1F6;
+            --3f-blue-light: #80CDFF;
+            --navy: #173B69;
+            --navy-deep: #102A4C;
+            --text-main: #1B2430;
+            --text-soft: #667085;
+            --text-muted: #8A94A6;
+            --surface: #FFFFFF;
+            --canvas: #FAFAFB;
+            --border: #E7E3E8;
+            --line-soft: #EEE7EB;
+        }
+
+        html, body, [class*="css"], .stApp, button, input, textarea, select {
+            font-family: Arial, Helvetica, sans-serif !important;
+        }
+
+        .stApp {
+            background: var(--canvas) !important;
+        }
+
+        .block-container {
+            max-width: 1520px !important;
+            padding-top: 1.15rem !important;
+            padding-left: 2rem !important;
+            padding-right: 2rem !important;
+        }
+
+        hr {
+            border: none !important;
+            border-top: 1px solid #E9EEF3 !important;
+            margin: 22px 0 !important;
+        }
+
+        /* HERO */
+        .vg-hero {
+            position: relative;
+            overflow: hidden;
+            padding: 28px 34px !important;
+            margin: 0 0 14px 0 !important;
+            background: var(--3f-pink-soft) !important;
+            border: 1px solid #E8D8E1 !important;
+            border-radius: 20px !important;
+            box-shadow: 0 10px 26px -22px rgba(27, 36, 48, 0.24) !important;
+        }
+
+        .vg-hero::before {
+            content: "";
+            position: absolute;
+            left: 0;
+            top: 0;
+            right: 0;
+            height: 5px;
+            background: var(--3f-red) !important;
+        }
+
+        .vg-hero::after {
+            content: "";
+            position: absolute;
+            width: 135px;
+            height: 135px;
+            right: -70px;
+            bottom: -75px;
+            border-radius: 50%;
+            background: rgba(128, 205, 255, 0.18);
+        }
+
+        .vg-hero-eyebrow {
+            position: relative;
+            z-index: 1;
+            display: inline-flex;
+            align-items: center;
+            gap: 7px;
+            color: #A33A61;
+            font-size: 11.5px;
+            font-weight: 700;
+            letter-spacing: 1.4px;
+            text-transform: uppercase;
+            margin-bottom: 11px;
+        }
+
+        .vg-hero-eyebrow::before {
+            content: "";
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: var(--3f-red);
+        }
+
+        .vg-hero-title {
+            position: relative;
+            z-index: 1;
+            color: var(--text-main);
+            font-size: 34px;
+            line-height: 1.08;
+            letter-spacing: -0.6px;
+            font-weight: 800;
+            margin-bottom: 8px;
+        }
+
+        .vg-hero-subtitle {
+            position: relative;
+            z-index: 1;
+            color: var(--text-soft);
+            font-size: 14.5px;
+            line-height: 1.55;
+            font-weight: 500;
+            max-width: 940px;
+        }
+
+        /* SECTIONS */
+        .vg-section-title {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            color: var(--text-main);
+            font-size: 20px;
+            font-weight: 800;
+            letter-spacing: -0.3px;
+            margin: 2px 0 3px 0;
+        }
+
+        .vg-section-title::before {
+            content: "";
+            width: 5px;
+            height: 21px;
+            border-radius: 99px;
+            background: var(--3f-red);
+        }
+
+        .vg-section-subtitle {
+            color: var(--text-soft);
+            font-size: 13px;
+            font-weight: 500;
+            line-height: 1.5;
+            margin-bottom: 14px;
+            max-width: 920px;
+        }
+
+        .vg-mini-title,
+        .vg-column-title {
+            color: var(--text-main);
+            font-size: 14px;
+            font-weight: 700;
+            margin: 2px 0 10px 0;
+        }
+
+        .vg-info {
+            padding: 12px 16px;
+            border-radius: 12px;
+            background: #FFF7FA;
+            border: 1px solid #EEDCE5;
+            color: var(--text-soft);
+            font-size: 12.5px;
+            font-weight: 500;
+            line-height: 1.5;
+            margin: 8px 0 16px 0;
+        }
+
+        /* CARTES */
+        .vg-card {
+            height: 190px;
+            min-height: 190px;
+            box-sizing: border-box;
+            display: flex;
+            flex-direction: column;
+            position: relative;
+            overflow: hidden;
+            padding: 18px 19px 17px 19px;
+            background: #FFFFFF;
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            box-shadow: 0 8px 20px -18px rgba(27, 36, 48, 0.22);
+            transition: border-color .15s ease, box-shadow .15s ease;
+        }
+
+        .vg-card:hover {
+            border-color: #DCCED5;
+            box-shadow: 0 10px 24px -18px rgba(27, 36, 48, 0.28);
+        }
+
+        .vg-card-accent {
+            width: 32px;
+            height: 4px;
+            border-radius: 99px;
+            background: var(--accent, #173B69);
+            margin-bottom: 15px;
+        }
+
+        .vg-card-label {
+            color: var(--text-muted);
+            font-size: 11.5px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.6px;
+            margin-bottom: 10px;
+        }
+
+        .vg-card-value {
+            color: var(--text-main);
+            font-size: 32px;
+            font-weight: 800;
+            letter-spacing: -1px;
+            line-height: 1;
+            margin-bottom: 12px;
+        }
+
+        .vg-card-pill {
+            display: inline-flex;
+            width: fit-content;
+            align-items: center;
+            padding: 4px 10px;
+            border-radius: 99px;
+            background: color-mix(in srgb, var(--accent, #173B69) 11%, transparent);
+            color: var(--accent, #173B69);
+            font-size: 11.5px;
+            font-weight: 700;
+            margin-bottom: 10px;
+        }
+
+        .vg-card-help {
+            color: var(--text-muted);
+            font-size: 11.5px;
+            font-weight: 500;
+            line-height: 1.45;
+            margin-top: auto;
+        }
+
+        .vg-card.vg-card-compact {
+            height: 158px;
+            min-height: 158px;
+            justify-content: flex-start;
+        }
+
+        .vg-card.vg-card-compact .vg-card-value {
+            margin-bottom: 0;
+        }
+
+        .vg-alert-card {
+            height: 148px;
+            min-height: 148px;
+            box-sizing: border-box;
+            padding: 16px 18px;
+            background: #FFFFFF;
+            border: 1px solid var(--border);
+            border-left: 4px solid var(--3f-red);
+            border-radius: 14px;
+            box-shadow: 0 7px 18px -17px rgba(27, 36, 48, 0.22);
+        }
+
+        .vg-alert-title {
+            color: var(--text-soft);
+            font-size: 10.5px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 9px;
+        }
+
+        .vg-alert-value {
+            color: var(--text-main);
+            font-size: 28px;
+            font-weight: 800;
+            letter-spacing: -0.5px;
+            line-height: 1;
+            margin-bottom: 8px;
+        }
+
+        .vg-alert-help {
+            color: var(--text-muted);
+            font-size: 11.5px;
+            font-weight: 500;
+            line-height: 1.4;
+        }
+
+        /* TABLES / GRAPHIQUES */
+        div[data-testid="stPlotlyChart"],
+        div[data-testid="stDataFrame"] {
+            width: 100% !important;
+            background: #FFFFFF !important;
+            border: 1px solid var(--border) !important;
+            border-radius: 16px !important;
+            box-shadow: 0 8px 20px -18px rgba(27, 36, 48, 0.22) !important;
+        }
+
+        div[data-testid="stPlotlyChart"] {
+            overflow: visible !important;
+            display: flex !important;
+            align-items: center !important;
+            justify-content: center !important;
+        }
+
+        div[data-testid="stPlotlyChart"] > div,
+        div[data-testid="stPlotlyChart"] .js-plotly-plot,
+        div[data-testid="stPlotlyChart"] .plot-container,
+        div[data-testid="stPlotlyChart"] .svg-container {
+            width: 100% !important;
+            margin-left: auto !important;
+            margin-right: auto !important;
+        }
+
+        div[data-testid="stDataFrame"] {
+            overflow: hidden !important;
+        }
+
+        div[data-testid="stDataFrame"] [role="columnheader"] {
+            background: #F3F6F9 !important;
+            color: var(--navy) !important;
+            font-weight: 700 !important;
+        }
+
+        /* ALIGNEMENT DES DEUX GRAPHIQUES DE LA VUE GLOBALE */
+        div[data-testid="stHorizontalBlock"]:has(.st-key-global_graph_status) {
+            align-items: stretch !important;
+        }
+
+        .st-key-global_graph_status,
+        .st-key-global_graph_metier {
+            height: 100% !important;
+            display: flex !important;
+            flex-direction: column !important;
+        }
+
+        .st-key-global_graph_status > div,
+        .st-key-global_graph_metier > div {
+            width: 100% !important;
+        }
+
+        .st-key-global_graph_status div[data-testid="stPlotlyChart"],
+        .st-key-global_graph_metier div[data-testid="stPlotlyChart"] {
+            flex: 1 1 auto !important;
+            width: 100% !important;
+        }
+
+        /* BOUTONS */
+        .stButton button {
+            min-height: 44px !important;
+            color: #9D174D !important;
+            background: #FFFFFF !important;
+            border: 1px solid var(--border) !important;
+            border-radius: 12px !important;
+            box-shadow: none !important;
+            font-weight: 650 !important;
+        }
+
+        .stButton button:hover {
+            color: var(--3f-red) !important;
+            background: #FFF7FA !important;
+            border-color: #E7C8D6 !important;
+            transform: none !important;
+        }
+
+        .stDownloadButton button {
+            border-radius: 10px !important;
+            font-weight: 650 !important;
+            border: 1px solid var(--3f-red) !important;
+            background: var(--3f-red) !important;
+            color: #FFFFFF !important;
+        }
+
+        .stDownloadButton button:hover {
+            background: var(--3f-red-dark) !important;
+        }
+
+        /* ONGLETS PRINCIPAUX */
+        .st-key-dashboard_tabs {
+            margin-top: 0 !important;
+            margin-bottom: 20px !important;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .st-key-dashboard_tabs div[role="radiogroup"] {
+            display: flex !important;
+            align-items: flex-end !important;
+            gap: 28px !important;
+            padding: 0 4px !important;
+            background: transparent !important;
+            border: 0 !important;
+        }
+
+        .st-key-dashboard_tabs div[role="radiogroup"] label {
+            position: relative !important;
+            min-height: 48px !important;
+            padding: 13px 2px 12px 2px !important;
+            color: var(--text-soft) !important;
+            background: transparent !important;
+            border: 0 !important;
+            border-radius: 0 !important;
+            box-shadow: none !important;
+            font-weight: 650 !important;
+        }
+
+        .st-key-dashboard_tabs div[role="radiogroup"] label *,
+        .st-key-dashboard_tabs div[role="radiogroup"] label p,
+        .st-key-dashboard_tabs div[role="radiogroup"] label span {
+            color: inherit !important;
+        }
+
+        .st-key-dashboard_tabs div[role="radiogroup"] label:has(input:checked),
+        .st-key-dashboard_tabs div[role="radiogroup"] label:has(input:checked) * {
+            color: var(--3f-red) !important;
+            background: transparent !important;
+        }
+
+        .st-key-dashboard_tabs div[role="radiogroup"] label:has(input:checked)::after {
+            content: "";
+            position: absolute;
+            left: 0;
+            right: 0;
+            bottom: -1px;
+            height: 3px;
+            border-radius: 3px 3px 0 0;
+            background: var(--3f-red);
+        }
+
+        .st-key-dashboard_tabs div[role="radiogroup"] label input[type="radio"],
+        .st-key-dashboard_tabs div[role="radiogroup"] label div[data-baseweb="radio"] > div:first-child {
+            display: none !important;
+        }
+
+        .st-key-dashboard_refresh button {
+            min-height: 42px !important;
+            margin-bottom: 20px !important;
+        }
+
+        /* FILTRE STATUT */
+        .st-key-contract_status_filter {
+            max-width: 760px;
+            margin-bottom: 20px !important;
+        }
+
+        .st-key-contract_status_filter div[role="radiogroup"] {
+            width: fit-content !important;
+            gap: 4px !important;
+            padding: 5px !important;
+            background: #F5F6F8 !important;
+            border: 1px solid var(--border) !important;
+            border-radius: 12px !important;
+        }
+
+        .st-key-contract_status_filter div[role="radiogroup"] label {
+            min-height: 42px !important;
+            padding: 8px 15px !important;
+            border-radius: 9px !important;
+        }
+
+        /* EXPANDERS / RADIOS INTERNES */
+        div[data-testid="stExpander"] {
+            border: 1px solid var(--border) !important;
+            border-radius: 14px !important;
+            background: #FFFFFF !important;
+            overflow: hidden !important;
+        }
+
+        div[data-testid="stExpander"] div[role="radiogroup"] {
+            width: 100% !important;
+            gap: 5px !important;
+            padding: 5px !important;
+            background: #F7F5F7 !important;
+            border: 1px solid var(--border) !important;
+            border-radius: 12px !important;
+        }
+
+        div[data-testid="stExpander"] div[role="radiogroup"] label {
+            min-height: 41px !important;
+            padding: 8px 12px !important;
+            background: #FFFFFF !important;
+            color: var(--text-main) !important;
+            border: 1px solid transparent !important;
+            border-radius: 9px !important;
+        }
+
+        div[data-testid="stExpander"] div[role="radiogroup"] label:has(input:checked) {
+            background: var(--3f-pink-soft) !important;
+            color: #A3184A !important;
+            border-color: #E7C8D6 !important;
+        }
+
+        div[data-testid="stExpander"] div[role="radiogroup"] label:has(input:checked) p,
+        div[data-testid="stExpander"] div[role="radiogroup"] label:has(input:checked) span {
+            color: #A3184A !important;
+        }
+
+        /* RÉSUMÉ TABLE */
+        .vg-table-summary {
+            display: flex;
+            align-items: center;
+            gap: 18px;
+            overflow: hidden;
+            margin: 8px 0 14px 0;
+            padding: 12px 15px;
+            background: #FFF7FA;
+            border: 1px solid #EEDCE5;
+            border-radius: 12px;
+        }
+
+        .vg-table-summary-item {
+            display: flex;
+            align-items: baseline;
+            gap: 7px;
+        }
+
+        .vg-table-summary-value {
+            color: var(--3f-red);
+            font-size: 20px;
+            font-weight: 800;
+            line-height: 1;
+        }
+
+        .vg-table-summary-label {
+            color: var(--text-soft);
+            font-size: 12px;
+            font-weight: 650;
+        }
+
+        .vg-table-summary-separator {
+            width: 1px;
+            height: 26px;
+            background: #E7D9E0;
+        }
+
+        .vg-table-summary-mode {
+            margin-left: auto;
+            padding: 5px 10px;
+            color: #A3184A;
+            background: #FFFFFF;
+            border: 1px solid #E7C8D6;
+            border-radius: 999px;
+            font-size: 11px;
+            font-weight: 700;
+            white-space: nowrap;
+        }
+
+        /* POPOVER COLONNES */
+        div[data-testid="stPopover"] button {
+            min-height: 44px !important;
+            color: #A3184A !important;
+            background: #FFFFFF !important;
+            border: 1px solid #E1DCE2 !important;
+            border-radius: 11px !important;
+            box-shadow: none !important;
+        }
+
+        div[data-testid="stPopoverBody"] {
+            min-width: 360px !important;
+            max-width: 430px !important;
+        }
+
+        .vg-columns-separator {
+            height: 1px;
+            margin: 10px 0 8px 0;
+            background: var(--line-soft);
+        }
+
+        div[data-testid="stPopoverBody"] form [data-testid="stFormSubmitButton"] button[kind="primary"] {
+            color: #FFFFFF !important;
+            background: var(--3f-red) !important;
+            border-color: var(--3f-red) !important;
+        }
+
+        /* RECHERCHE ACTIVE */
+        .vg-search-active {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            margin-top: 7px;
+            margin-bottom: 10px;
+            padding: 7px 10px;
+            color: #A3184A;
+            background: var(--3f-pink-soft);
+            border: 1px solid #E7C8D6;
+            border-radius: 999px;
+            font-size: 11px;
+            font-weight: 700;
+        }
+
+        .vg-search-active-dot {
+            width: 7px;
+            height: 7px;
+            border-radius: 50%;
+            background: var(--3f-red);
+        }
+
+        .st-key-effacer_recherche_contrat button {
+            min-height: 36px !important;
+            padding-left: 13px !important;
+            padding-right: 13px !important;
+        }
+
+        /* PAGINATION */
+        .vg-pagination-current {
+            display: grid !important;
+            grid-template-columns: 1fr auto 1fr !important;
+            align-items: center !important;
+            width: 100% !important;
+            min-height: 48px !important;
+            height: 48px !important;
+            padding: 6px 14px !important;
+            background: #FFF7FA !important;
+            border: 1px solid #EEDCE5 !important;
+            border-radius: 12px !important;
+            box-sizing: border-box !important;
+        }
+
+        .vg-pagination-label {
+            justify-self: end !important;
+            margin-right: 9px !important;
+            color: var(--text-soft) !important;
+            font-size: 12px !important;
+            font-weight: 700 !important;
+        }
+
+        .vg-pagination-current strong {
+            display: inline-flex !important;
+            align-items: center !important;
+            justify-content: center !important;
+            min-width: 38px !important;
+            height: 34px !important;
+            padding: 0 10px !important;
+            color: #FFFFFF !important;
+            background: var(--3f-red) !important;
+            border-radius: 9px !important;
+            font-size: 14px !important;
+            font-weight: 800 !important;
+        }
+
+        .vg-pagination-total {
+            justify-self: start !important;
+            margin-left: 9px !important;
+            color: var(--text-soft) !important;
+            font-size: 12px !important;
+            font-weight: 700 !important;
+        }
+
+        .st-key-page_precedente_uniques button,
+        .st-key-page_precedente_rattachements button,
+        .st-key-page_precedente_prestations button,
+        .st-key-page_suivante_uniques button,
+        .st-key-page_suivante_rattachements button,
+        .st-key-page_suivante_prestations button {
+            min-height: 48px !important;
+            height: 48px !important;
+            color: #A3184A !important;
+            background: #FFFFFF !important;
+            border: 1px solid #E7DDE2 !important;
+            border-radius: 12px !important;
+            box-shadow: none !important;
+            font-size: 13px !important;
+            font-weight: 700 !important;
+        }
+
+        .st-key-page_precedente_uniques button:disabled,
+        .st-key-page_precedente_rattachements button:disabled,
+        .st-key-page_precedente_prestations button:disabled,
+        .st-key-page_suivante_uniques button:disabled,
+        .st-key-page_suivante_rattachements button:disabled,
+        .st-key-page_suivante_prestations button:disabled {
+            color: #B9C0CA !important;
+            background: #F7F7F8 !important;
+            border-color: #ECEDEF !important;
+            opacity: 1 !important;
+        }
+
+        div[data-testid="stHorizontalBlock"]:has(.vg-pagination-current) {
+            align-items: stretch !important;
+        }
+
+
+
+        /* STABILITÉ APRÈS RERUN / PAGINATION */
+        div[data-testid="stExpander"] {
+            contain: none !important;
+            overflow: visible !important;
+        }
+
+        div[data-testid="stExpanderDetails"] {
+            overflow: visible !important;
+        }
+
+        [data-testid="stMainBlockContainer"] {
+            min-height: max-content !important;
+        }
+
+        /* BLOCS COUVERTURE RESPONSIVES */
+        .vg-chart-intro {
+            display: flex;
+            align-items: flex-start;
+            justify-content: space-between;
+            gap: 18px;
+            margin: 2px 0 12px 0;
+        }
+
+        .vg-chart-question {
+            color: var(--text-main);
+            font-size: 14px;
+            font-weight: 750;
+            line-height: 1.35;
+        }
+
+        .vg-chart-base {
+            flex: 0 0 auto;
+            padding: 5px 9px;
+            color: var(--navy);
+            background: #EFF7FC;
+            border: 1px solid #D9EAF5;
+            border-radius: 999px;
+            font-size: 10.5px;
+            font-weight: 700;
+            white-space: nowrap;
+        }
+
+        .vg-coverage-legend {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 8px;
+            margin-top: 10px;
+        }
+
+        .vg-coverage-legend-item {
+            display: grid;
+            grid-template-columns: 11px minmax(0, 1fr) auto;
+            align-items: center;
+            gap: 9px;
+            padding: 8px 10px;
+            background: #FFFFFF;
+            border: 1px solid var(--border);
+            border-radius: 10px;
+        }
+
+        .vg-coverage-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background: var(--dot);
+        }
+
+        .vg-coverage-label {
+            color: var(--text-soft);
+            font-size: 11px;
+            font-weight: 650;
+            line-height: 1.25;
+        }
+
+        .vg-coverage-value {
+            color: var(--text-main);
+            font-size: 11px;
+            font-weight: 800;
+            white-space: nowrap;
+        }
+
+        .vg-drilldown-summary {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin: 5px 0 13px 0;
+        }
+
+        .vg-drilldown-pill {
+            padding: 6px 9px;
+            color: var(--navy);
+            background: #F4F8FB;
+            border: 1px solid #DFEAF2;
+            border-radius: 999px;
+            font-size: 10.5px;
+            font-weight: 700;
+        }
+
+        @media screen and (max-width: 900px) {
+            .block-container {
+                padding-left: 1rem !important;
+                padding-right: 1rem !important;
+            }
+
+            .vg-hero {
+                padding: 24px 22px !important;
+            }
+
+            .vg-hero-title {
+                font-size: 29px !important;
+            }
+
+            .st-key-dashboard_tabs div[role="radiogroup"] {
+                gap: 16px !important;
+                overflow-x: auto !important;
+                flex-wrap: nowrap !important;
+            }
+
+            .vg-card,
+            .vg-alert-card {
+                height: auto !important;
+                min-height: 148px !important;
+            }
+
+            .vg-table-summary {
+                align-items: flex-start;
+                flex-wrap: wrap;
+                gap: 10px 14px;
+            }
+
+            .vg-table-summary-mode {
+                margin-left: 0;
+            }
+        }
+        </style>
+        """,
+        unsafe_allow_html=True,
+    )
+
+
+def hero(title: str, subtitle: str):
+    st.markdown(
+        f"""
+        <div class="vg-hero">
+            <div class="vg-hero-eyebrow">Patrimoine 3F</div>
+            <div class="vg-hero-title">{_safe(title)}</div>
+            <div class="vg-hero-subtitle">{_safe(subtitle)}</div>
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
+
+
+def section(title: str, subtitle: str = ""):
+    st.markdown(
+        f"""
+        <div class="vg-section-title">{_safe(title)}</div>
+        <div class="vg-section-subtitle">{_safe(subtitle)}</div>
+        """,
+        unsafe_allow_html=True,
+    )
+
+
+def info(message: str):
+    st.markdown(
+        f'<div class="vg-info">{_safe(message)}</div>',
+        unsafe_allow_html=True,
+    )
+
+
+inject_style()
+
+
 # =====================================================
-# GRAPHIQUES ET COMPOSANTS DE LA PAGE
+# CONNEXION
 # =====================================================
+
+@st.cache_resource
+def get_engine():
+    return create_engine(
+        DB_URL,
+        pool_pre_ping=True,
+        pool_size=5,
+        max_overflow=10,
+        pool_recycle=1800,
+        connect_args={
+            "connect_timeout": 10,
+            "options": f"-c statement_timeout={SQL_TIMEOUT_MS}",
+        },
+    )
+
+
+def tester_connexion():
+    try:
+        with get_engine().connect() as conn:
+            conn.execute(text("SELECT 1"))
+        return True, None
+    except Exception as exc:
+        return False, str(exc)
+
+
+def table_exists(conn, source: str) -> bool:
+    return conn.execute(
+        text("SELECT to_regclass(:source)"),
+        {"source": source},
+    ).scalar() is not None
+
+
+def verifier_sources(conn):
+    required = [
+        SOURCE_ESI,
+        SOURCE_CONTRATS,
+        SOURCE_PRESTATIONS,
+        SOURCE_EQUIPEMENTS_COUVERTURE,
+        SOURCE_EQUIPEMENTS_CONTRATS,
+        SOURCE_GLOBAL,
+    ]
+    return [source for source in required if not table_exists(conn, source)]
+
+
+# =====================================================
+# FORMAT + NETTOYAGE
+# =====================================================
+
+
+def fmt_nombre(value):
+    try:
+        return f"{int(float(value or 0)):,}".replace(",", " ")
+    except Exception:
+        return "0"
+
+
+def fmt_pourcentage(value):
+    try:
+        return f"{float(value):.1f} %".replace(".", ",")
+    except Exception:
+        return "0,0 %"
+
+
+def fmt_date(value):
+    try:
+        if pd.isna(value):
+            return ""
+        return pd.to_datetime(value).strftime("%d/%m/%Y")
+    except Exception:
+        return ""
+
+
+def aujourd_hui_france():
+    return datetime.now(ZoneInfo("Europe/Paris")).date()
+
+
+MOIS_FR_COURTS = {
+    1: "janv.",
+    2: "févr.",
+    3: "mars",
+    4: "avr.",
+    5: "mai",
+    6: "juin",
+    7: "juil.",
+    8: "août",
+    9: "sept.",
+    10: "oct.",
+    11: "nov.",
+    12: "déc.",
+}
+
+
+def libelle_mois_fr(date_value) -> str:
+    date_value = pd.Timestamp(date_value)
+    return f"{MOIS_FR_COURTS[date_value.month]} {date_value.year}"
+
+
+PLOTLY_FR_DICTIONARY = {
+    "Download plot as a PNG": "Télécharger en PNG",
+    "Download plot": "Télécharger le graphique",
+    "Zoom": "Zoomer",
+    "Pan": "Déplacer",
+    "Zoom in": "Zoom avant",
+    "Zoom out": "Zoom arrière",
+    "Autoscale": "Ajustement automatique",
+    "Reset axes": "Réinitialiser les axes",
+    "Reset camera to default": "Réinitialiser la vue",
+    "Reset camera to last save": "Restaurer la dernière vue",
+    "Orbit rotation": "Rotation orbitale",
+    "Turntable rotation": "Rotation horizontale",
+    "Show closest data on hover": "Afficher la donnée la plus proche",
+    "Compare data on hover": "Comparer les données",
+    "Toggle Spike Lines": "Afficher ou masquer les lignes de repère",
+    "Snapshot succeeded": "Image téléchargée",
+    "Sorry, there was a problem downloading your snapshot!": (
+        "Le téléchargement de l’image a échoué."
+    ),
+}
+
+
+def config_plotly(nom_fichier: str, afficher_barre: bool = True) -> dict:
+    return {
+        "displayModeBar": afficher_barre,
+        "displaylogo": False,
+        "responsive": True,
+        "locale": "fr",
+        "locales": {
+            "fr": {
+                "dictionary": PLOTLY_FR_DICTIONARY,
+                "format": {
+                    "days": [
+                        "dimanche", "lundi", "mardi", "mercredi",
+                        "jeudi", "vendredi", "samedi",
+                    ],
+                    "shortDays": ["dim.", "lun.", "mar.", "mer.", "jeu.", "ven.", "sam."],
+                    "months": [
+                        "janvier", "février", "mars", "avril", "mai", "juin",
+                        "juillet", "août", "septembre", "octobre", "novembre", "décembre",
+                    ],
+                    "shortMonths": [
+                        "janv.", "févr.", "mars", "avr.", "mai", "juin",
+                        "juil.", "août", "sept.", "oct.", "nov.", "déc.",
+                    ],
+                    "date": "%d/%m/%Y",
+                },
+            }
+        },
+        "modeBarButtonsToRemove": [
+            "select2d",
+            "lasso2d",
+            "autoScale2d",
+            "toggleSpikelines",
+        ],
+        "toImageButtonOptions": {
+            "format": "png",
+            "filename": nom_fichier,
+            "height": 900,
+            "width": 1600,
+            "scale": 2,
+        },
+    }
+
+
+def graduations_periodes(evolution: pd.DataFrame, maximum: int = 6):
+    periodes = evolution["Période"].astype(str).tolist()
+    if len(periodes) <= maximum:
+        return periodes
+
+    pas = max(1, (len(periodes) - 1) // (maximum - 1))
+    graduations = periodes[::pas]
+    if graduations[-1] != periodes[-1]:
+        graduations.append(periodes[-1])
+    return graduations[:maximum - 1] + [periodes[-1]] if len(graduations) > maximum else graduations
+
+
+def nettoyer_df(df: pd.DataFrame) -> pd.DataFrame:
+    df = df.copy()
+
+    ref_cols = [
+        "esi_reference",
+        "contract_reference",
+        "objet_reference",
+        "third_party_id",
+    ]
+
+    text_cols = [
+        "esi_label",
+        "societe",
+        "agence",
+        "groupe",
+        "secteur",
+        "contract_label",
+        "contract_status",
+        "contract_topic",
+        "third_party_label",
+        "objet_type",
+        "objet_label",
+        "anomalie_type",
+        "gravite",
+        "description",
+    ]
+
+    num_cols = [
+        "nb_logements",
+        "nb_equipements",
+        "nb_contrats_actifs",
+        "nb_contrats_inactifs",
+        "nb_prestataires_actifs",
+        "nb_contrats_actifs_date_depassee",
+        "esi_couvert",
+        "esi_multi_couvert",
+        "esi_multi_meme_metier",
+        "esi_sans_contrat",
+        "esi_sans_equipement",
+    ]
+
+    for col in ref_cols:
+        if col in df.columns:
+            df[col] = (
+                df[col]
+                .astype("string")
+                .str.strip()
+                .replace({"": pd.NA, "nan": pd.NA, "None": pd.NA, "<NA>": pd.NA})
+            )
+
+    for col in text_cols:
+        if col in df.columns:
+            df[col] = (
+                df[col]
+                .fillna("Non renseigné")
+                .astype(str)
+                .str.strip()
+                .replace("", "Non renseigné")
+                .replace("nan", "Non renseigné")
+                .replace("undefined", "Non renseigné")
+            )
+
+    for col in num_cols:
+        if col in df.columns:
+            df[col] = pd.to_numeric(df[col], errors="coerce").fillna(0)
+
+    return df
+
+
+def normaliser_contrats(df: pd.DataFrame) -> pd.DataFrame:
+    df = nettoyer_df(df)
+
+    if "contract_status" not in df.columns:
+        df["contract_status"] = "Non renseigné"
+
+    df["contract_status_clean"] = (
+        df["contract_status"]
+        .fillna("")
+        .astype(str)
+        .str.lower()
+        .str.strip()
+    )
+
+    for col in ["contract_start_date", "contract_end_date"]:
+        if col not in df.columns:
+            df[col] = pd.NaT
+        df[col] = pd.to_datetime(df[col], errors="coerce")
+
+    return df
+
+
+def normaliser_prestations(df: pd.DataFrame) -> pd.DataFrame:
+    if df.empty:
+        return df.copy()
+
+    df = df.copy()
+
+    ref_cols = [
+        "contract_reference_3f",
+        "contract_reference_prestataire",
+        "contract_id_intent",
+        "third_party_id",
+        "third_party_reference",
+        "service_contract_reference",
+        "service_code_id_intent",
+        "service_code_reference_3f",
+        "service_code_reference_prestataire",
+    ]
+
+    text_cols = [
+        "contract_label",
+        "contract_description",
+        "contract_topic",
+        "contract_status",
+        "third_party_label",
+        "service_code_label",
+        "service_code_description",
+        "service_code_work_type",
+        "service_code_fixed_rate",
+        "sla_periodicity_unit",
+        "sla_estimated_intervention_duration_value",
+        "sla_estimated_intervention_duration_unit",
+        "sla_max_time_to_intervention_unit",
+        "sla_max_time_to_recovery_unit",
+    ]
+
+    date_cols = [
+        "contract_start_date",
+        "contract_end_date",
+        "contract_creation_date",
+        "contract_deactivation_date",
+        "contract_last_update_date",
+    ]
+
+    num_cols = [
+        "contract_found",
+        "contract_active_intent",
+        "contract_active_end_date_expired",
+        "service_code_critical_level",
+        "sla_periodicity_value",
+        "sla_max_time_to_intervention_value",
+        "sla_max_time_to_recovery_value",
+        "has_service_code",
+    ]
+
+    for col in ref_cols:
+        if col in df.columns:
+            df[col] = (
+                df[col]
+                .astype("string")
+                .str.strip()
+                .replace({"": pd.NA, "nan": pd.NA, "None": pd.NA, "<NA>": pd.NA})
+            )
+
+    for col in text_cols:
+        if col in df.columns:
+            df[col] = (
+                df[col]
+                .fillna("Non renseigné")
+                .astype(str)
+                .str.strip()
+                .replace({
+                    "": "Non renseigné",
+                    "nan": "Non renseigné",
+                    "undefined": "Non renseigné",
+                })
+            )
+
+    for col in date_cols:
+        if col in df.columns:
+            df[col] = pd.to_datetime(df[col], errors="coerce")
+
+    for col in num_cols:
+        if col in df.columns:
+            df[col] = pd.to_numeric(df[col], errors="coerce").fillna(0)
+
+    if "contract_status" not in df.columns:
+        df["contract_status"] = "Non renseigné"
+
+    df["contract_status_clean"] = (
+        df["contract_status"]
+        .fillna("")
+        .astype(str)
+        .str.lower()
+        .str.strip()
+    )
+
+    return df
+
+
+def normaliser_creations(df: pd.DataFrame) -> pd.DataFrame:
+    df = nettoyer_df(df)
+    if "creation_date" in df.columns:
+        df["creation_date"] = pd.to_datetime(df["creation_date"], errors="coerce")
+    else:
+        df["creation_date"] = pd.NaT
+    return df
+
+
+def dedupliquer_esi(df_esi: pd.DataFrame) -> pd.DataFrame:
+    if df_esi.empty:
+        return df_esi.copy()
+
+    if "esi_reference" not in df_esi.columns:
+        return df_esi.drop_duplicates().copy()
+
+    df = df_esi[df_esi["esi_reference"].notna()].copy()
+    if df.empty:
+        return df
+
+    num_cols = [
+        "nb_logements",
+        "nb_equipements",
+        "nb_contrats_actifs",
+        "nb_contrats_inactifs",
+        "nb_prestataires_actifs",
+        "nb_contrats_actifs_date_depassee",
+        "esi_couvert",
+        "esi_multi_couvert",
+        "esi_multi_meme_metier",
+        "esi_sans_contrat",
+        "esi_sans_equipement",
+    ]
+
+    agg = {}
+    for col in df.columns:
+        if col == "esi_reference":
+            continue
+        agg[col] = "max" if col in num_cols else "first"
+
+    return df.groupby("esi_reference", as_index=False).agg(agg)
+
+
+def liste_refs_valides(df: pd.DataFrame, colonne: str):
+    if colonne not in df.columns:
+        return []
+
+    serie = df[colonne].dropna().astype(str).str.strip()
+    serie = serie[~serie.isin(["", "nan", "None", "<NA>", "Non renseigné"])]
+    return serie.unique().tolist()
+
+
+def refs_ont_change(df_base: pd.DataFrame, df_filtre: pd.DataFrame, colonne: str) -> bool:
+    if colonne not in df_base.columns or colonne not in df_filtre.columns:
+        return False
+    return set(liste_refs_valides(df_base, colonne)) != set(liste_refs_valides(df_filtre, colonne))
+
+
+# =====================================================
+# CHARGEMENT DATA
+# =====================================================
+
+@st.cache_data(ttl=CACHE_TTL, show_spinner=False)
+def charger_donnees():
+    try:
+        with get_engine().connect() as conn:
+            conn.execute(text(f"SET statement_timeout = {SQL_TIMEOUT_MS}"))
+
+            missing = verifier_sources(conn)
+            if missing:
+                raise RuntimeError("Sources SQL manquantes : " + ", ".join(missing))
+
+            df_global = pd.read_sql_query(
+                text(f"SELECT * FROM {SOURCE_GLOBAL} ORDER BY date_maj DESC NULLS LAST LIMIT 1"),
+                conn,
+            )
+
+            df_esi = pd.read_sql_query(text(f"SELECT * FROM {SOURCE_ESI}"), conn)
+            df_contrats = pd.read_sql_query(text(f"SELECT * FROM {SOURCE_CONTRATS}"), conn)
+            df_prestations = pd.read_sql_query(text(f"SELECT * FROM {SOURCE_PRESTATIONS}"), conn)
+            df_equipements_couverture = pd.read_sql_query(
+                text(f"SELECT * FROM {SOURCE_EQUIPEMENTS_COUVERTURE}"), conn
+            )
+            df_equipements_contrats = pd.read_sql_query(
+                text(f"SELECT * FROM {SOURCE_EQUIPEMENTS_CONTRATS}"), conn
+            )
+
+            if table_exists(conn, SOURCE_CREATIONS):
+                df_creations = pd.read_sql_query(text(f"SELECT * FROM {SOURCE_CREATIONS}"), conn)
+            else:
+                df_creations = pd.DataFrame()
+
+            if table_exists(conn, SOURCE_QUALITE):
+                df_qualite = pd.read_sql_query(text(f"SELECT * FROM {SOURCE_QUALITE}"), conn)
+            else:
+                df_qualite = pd.DataFrame()
+
+            if table_exists(conn, SOURCE_QUALITE_RESUME):
+                df_qualite_resume = pd.read_sql_query(text(f"SELECT * FROM {SOURCE_QUALITE_RESUME}"), conn)
+            else:
+                df_qualite_resume = pd.DataFrame()
+
+    except SQLAlchemyError as exc:
+        raise RuntimeError(f"Erreur PostgreSQL : {exc}") from exc
+
+    df_esi = nettoyer_df(df_esi)
+    df_contrats = normaliser_contrats(df_contrats)
+    df_prestations = normaliser_prestations(df_prestations)
+    df_equipements_couverture = nettoyer_df(df_equipements_couverture)
+    df_equipements_contrats = nettoyer_df(df_equipements_contrats)
+    df_creations = normaliser_creations(df_creations)
+    df_qualite = nettoyer_df(df_qualite) if not df_qualite.empty else df_qualite
+    if not df_qualite.empty and "contract_end_date" in df_qualite.columns:
+        df_qualite["contract_end_date"] = pd.to_datetime(
+            df_qualite["contract_end_date"], errors="coerce"
+        )
+    df_qualite_resume = nettoyer_df(df_qualite_resume) if not df_qualite_resume.empty else df_qualite_resume
+
+    return (
+        df_global,
+        df_esi,
+        df_contrats,
+        df_prestations,
+        df_equipements_couverture,
+        df_equipements_contrats,
+        df_creations,
+        df_qualite,
+        df_qualite_resume,
+    )
+
+
+# =====================================================
+# FILTRES + CALCULS
+# =====================================================
+
+
+def valeur_filtre_active(valeur) -> bool:
+    valeurs_vides = {
+        "",
+        "Tous",
+        "Toutes",
+        "Tous les contrats",
+        "Toutes les sociétés",
+        "Toutes les agences",
+        "Tous les groupes",
+        "Tous les secteurs",
+        "Tous les programmes",
+        "Tous les métiers",
+        "Tous les prestataires",
+        "None",
+        "nan",
+        "<NA>",
+    }
+
+    if valeur is None:
+        return False
+
+    if isinstance(valeur, (pd.Series, pd.Index)):
+        valeur = valeur.tolist()
+
+    if isinstance(valeur, (list, tuple, set)):
+        return len([str(v).strip() for v in valeur if str(v).strip() not in valeurs_vides]) > 0
+
+    return str(valeur).strip() not in valeurs_vides
+
+
+def filtre_contrat_est_actif(
+    filtres_selectionnes,
+    statut_selectionne,
+    df_esi,
+    df_esi_filtre,
+    df_contrats,
+    df_contrats_filtre,
+):
+    if statut_selectionne is not None:
+        return True
+
+    mots_cles_contrat = ["metier", "métier", "topic", "prestataire", "third", "contrat", "contract"]
+
+    if filtres_selectionnes:
+        for cle, valeur in filtres_selectionnes.items():
+            cle_clean = str(cle).lower()
+            if any(mot in cle_clean for mot in mots_cles_contrat) and valeur_filtre_active(valeur):
+                return True
+
+    esi_change = refs_ont_change(df_esi, df_esi_filtre, "esi_reference")
+    contrats_change = refs_ont_change(df_contrats, df_contrats_filtre, "contract_reference")
+
+    return contrats_change and not esi_change
+
+
+def afficher_filtre_statut_contrat():
+    choix = st.radio(
+        "Statut des contrats",
+        ["Tous les contrats", "Contrats actifs", "Contrats inactifs"],
+        horizontal=True,
+        label_visibility="collapsed",
+        key="vg_filtre_statut_contrat",
+    )
+
+    if choix == "Contrats actifs":
+        return "active"
+    if choix == "Contrats inactifs":
+        return "inactive"
+    return None
+
+
+def filtrer_contrats_par_statut(df_contrats: pd.DataFrame, statut):
+    df = normaliser_contrats(df_contrats)
+
+    if statut is None:
+        return df.copy()
+
+    if statut == "active":
+        return df[df["contract_status_clean"] == "active"].copy()
+
+    if statut == "inactive":
+        return df[df["contract_status_clean"] != "active"].copy()
+
+    return df.copy()
+
+
+def filtrer_esi_depuis_contrats(
+    df_esi: pd.DataFrame,
+    df_contrats: pd.DataFrame,
+    appliquer_filtre_contrat: bool,
+):
+    if not appliquer_filtre_contrat:
+        return df_esi.copy()
+
+    if df_contrats.empty:
+        return df_esi.iloc[0:0].copy()
+
+    refs = liste_refs_valides(df_contrats, "esi_reference")
+    if not refs:
+        return df_esi.iloc[0:0].copy()
+
+    return df_esi[df_esi["esi_reference"].isin(refs)].copy()
+
+
+def filtrer_prestations_depuis_contrats(
+    df_prestations: pd.DataFrame,
+    df_contrats_kpi: pd.DataFrame,
+    perimetre_filtre_actif: bool,
+    statut_selectionne,
+) -> pd.DataFrame:
+    if df_prestations.empty:
+        return df_prestations.copy()
+
+    df = df_prestations.copy()
+
+    if perimetre_filtre_actif:
+        refs = set(liste_refs_valides(df_contrats_kpi, "contract_reference"))
+        if not refs:
+            return df.iloc[0:0].copy()
+        if "contract_reference_3f" not in df.columns:
+            return df.iloc[0:0].copy()
+        df = df[df["contract_reference_3f"].isin(refs)].copy()
+
+    if statut_selectionne == "active":
+        df = df[df["contract_status_clean"] == "active"].copy()
+    elif statut_selectionne == "inactive":
+        df = df[df["contract_status_clean"] != "active"].copy()
+
+    return df
+
+
+def construire_contrats_uniques_source(
+    df_prestations: pd.DataFrame,
+    df_contrats_rattaches: pd.DataFrame,
+) -> pd.DataFrame:
+    """
+    Retourne une ligne par contrat Intent.
+
+    La source prestations contient les 576 contrats. Les données de rattachement
+    sont utilisées uniquement en complément lorsqu'elles existent, sans créer
+    artificiellement de rattachement pour les 9 contrats non rattachés.
+    """
+    if df_prestations.empty:
+        return (
+            df_contrats_rattaches.drop_duplicates("contract_reference").copy()
+            if not df_contrats_rattaches.empty
+            else pd.DataFrame()
+        )
+
+    source = df_prestations.copy()
+    if "contract_reference_3f" not in source.columns:
+        return pd.DataFrame()
+
+    source = source[source["contract_reference_3f"].notna()].copy()
+    source = source.sort_values(
+        ["contract_reference_3f", "contract_last_update_date"]
+        if "contract_last_update_date" in source.columns
+        else ["contract_reference_3f"],
+        na_position="last",
+    ).drop_duplicates("contract_reference_3f", keep="last")
+
+    source = source.rename(
+        columns={"contract_reference_3f": "contract_reference"}
+    )
+
+    # On complète seulement avec les informations patrimoniales réellement présentes.
+    if not df_contrats_rattaches.empty and "contract_reference" in df_contrats_rattaches.columns:
+        rattachements = (
+            df_contrats_rattaches.sort_values(
+                [c for c in ["contract_reference", "esi_reference"] if c in df_contrats_rattaches.columns],
+                na_position="last",
+            )
+            .drop_duplicates("contract_reference")
+            .copy()
+        )
+        colonnes_rattachement = [
+            c for c in [
+                "contract_reference", "societe", "agence", "groupe",
+                "secteur", "esi_reference", "esi_label",
+            ]
+            if c in rattachements.columns
+        ]
+        source = source.merge(
+            rattachements[colonnes_rattachement],
+            on="contract_reference",
+            how="left",
+        )
+
+    return source
+
+
+def calcul_nouveaux_ce_mois(df_creations, objet_type, object_refs=None, esi_refs=None):
+    if df_creations.empty or "objet_type" not in df_creations.columns:
+        return 0
+
+    df = df_creations[df_creations["objet_type"] == objet_type].copy()
+
+    if object_refs is not None and "objet_reference" in df.columns:
+        df = df[df["objet_reference"].isin(object_refs)]
+
+    if esi_refs is not None and "esi_reference" in df.columns:
+        df = df[df["esi_reference"].isin(esi_refs)]
+
+    today = pd.Timestamp.today().normalize()
+    debut_mois = today.replace(day=1)
+    demain = today + pd.Timedelta(days=1)
+
+    return df[
+        df["creation_date"].notna()
+        & (df["creation_date"] >= debut_mois)
+        & (df["creation_date"] < demain)
+    ]["objet_reference"].nunique()
+
+
+def contrats_actifs_fin_depassee(df_contrats: pd.DataFrame) -> pd.DataFrame:
+    if df_contrats.empty:
+        return df_contrats.copy()
+
+    today = pd.Timestamp(aujourd_hui_france())
+    df = df_contrats.copy()
+    df["contract_end_date"] = pd.to_datetime(df["contract_end_date"], errors="coerce")
+
+    out = df[
+        (df["contract_status_clean"] == "active")
+        & df["contract_end_date"].notna()
+        & (df["contract_end_date"] < today)
+    ].copy()
+
+    return out.sort_values(["contract_end_date", "contract_reference"]).drop_duplicates("contract_reference")
+
+
+def serie_numerique(df: pd.DataFrame, colonne: str) -> pd.Series:
+    if colonne not in df.columns:
+        return pd.Series(0, index=df.index, dtype="float64")
+    return pd.to_numeric(df[colonne], errors="coerce").fillna(0)
+
+
+def global_value(df_global: pd.DataFrame, col: str, default=0):
+    if df_global.empty or col not in df_global.columns:
+        return default
+    try:
+        return df_global.iloc[0][col]
+    except Exception:
+        return default
+
+
+
+
+# =====================================================
+# MÉTIERS ET ÉQUIPEMENTS
+# =====================================================
+
+
+def filtrer_table_par_esi(
+    dataframe: pd.DataFrame,
+    df_esi_perimetre: pd.DataFrame,
+) -> pd.DataFrame:
+    """Restreint une table au périmètre réel des ESI sélectionnés."""
+    if dataframe.empty or "esi_reference" not in dataframe.columns:
+        return dataframe.copy()
+
+    refs = set(liste_refs_valides(df_esi_perimetre, "esi_reference"))
+    if not refs:
+        return dataframe.iloc[0:0].copy()
+
+    return dataframe[dataframe["esi_reference"].isin(refs)].copy()
+
+
+def construire_presence_metiers(
+    df_contrats: pd.DataFrame,
+    total_esi: int,
+    top_n: int = 15,
+) -> pd.DataFrame:
+    """
+    Une présence métier = au moins un contrat DISTINCT du métier sur l'ESI.
+    Le pourcentage est calculé sur tous les ESI du périmètre.
+    """
+    colonnes = ["Métier", "ESI", "Taux"]
+    if (
+        df_contrats.empty
+        or "esi_reference" not in df_contrats.columns
+        or "contract_topic" not in df_contrats.columns
+    ):
+        return pd.DataFrame(columns=colonnes)
+
+    df = df_contrats[
+        df_contrats["esi_reference"].notna()
+    ].copy()
+    df["contract_topic"] = (
+        df["contract_topic"]
+        .fillna("Non renseigné")
+        .astype(str)
+        .str.strip()
+        .replace("", "Non renseigné")
+    )
+
+    resultat = (
+        df.groupby("contract_topic", as_index=False)
+        .agg(ESI=("esi_reference", "nunique"))
+        .rename(columns={"contract_topic": "Métier"})
+    )
+    resultat["Taux"] = (
+        resultat["ESI"] / total_esi * 100
+        if total_esi
+        else 0.0
+    )
+
+    return (
+        resultat.sort_values(["ESI", "Métier"], ascending=[False, True])
+        .head(top_n)
+        .sort_values("ESI", ascending=True)
+        .reset_index(drop=True)
+    )
+
+
+def construire_repartition_types_equipement(
+    df_equipements: pd.DataFrame,
+    top_n: int = 12,
+) -> pd.DataFrame:
+    """
+    Répartition du parc par type d'équipement.
+    Une ligne source = un équipement distinct.
+    """
+    colonnes = ["Type d’équipement", "Équipements", "ESI", "Part du parc"]
+    if df_equipements.empty:
+        return pd.DataFrame(columns=colonnes)
+
+    colonne_type = None
+    for candidate in ["equipment_type", "equipment_asset_type"]:
+        if candidate in df_equipements.columns:
+            colonne_type = candidate
+            break
+
+    if colonne_type is None or "equipment_reference" not in df_equipements.columns:
+        return pd.DataFrame(columns=colonnes)
+
+    df = df_equipements.copy()
+    df["Type d’équipement"] = (
+        df[colonne_type]
+        .fillna("Non renseigné")
+        .astype(str)
+        .str.strip()
+        .replace("", "Non renseigné")
+    )
+
+    # Un équipement ne doit compter qu'une seule fois, même s'il existe plusieurs liens.
+    df = df.drop_duplicates("equipment_reference")
+
+    agg = {
+        "equipment_reference": "nunique",
+    }
+    if "esi_reference" in df.columns:
+        agg["esi_reference"] = "nunique"
+
+    resultat = (
+        df.groupby("Type d’équipement", as_index=False)
+        .agg(agg)
+        .rename(
+            columns={
+                "equipment_reference": "Équipements",
+                "esi_reference": "ESI",
+            }
+        )
+    )
+    if "ESI" not in resultat.columns:
+        resultat["ESI"] = 0
+
+    total = int(resultat["Équipements"].sum())
+    resultat["Part du parc"] = (
+        resultat["Équipements"] / total * 100
+        if total
+        else 0.0
+    )
+
+    resultat = resultat.sort_values(
+        ["Équipements", "Type d’équipement"],
+        ascending=[False, True],
+    )
+
+    if len(resultat) > top_n:
+        principaux = resultat.head(top_n - 1).copy()
+        autres = resultat.iloc[top_n - 1:]
+        ligne_autres = pd.DataFrame(
+            {
+                "Type d’équipement": ["Autres types"],
+                "Équipements": [int(autres["Équipements"].sum())],
+                "ESI": [int(autres["ESI"].sum())],
+                "Part du parc": [float(autres["Part du parc"].sum())],
+            }
+        )
+        resultat = pd.concat(
+            [principaux, ligne_autres],
+            ignore_index=True,
+        )
+
+    return resultat.sort_values(
+        "Équipements",
+        ascending=True,
+    ).reset_index(drop=True)
+
+
+def construire_couverture_reelle_equipements(
+    df_equipements: pd.DataFrame,
+    statut: str | None,
+) -> pd.DataFrame:
+    """
+    Mesure directement la part des équipements avec ou sans contrat rattaché.
+
+    Tous :
+        au moins un contrat directement rattaché à l'équipement.
+    Actifs :
+        au moins un contrat actif valide directement rattaché.
+    Inactifs :
+        au moins un contrat inactif directement rattaché.
+    """
+    colonnes = ["Couverture", "Équipements", "Taux"]
+
+    if (
+        df_equipements.empty
+        or "equipment_reference" not in df_equipements.columns
+    ):
+        return pd.DataFrame(columns=colonnes)
+
+    df = (
+        df_equipements[
+            df_equipements["equipment_reference"].notna()
+        ]
+        .drop_duplicates("equipment_reference")
+        .copy()
+    )
+
+    if statut == "active":
+        couvert = (
+            serie_numerique(df, "equipment_covered_valid") > 0
+        )
+    elif statut == "inactive":
+        couvert = (
+            serie_numerique(df, "nb_contrats_inactifs") > 0
+        )
+    else:
+        couvert = (
+            serie_numerique(df, "equipment_has_contract_link") > 0
+        )
+
+    df["_couvert"] = couvert.astype(int)
+
+    nb_couverts = int(df["_couvert"].sum())
+    total = int(df["equipment_reference"].nunique())
+    nb_non_couverts = max(total - nb_couverts, 0)
+
+    resultat = pd.DataFrame(
+        {
+            "Couverture": [
+                "Équipements avec contrat",
+                "Équipements sans contrat",
+            ],
+            "Équipements": [
+                nb_couverts,
+                nb_non_couverts,
+            ],
+        }
+    )
+    resultat["Taux"] = (
+        resultat["Équipements"] / total * 100
+        if total
+        else 0.0
+    )
+    return resultat
+
+
+
+
+# =====================================================
+# ÉVOLUTION DES CONTRATS
+# =====================================================
+
+
+def preparer_base_evolution_contrats(
+    df_contrats: pd.DataFrame,
+    df_prestations: pd.DataFrame,
+) -> pd.DataFrame:
+    """
+    Construit une ligne par contrat avec les dates utiles à l'évolution.
+
+    Priorité donnée à dashboard.contrats_prestations, car cette source contient
+    les dates de création et de désactivation Intent. Les colonnes manquantes
+    sont complétées depuis dashboard.contrats_patrimoine.
+    """
+    colonnes_sortie = [
+        "contract_reference",
+        "contract_creation_date",
+        "contract_deactivation_date",
+        "contract_end_date",
+        "contract_status_clean",
+    ]
+
+    base = pd.DataFrame(columns=colonnes_sortie)
+
+    if not df_prestations.empty and "contract_reference_3f" in df_prestations.columns:
+        p = df_prestations.copy()
+        p["contract_reference"] = p["contract_reference_3f"].astype("string")
+
+        for col in [
+            "contract_creation_date",
+            "contract_deactivation_date",
+            "contract_end_date",
+        ]:
+            if col not in p.columns:
+                p[col] = pd.NaT
+            p[col] = pd.to_datetime(p[col], errors="coerce")
+
+        if "contract_status_clean" not in p.columns:
+            p["contract_status_clean"] = (
+                p.get("contract_status", "")
+                .fillna("")
+                .astype(str)
+                .str.lower()
+                .str.strip()
+            )
+
+        base = (
+            p.sort_values(
+                ["contract_reference", "contract_last_update_date"]
+                if "contract_last_update_date" in p.columns
+                else ["contract_reference"],
+                na_position="last",
+            )
+            .drop_duplicates("contract_reference", keep="last")
+            [colonnes_sortie]
+            .copy()
+        )
+
+    if not df_contrats.empty and "contract_reference" in df_contrats.columns:
+        c = df_contrats.copy()
+
+        for col in ["contract_end_date"]:
+            if col not in c.columns:
+                c[col] = pd.NaT
+            c[col] = pd.to_datetime(c[col], errors="coerce")
+
+        if "contract_status_clean" not in c.columns:
+            c["contract_status_clean"] = (
+                c.get("contract_status", "")
+                .fillna("")
+                .astype(str)
+                .str.lower()
+                .str.strip()
+            )
+
+        c = (
+            c.sort_values("contract_reference")
+            .drop_duplicates("contract_reference")
+            .copy()
+        )
+
+        colonnes_c = [
+            "contract_reference",
+            "contract_end_date",
+            "contract_status_clean",
+        ]
+        c = c[colonnes_c]
+
+        if base.empty:
+            base = c.copy()
+            base["contract_creation_date"] = pd.NaT
+            base["contract_deactivation_date"] = pd.NaT
+            base = base[colonnes_sortie]
+        else:
+            base = base.merge(
+                c,
+                on="contract_reference",
+                how="outer",
+                suffixes=("", "_patrimoine"),
+            )
+
+            base["contract_end_date"] = base["contract_end_date"].fillna(
+                base.get("contract_end_date_patrimoine")
+            )
+            base["contract_status_clean"] = (
+                base["contract_status_clean"]
+                .replace("", pd.NA)
+                .fillna(base.get("contract_status_clean_patrimoine"))
+                .fillna("")
+            )
+
+            base = base[colonnes_sortie]
+
+    for col in [
+        "contract_creation_date",
+        "contract_deactivation_date",
+        "contract_end_date",
+    ]:
+        base[col] = pd.to_datetime(base[col], errors="coerce")
+
+    base["contract_reference"] = (
+        base["contract_reference"]
+        .astype("string")
+        .str.strip()
+    )
+
+    return base[
+        base["contract_reference"].notna()
+        & (base["contract_reference"] != "")
+    ].drop_duplicates("contract_reference")
+
+
+def construire_periodes_continues(
+    base: pd.DataFrame,
+    granularite: str,
+    nb_mois: int,
+) -> pd.DataFrame:
+    aujourd_hui = pd.Timestamp(aujourd_hui_france())
+
+    if granularite == "Annuel":
+        annee_fin = aujourd_hui.year
+        nb_annees = max(2, int((nb_mois + 11) // 12))
+        annees = list(range(annee_fin - nb_annees + 1, annee_fin + 1))
+
+        periodes = pd.DataFrame(
+            {
+                "periode_debut": [pd.Timestamp(year=a, month=1, day=1) for a in annees],
+                "periode_fin": [pd.Timestamp(year=a, month=12, day=31) for a in annees],
+                "libelle": [str(a) for a in annees],
+            }
+        )
+        periodes.loc[
+            periodes["periode_fin"] > aujourd_hui,
+            "periode_fin",
+        ] = aujourd_hui
+        return periodes
+
+    mois_fin = aujourd_hui.to_period("M").to_timestamp()
+    mois_debut = mois_fin - pd.DateOffset(months=nb_mois - 1)
+    mois = pd.date_range(mois_debut, mois_fin, freq="MS")
+
+    return pd.DataFrame(
+        {
+            "periode_debut": mois,
+            "periode_fin": mois + pd.offsets.MonthEnd(1),
+            "libelle": [libelle_mois_fr(m) for m in mois],
+        }
+    )
+
+
+def construire_evolution_contrats(
+    df_contrats: pd.DataFrame,
+    df_prestations: pd.DataFrame,
+    granularite: str,
+    nb_mois: int,
+) -> pd.DataFrame:
+    base = preparer_base_evolution_contrats(
+        df_contrats=df_contrats,
+        df_prestations=df_prestations,
+    )
+    periodes = construire_periodes_continues(
+        base=base,
+        granularite=granularite,
+        nb_mois=nb_mois,
+    )
+
+    lignes = []
+
+    for row in periodes.itertuples(index=False):
+        debut = pd.Timestamp(row.periode_debut)
+        fin = pd.Timestamp(row.periode_fin)
+
+        crees = int(
+            (
+                base["contract_creation_date"].notna()
+                & (base["contract_creation_date"] >= debut)
+                & (base["contract_creation_date"] <= fin)
+            ).sum()
+        )
+
+        desactives = int(
+            (
+                base["contract_deactivation_date"].notna()
+                & (base["contract_deactivation_date"] >= debut)
+                & (base["contract_deactivation_date"] <= fin)
+            ).sum()
+        )
+
+        existe_fin = (
+            base["contract_creation_date"].isna()
+            | (base["contract_creation_date"] <= fin)
+        )
+
+        actif_fin = (
+            existe_fin
+            & (
+                base["contract_deactivation_date"].isna()
+                | (base["contract_deactivation_date"] > fin)
+            )
+        )
+
+        inactif_fin = (
+            existe_fin
+            & base["contract_deactivation_date"].notna()
+            & (base["contract_deactivation_date"] <= fin)
+        )
+
+        actif_expire_fin = (
+            actif_fin
+            & base["contract_end_date"].notna()
+            & (base["contract_end_date"] < fin)
+        )
+
+        lignes.append(
+            {
+                "periode_debut": debut,
+                "periode_fin": fin,
+                "Période": row.libelle,
+                "Créés": crees,
+                "Désactivés": desactives,
+                "Contrats actifs": int(actif_fin.sum()),
+                "Contrats inactifs": int(inactif_fin.sum()),
+                "Actifs avec date de fin dépassée": int(actif_expire_fin.sum()),
+            }
+        )
+
+    return pd.DataFrame(lignes)
 
 
 def afficher_evolution_contrats(
@@ -285,8 +2412,67 @@ def afficher_evolution_contrats(
 
 
 # =====================================================
-# GRAPHIQUES, COMPOSANTS ET EXPORTS
+# COMPOSANTS VISUELS
 # =====================================================
+
+
+def kpi_card(
+    label,
+    value,
+    pill="",
+    help_text="",
+    accent=C_RED,
+    compact=False,
+):
+    classes = "vg-card vg-card-compact" if compact else "vg-card"
+    pill_html = (
+        f'<div class="vg-card-pill">{_safe(pill)}</div>'
+        if pill
+        else ""
+    )
+    help_html = (
+        f'<div class="vg-card-help">{_safe(help_text)}</div>'
+        if help_text
+        else ""
+    )
+
+    st.markdown(
+        f"""
+        <div class="{classes}" style="--accent:{_safe(accent)};">
+            <div class="vg-card-accent"></div>
+            <div class="vg-card-label">{_safe(label)}</div>
+            <div class="vg-card-value">{_safe(fmt_nombre(value))}</div>
+            {pill_html}
+            {help_html}
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
+
+
+def alert_card(title, value, help_text):
+    st.markdown(
+        f"""
+        <div class="vg-alert-card">
+            <div class="vg-alert-title">{_safe(title)}</div>
+            <div class="vg-alert-value">{_safe(fmt_nombre(value))}</div>
+            <div class="vg-alert-help">{_safe(help_text)}</div>
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
+
+
+def _layout_plotly(fig, height):
+    fig.update_layout(
+        height=height,
+        margin=dict(l=8, r=24, t=10, b=18),
+        plot_bgcolor="white",
+        paper_bgcolor="white",
+        font=dict(family="Arial", size=12, color=C_INK),
+        showlegend=False,
+    )
+    return fig
 
 
 def construire_couverture(df_esi_base, df_esi_couverts, utiliser_selection_contrats):
@@ -526,9 +2712,463 @@ def construire_graph_qualite(df_resume: pd.DataFrame, df_qualite: pd.DataFrame):
     return pd.DataFrame(columns=["Anomalie", "Objets distincts"])
 
 
+def dataframe_download(
+    label: str,
+    df: pd.DataFrame,
+    filename: str,
+    cle: str | None = None,
+):
+    if df.empty:
+        return
+
+    export = df.copy()
+
+    for colonne in export.columns:
+        serie = export[colonne]
+        if pd.api.types.is_datetime64_any_dtype(serie):
+            serie = pd.to_datetime(serie, errors="coerce")
+            try:
+                serie = serie.dt.tz_localize(None)
+            except (TypeError, AttributeError):
+                pass
+            export[colonne] = serie
+
+    fichier = BytesIO()
+    with pd.ExcelWriter(fichier, engine="openpyxl") as writer:
+        export.to_excel(writer, index=False, sheet_name="Données")
+        feuille = writer.sheets["Données"]
+        feuille.freeze_panes = "A2"
+        feuille.auto_filter.ref = feuille.dimensions
+
+        for cellules in feuille.columns:
+            valeurs = [
+                len(str(cellule.value)) if cellule.value is not None else 0
+                for cellule in cellules
+            ]
+            largeur = min(max(valeurs, default=0) + 3, 55)
+            feuille.column_dimensions[cellules[0].column_letter].width = largeur
+
+    fichier.seek(0)
+    nom_excel = filename.rsplit(".", 1)[0] + ".xlsx"
+
+    st.download_button(
+        label,
+        data=fichier.getvalue(),
+        file_name=nom_excel,
+        mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        key=cle,
+        width="stretch",
+    )
+
+
+# =====================================================
+# PRÉPARATION DES TABLEAUX
+# =====================================================
+
+
+def preparer_contrats_table(df: pd.DataFrame) -> pd.DataFrame:
+    if df.empty:
+        return pd.DataFrame()
+
+    cols = [
+        "contract_reference",
+        "contract_label",
+        "third_party_label",
+        "contract_start_date",
+        "contract_end_date",
+        "contract_topic",
+        "contract_status",
+        "societe",
+        "agence",
+        "groupe",
+        "secteur",
+        "esi_reference",
+        "esi_label",
+    ]
+    cols = [col for col in cols if col in df.columns]
+    out = df[cols].copy()
+
+    for col in ["contract_start_date", "contract_end_date"]:
+        if col in out.columns:
+            out[col] = (
+                pd.to_datetime(out[col], errors="coerce")
+                .dt.strftime("%d/%m/%Y")
+                .fillna("")
+            )
+
+    return out.rename(
+        columns={
+            "contract_reference": "Référence contrat",
+            "contract_label": "Libellé contrat",
+            "third_party_label": "Prestataire",
+            "contract_start_date": "Date de début",
+            "contract_end_date": "Date de fin",
+            "contract_topic": "Métier",
+            "contract_status": "Statut",
+            "societe": "Société",
+            "agence": "Agence",
+            "groupe": "Groupe",
+            "secteur": "Secteur",
+            "esi_reference": "Référence ESI",
+            "esi_label": "Libellé ESI",
+        }
+    )
+
+
+def preparer_prestations_table(df: pd.DataFrame) -> pd.DataFrame:
+    if df.empty:
+        return pd.DataFrame()
+
+    cols = [
+        "contract_reference_3f",
+        "contract_reference_prestataire",
+        "contract_id_intent",
+        "contract_label",
+        "contract_description",
+        "third_party_label",
+        "third_party_reference",
+        "contract_topic",
+        "contract_status",
+        "contract_start_date",
+        "contract_end_date",
+        "contract_creation_date",
+        "contract_deactivation_date",
+        "contract_last_update_date",
+        "contract_active_end_date_expired",
+        "service_code_id_intent",
+        "service_code_reference_3f",
+        "service_code_reference_prestataire",
+        "service_code_label",
+        "service_code_description",
+        "service_code_work_type",
+        "service_code_critical_level",
+        "service_code_fixed_rate",
+        "sla_periodicity_value",
+        "sla_periodicity_unit",
+        "sla_estimated_intervention_duration_value",
+        "sla_estimated_intervention_duration_unit",
+        "sla_max_time_to_intervention_value",
+        "sla_max_time_to_intervention_unit",
+        "sla_max_time_to_recovery_value",
+        "sla_max_time_to_recovery_unit",
+    ]
+    cols = [col for col in cols if col in df.columns]
+    out = df[cols].copy()
+
+    for col in ["contract_start_date", "contract_end_date"]:
+        if col in out.columns:
+            out[col] = (
+                pd.to_datetime(out[col], errors="coerce")
+                .dt.strftime("%d/%m/%Y")
+                .fillna("")
+            )
+
+    for col in [
+        "contract_creation_date",
+        "contract_deactivation_date",
+        "contract_last_update_date",
+    ]:
+        if col in out.columns:
+            out[col] = (
+                pd.to_datetime(out[col], errors="coerce")
+                .dt.strftime("%d/%m/%Y %H:%M")
+                .fillna("")
+            )
+
+    if "service_code_work_type" in out.columns:
+        out["service_code_work_type"] = out["service_code_work_type"].replace(
+            {
+                "corrective": "Curatif",
+                "preventive": "Préventif",
+                "operational": "Opérationnel",
+            }
+        )
+
+    if "contract_active_end_date_expired" in out.columns:
+        out["contract_active_end_date_expired"] = (
+            pd.to_numeric(
+                out["contract_active_end_date_expired"],
+                errors="coerce",
+            )
+            .fillna(0)
+            .map({1: "Oui", 0: "Non"})
+        )
+
+    return out.rename(
+        columns={
+            "contract_reference_3f": "Référence contrat 3F",
+            "contract_reference_prestataire": "Référence contrat prestataire",
+            "contract_id_intent": "Identifiant contrat Intent",
+            "contract_label": "Libellé contrat",
+            "contract_description": "Description contrat",
+            "third_party_label": "Prestataire",
+            "third_party_reference": "Référence prestataire",
+            "contract_topic": "Métier",
+            "contract_status": "Statut",
+            "contract_start_date": "Date de début",
+            "contract_end_date": "Date de fin",
+            "contract_creation_date": "Date de création Intent",
+            "contract_deactivation_date": "Date de désactivation Intent",
+            "contract_last_update_date": "Dernière modification",
+            "contract_active_end_date_expired": "Contrat actif expiré",
+            "service_code_id_intent": "Identifiant prestation Intent",
+            "service_code_reference_3f": "Référence prestation 3F",
+            "service_code_reference_prestataire": "Référence prestation prestataire",
+            "service_code_label": "Libellé prestation",
+            "service_code_description": "Description prestation",
+            "service_code_work_type": "Type d’intervention",
+            "service_code_critical_level": "Niveau de criticité",
+            "service_code_fixed_rate": "Forfait fixe",
+            "sla_periodicity_value": "Périodicité SLA",
+            "sla_periodicity_unit": "Unité périodicité",
+            "sla_estimated_intervention_duration_value": "Durée estimée intervention",
+            "sla_estimated_intervention_duration_unit": "Unité durée estimée",
+            "sla_max_time_to_intervention_value": "Délai maximal intervention",
+            "sla_max_time_to_intervention_unit": "Unité délai intervention",
+            "sla_max_time_to_recovery_value": "Délai maximal rétablissement",
+            "sla_max_time_to_recovery_unit": "Unité délai rétablissement",
+        }
+    )
+
+
+def preparer_esi_table(df: pd.DataFrame) -> pd.DataFrame:
+    if df.empty:
+        return pd.DataFrame()
+
+    cols = [
+        "esi_reference",
+        "esi_label",
+        "societe",
+        "agence",
+        "groupe",
+        "secteur",
+        "nb_logements",
+        "nb_equipements",
+        "nb_contrats_actifs",
+        "nb_contrats_inactifs",
+        "esi_couvert",
+        "esi_multi_meme_metier",
+    ]
+    cols = [col for col in cols if col in df.columns]
+    return df[cols].copy().rename(
+        columns={
+            "esi_reference": "Référence ESI",
+            "esi_label": "Libellé ESI",
+            "societe": "Société",
+            "agence": "Agence",
+            "groupe": "Groupe",
+            "secteur": "Secteur",
+            "nb_logements": "Logements",
+            "nb_equipements": "Équipements",
+            "nb_contrats_actifs": "Contrats actifs",
+            "nb_contrats_inactifs": "Contrats inactifs",
+            "esi_couvert": "ESI couvert",
+            "esi_multi_meme_metier": "Multi même métier",
+        }
+    )
+
+
+def preparer_qualite_table(df: pd.DataFrame) -> pd.DataFrame:
+    if df.empty:
+        return pd.DataFrame()
+
+    cols = [
+        "anomalie_type",
+        "objet_type",
+        "objet_reference",
+        "objet_label",
+        "gravite",
+        "description",
+        "societe",
+        "agence",
+        "groupe",
+        "secteur",
+        "esi_reference",
+        "esi_label",
+        "contract_topic",
+        "third_party_label",
+        "contract_status",
+        "contract_end_date",
+    ]
+    cols = [col for col in cols if col in df.columns]
+    out = df[cols].copy()
+
+    if "contract_end_date" in out.columns:
+        out["contract_end_date"] = (
+            pd.to_datetime(out["contract_end_date"], errors="coerce")
+            .dt.strftime("%d/%m/%Y")
+            .fillna("")
+        )
+
+    return out.rename(
+        columns={
+            "anomalie_type": "Type anomalie",
+            "objet_type": "Type objet",
+            "objet_reference": "Référence objet",
+            "objet_label": "Libellé objet",
+            "gravite": "Gravité",
+            "description": "Description",
+            "societe": "Société",
+            "agence": "Agence",
+            "groupe": "Groupe",
+            "secteur": "Secteur",
+            "esi_reference": "Référence ESI",
+            "esi_label": "Libellé ESI",
+            "contract_topic": "Métier",
+            "third_party_label": "Prestataire",
+            "contract_status": "Statut contrat",
+            "contract_end_date": "Date de fin contrat",
+        }
+    )
+
+
+def filtrer_table_recherche(df: pd.DataFrame, recherche: str) -> pd.DataFrame:
+    if df.empty or not recherche:
+        return df.copy()
+
+    recherche = str(recherche).strip().lower()
+    if not recherche:
+        return df.copy()
+
+    masque = pd.Series(False, index=df.index)
+    for col in df.columns:
+        masque = masque | (
+            df[col]
+            .fillna("")
+            .astype(str)
+            .str.lower()
+            .str.contains(recherche, regex=False, na=False)
+        )
+    return df[masque].copy()
+
+
+def afficher_detail_qualite(
+    focus,
+    df_contrats_kpi,
+    df_esi_context,
+    df_qualite,
+    df_global,
+):
+    if not focus:
+        return
+
+    st.markdown("---")
+
+    if focus == "expired":
+        section(
+            "Détail : contrats actifs avec date de fin dépassée",
+            "Contrats exploitables dans le périmètre filtré.",
+        )
+        table = preparer_contrats_table(contrats_actifs_fin_depassee(df_contrats_kpi))
+        if table.empty:
+            st.success("Aucun contrat actif expiré dans le périmètre affiché.")
+        else:
+            st.dataframe(table.head(500), width="stretch", hide_index=True, height=360)
+            dataframe_download(
+                "Télécharger les contrats expirés",
+                table,
+                "contrats_actifs_expires.xlsx",
+            )
+
+    elif focus == "unlinked_contracts":
+        section(
+            "Détail : contrats non rattachés",
+            "Contrats présents en source mais absents de la couverture programme.",
+        )
+        if not df_qualite.empty and "anomalie_type" in df_qualite.columns:
+            table = df_qualite[
+                df_qualite["anomalie_type"] == "CONTRAT_NON_RATTACHE_PROGRAMME"
+            ].copy()
+        else:
+            table = pd.DataFrame()
+        table = preparer_qualite_table(table)
+        if table.empty:
+            st.info("Aucun détail disponible dans la table qualité.")
+        else:
+            st.dataframe(table.head(500), width="stretch", hide_index=True, height=360)
+            dataframe_download(
+                "Télécharger les contrats non rattachés",
+                table,
+                "contrats_non_rattaches.xlsx",
+            )
+
+    elif focus == "housing":
+        section(
+            "Détail : logements sans programme",
+            "Logements non exploitables dans les calculs de couverture ESI.",
+        )
+        if not df_qualite.empty and "anomalie_type" in df_qualite.columns:
+            table = df_qualite[
+                df_qualite["anomalie_type"] == "LOGEMENT_SANS_PROGRAMME"
+            ].copy()
+        else:
+            table = pd.DataFrame()
+        table = preparer_qualite_table(table)
+        if table.empty:
+            st.info("Aucun détail disponible dans la table qualité.")
+        else:
+            st.dataframe(table.head(500), width="stretch", hide_index=True, height=360)
+            dataframe_download(
+                "Télécharger les logements sans programme",
+                table,
+                "logements_sans_programme.xlsx",
+            )
+            if len(table) > 500:
+                st.caption(f"Affichage limité à 500 lignes sur {fmt_nombre(len(table))}.")
+
+    elif focus == "multi_topic":
+        section(
+            "Détail : ESI avec plusieurs contrats actifs sur le même métier",
+            "Ce signal peut révéler des doublons ou des chevauchements de contrats.",
+        )
+        if "esi_multi_meme_metier" not in df_esi_context.columns:
+            st.info("La colonne esi_multi_meme_metier n'est pas disponible.")
+            return
+        table = df_esi_context[
+            pd.to_numeric(
+                df_esi_context["esi_multi_meme_metier"],
+                errors="coerce",
+            ).fillna(0) > 0
+        ].copy()
+        table = preparer_esi_table(table)
+        if table.empty:
+            st.success("Aucun ESI multi même métier dans le périmètre affiché.")
+        else:
+            st.dataframe(table.head(500), width="stretch", hide_index=True, height=360)
+            dataframe_download(
+                "Télécharger les ESI multi même métier",
+                table,
+                "esi_multi_meme_metier.xlsx",
+            )
+
+    elif focus == "no_contract":
+        section(
+            "Détail : ESI sans contrat actif",
+            "Programmes sans contrat actif rattaché dans le périmètre affiché.",
+        )
+        table = df_esi_context[
+            serie_numerique(df_esi_context, "nb_contrats_actifs") == 0
+        ].copy()
+        table = preparer_esi_table(table)
+        if table.empty:
+            st.success("Aucun ESI sans contrat actif dans le périmètre affiché.")
+        else:
+            st.dataframe(table.head(500), width="stretch", hide_index=True, height=360)
+            dataframe_download(
+                "Télécharger les ESI sans contrat actif",
+                table,
+                "esi_sans_contrat_actif.xlsx",
+            )
+
+
 # =====================================================
 # PAGE
 # =====================================================
+
+hero(
+    "Pilotage du patrimoine",
+    "Une lecture en trois temps : réalité source, couverture exploitable, puis anomalies à corriger.",
+)
 
 ok, erreur = tester_connexion()
 if not ok:
@@ -553,60 +3193,27 @@ with refresh_col:
         st.cache_data.clear()
         st.rerun()
 
-chargement_placeholder = st.empty()
-chargement_placeholder.markdown(
-    dedent(
-        """
-        <div class="vg-loading-shell">
-            <div class="vg-loading-card">
-                <div class="vg-loading-logo">3F</div>
-                <div class="vg-loading-content">
-                    <div class="vg-loading-title">
-                        Chargement du patrimoine
-                    </div>
-                    <div class="vg-loading-subtitle">
-                        Préparation des données et des indicateurs…
-                    </div>
-                    <div class="vg-loading-progress">
-                        <span></span>
-                    </div>
-                </div>
-            </div>
-        </div>
-        """
-    ).strip(),
-    unsafe_allow_html=True,
-)
-
 try:
-    (
-        df_global,
-        df_esi,
-        df_contrats,
-        df_prestations,
-        df_equipements_couverture,
-        df_equipements_contrats,
-        df_creations,
-        df_qualite,
-        df_qualite_resume,
-    ) = charger_donnees()
+    with st.spinner("Chargement des données..."):
+        (
+            df_global,
+            df_esi,
+            df_contrats,
+            df_prestations,
+            df_equipements_couverture,
+            df_equipements_contrats,
+            df_creations,
+            df_qualite,
+            df_qualite_resume,
+        ) = charger_donnees()
 except Exception as exc:
-    chargement_placeholder.empty()
     st.error("Erreur pendant le chargement des données.")
     st.code(str(exc))
     st.stop()
-else:
-    chargement_placeholder.empty()
 
 if df_global.empty:
     st.error("La table dashboard.kpi_globale est vide.")
     st.stop()
-
-hero(
-    "Pilotage du patrimoine",
-    "Une lecture en trois temps : réalité source, couverture exploitable, puis anomalies à corriger.",
-)
-
 
 # Filtres patrimoine dans la barre latérale.
 df_esi_filtre, df_contrats_filtre, filtres_selectionnes = render_filtres_patrimoine(
@@ -1271,12 +3878,12 @@ if vue_active == "Vue globale":
         resume_html = (
             '<div class="vg-table-summary">'
             '<div class="vg-table-summary-item">'
-            f'<span class="vg-table-summary-value">{fmt_nombre(nb_contrats_resultat)}</span>'
+            f'<span class="vg-table-summary-value">{format_nombre(nb_contrats_resultat)}</span>'
             f'<span class="vg-table-summary-label">{libelle_contrats}</span>'
             "</div>"
             '<div class="vg-table-summary-separator"></div>'
             '<div class="vg-table-summary-item">'
-            f'<span class="vg-table-summary-value">{fmt_nombre(nb_lignes_resultat)}</span>'
+            f'<span class="vg-table-summary-value">{format_nombre(nb_lignes_resultat)}</span>'
             f'<span class="vg-table-summary-label">{libelle_lignes}</span>'
             "</div>"
             f'<div class="vg-table-summary-mode">{mode_tableau}</div>'
@@ -1364,8 +3971,8 @@ if vue_active == "Vue globale":
 
             st.caption(
                 f"Page {page_selectionnee} sur {nb_pages} · lignes "
-                f"{fmt_nombre(debut + 1)} à "
-                f"{fmt_nombre(min(fin, nb_lignes_resultat))}"
+                f"{format_nombre(debut + 1)} à "
+                f"{format_nombre(min(fin, nb_lignes_resultat))}"
             )
 
             st.dataframe(
@@ -1400,7 +4007,7 @@ if vue_active == "Vue globale":
                 ].copy()
                 st.caption(
                     "Le fichier contient toutes les lignes filtrées : "
-                    f"{fmt_nombre(len(table_export_complete))} ligne(s)."
+                    f"{format_nombre(len(table_export_complete))} ligne(s)."
                 )
                 dataframe_download(
                     "Télécharger toutes les lignes",
@@ -2256,99 +4863,88 @@ elif vue_active == "Couverture":
                     width="stretch",
                 )
             else:
-                couverture_indexee = (
-                    couverture_equipements
-                    .set_index("Couverture")
-                    .reindex(
-                        [
-                            "Équipements avec contrat",
-                            "Équipements sans contrat",
-                        ],
-                        fill_value=0,
+                couleurs_couverture = {
+                    "Équipements avec contrat": "#2F7C6D",
+                    "Équipements sans contrat": "#E89BC7",
+                }
+
+                fig_couverture = go.Figure(
+                    go.Pie(
+                        labels=couverture_equipements["Couverture"],
+                        values=couverture_equipements["Équipements"],
+                        hole=0.68,
+                        sort=False,
+                        textinfo="label+percent",
+                        textposition="inside",
+                        textfont=dict(
+                            size=14,
+                            color="#FFFFFF",
+                        ),
+                        marker=dict(
+                            colors=[
+                                couleurs_couverture.get(
+                                    label,
+                                    C_NAVY,
+                                )
+                                for label in couverture_equipements[
+                                    "Couverture"
+                                ]
+                            ],
+                            line=dict(
+                                color="#FFFFFF",
+                                width=4,
+                            ),
+                        ),
+                        customdata=couverture_equipements["Taux"],
+                        hovertemplate=(
+                            "<b>%{label}</b><br>"
+                            "Équipements : %{value:,}<br>"
+                            "Part du parc : %{customdata:.1f} %"
+                            "<extra></extra>"
+                        ),
                     )
                 )
-
-                nb_avec_contrat = int(
-                    couverture_indexee.loc[
-                        "Équipements avec contrat",
-                        "Équipements",
-                    ]
+                fig_couverture.add_annotation(
+                    text=(
+                        f"<b>{fmt_nombre(total_equipements_couverture)}</b>"
+                        "<br><span style='font-size:11px'>équipements</span>"
+                    ),
+                    x=0.5,
+                    y=0.5,
+                    showarrow=False,
+                    font=dict(
+                        color=C_INK,
+                        size=20,
+                    ),
                 )
-                nb_sans_contrat = int(
-                    couverture_indexee.loc[
-                        "Équipements sans contrat",
-                        "Équipements",
-                    ]
+                _layout_plotly(fig_couverture, 340)
+                fig_couverture.update_layout(
+                    showlegend=True,
+                    legend=dict(
+                        orientation="h",
+                        yanchor="top",
+                        y=-0.04,
+                        xanchor="center",
+                        x=0.5,
+                        font=dict(size=11),
+                        itemclick=False,
+                        itemdoubleclick=False,
+                    ),
+                    margin=dict(
+                        l=8,
+                        r=8,
+                        t=4,
+                        b=72,
+                    ),
                 )
-                taux_avec_contrat = float(
-                    couverture_indexee.loc[
-                        "Équipements avec contrat",
-                        "Taux",
-                    ]
-                )
-                taux_sans_contrat = float(
-                    couverture_indexee.loc[
-                        "Équipements sans contrat",
-                        "Taux",
-                    ]
+                st.plotly_chart(
+                    fig_couverture,
+                    use_container_width=True,
+                    config=config_plotly(
+                        "part_equipements_avec_contrat"
+                    ),
                 )
 
-                taux_css = max(
-                    0.0,
-                    min(100.0, taux_avec_contrat),
-                )
-
-                couverture_html = dedent(
-                    f"""
-                    <div class="vg-equipment-coverage">
-                        <div class="vg-equipment-coverage-main">
-                            <div
-                                class="vg-equipment-gauge"
-                                style="--coverage:{taux_css:.2f}%;"
-                            >
-                                <div class="vg-equipment-gauge-inner">
-                                    <div class="vg-equipment-gauge-rate">
-                                        {fmt_pourcentage(taux_avec_contrat)}
-                                    </div>
-                                    <div class="vg-equipment-gauge-label">
-                                        Avec contrat
-                                    </div>
-                                </div>
-                            </div>
-
-
-                        </div>
-
-                        <div class="vg-equipment-coverage-stats">
-                            <div class="vg-equipment-stat vg-equipment-stat-covered">
-                                <div class="vg-equipment-stat-label">
-                                    Avec contrat
-                                </div>
-                                <div class="vg-equipment-stat-value">
-                                    {fmt_nombre(nb_avec_contrat)}
-                                </div>
-                                <div class="vg-equipment-stat-help">
-                                    {fmt_pourcentage(taux_avec_contrat)} du parc
-                                </div>
-                            </div>
-
-                            <div class="vg-equipment-stat vg-equipment-stat-uncovered">
-                                <div class="vg-equipment-stat-label">
-                                    Sans contrat
-                                </div>
-                                <div class="vg-equipment-stat-value">
-                                    {fmt_nombre(nb_sans_contrat)}
-                                </div>
-                                <div class="vg-equipment-stat-help">
-                                    {fmt_pourcentage(taux_sans_contrat)} du parc
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    """
-                ).strip()
-
-                st.html(couverture_html)
 
             definition_couverture = (
                 "un contrat actif valide"
