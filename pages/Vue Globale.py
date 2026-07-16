@@ -5971,7 +5971,7 @@ elif vue_active == "Couverture":
                         hole=0.68,
                         sort=False,
                         textinfo="percent",
-                        textposition="outside",
+                        textposition="inside",
                         textfont=dict(
                             size=14,
                             color="#201E1E",
