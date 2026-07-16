@@ -4192,10 +4192,19 @@ if vue_active == "Vue globale":
             "Périmètre des contrats inactifs et patrimoine associé.",
         )
     else:
-        section(
-            "Vue globale",
-            "La réalité présente dans Intent, puis la part réellement exploitable pour les analyses de couverture.",
-        )
+        if perimetre_filtre_actif:
+            section(
+                "Vue globale",
+                "Périmètre sélectionné et patrimoine associé.",
+            )
+        else:
+            section(
+                "Vue globale",
+                (
+                    "La réalité présente dans Intent, puis la part "
+                    "réellement exploitable pour les analyses de couverture."
+                ),
+            )
 
     # Tous les contrats sans filtre : on conserve la lecture globale de la source.
     if statut_selectionne is None and not perimetre_filtre_actif:
@@ -5067,10 +5076,19 @@ elif vue_active == "Couverture":
             "Périmètre des contrats inactifs et patrimoine associé.",
         )
     else:
-        section(
-            "Couverture du patrimoine",
-            "La réalité présente dans Intent, puis la part réellement exploitable pour les analyses de couverture.",
-        )
+        if perimetre_filtre_actif:
+            section(
+                "Couverture du patrimoine",
+                "Périmètre sélectionné et patrimoine associé.",
+            )
+        else:
+            section(
+                "Couverture du patrimoine",
+                (
+                    "La réalité présente dans Intent, puis la part "
+                    "réellement exploitable pour les analyses de couverture."
+                ),
+            )
 
     # Même base de lecture que la Vue globale.
     if statut_selectionne is None and not perimetre_filtre_actif:
@@ -5141,30 +5159,55 @@ elif vue_active == "Couverture":
         logements_pill = logements_help = ""
         equipements_pill = equipements_help = ""
 
+    # Périmètre obtenu après application d'un ou plusieurs filtres.
+    # On affiche uniquement ce que les contrats sélectionnés couvrent,
+    # sans introduire ici de notion de taux de couverture.
     else:
-        contrats_value = len(liste_refs_valides(df_contrats_kpi, "contract_reference"))
-        contrats_pill = "Périmètre filtré"
-        contrats_help = "Contrats exploitables correspondant aux filtres actifs."
+        contrats_value = len(
+            liste_refs_valides(
+                df_contrats_kpi,
+                "contract_reference",
+            )
+        )
 
-        programmes_value = len(liste_refs_valides(df_esi_context, "esi_reference"))
-        programmes_couverts = int(serie_numerique(df_esi_context, "esi_couvert").sum())
-        programmes_pill = f"{fmt_nombre(programmes_couverts)} couverts"
-        programmes_help = "Programmes / ESI correspondant aux filtres actifs."
+        programmes_value = len(
+            liste_refs_valides(
+                df_esi_context,
+                "esi_reference",
+            )
+        )
 
-        logements_value = int(serie_numerique(df_esi_context, "nb_logements").sum())
-        logements_pill = "Rattachés aux ESI"
-        logements_help = "Logements exploitables du périmètre filtré."
+        logements_value = int(
+            serie_numerique(
+                df_esi_context,
+                "nb_logements",
+            ).sum()
+        )
 
-        equipements_value = int(serie_numerique(df_esi_context, "nb_equipements").sum())
-        equipements_pill = "Rattachés aux ESI"
-        equipements_help = "Équipements exploitables du périmètre filtré."
+        equipements_value = int(
+            serie_numerique(
+                df_esi_context,
+                "nb_equipements",
+            ).sum()
+        )
 
-        contrats_label = "Contrats"
-        programmes_label = "Programmes / ESI"
-        logements_label = "Logements"
-        equipements_label = "Équipements"
+        contrats_label = "Contrats concernés"
+        programmes_label = "ESI concernés"
+        logements_label = "Logements rattachés"
+        equipements_label = "Équipements rattachés"
 
-    cartes_compactes = statut_selectionne in {"active", "inactive"}
+        contrats_pill = contrats_help = ""
+        programmes_pill = programmes_help = ""
+        logements_pill = logements_help = ""
+        equipements_pill = equipements_help = ""
+
+        cartes_compactes = (
+        statut_selectionne in {
+            "active",
+            "inactive",
+        }
+        or perimetre_filtre_actif
+    )
 
     c1, c2, c3, c4 = st.columns(4)
     with c1:
