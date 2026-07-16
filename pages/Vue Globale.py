@@ -2736,35 +2736,20 @@ def afficher_evolution_couverture_esi(
         # Par défaut :
         # toutes les sociétés si elles sont peu nombreuses ;
         # seulement les 5 premières pour les mailles plus détaillées.
-        if maille_selectionnee == "Société":
-            selection_par_defaut = entites_disponibles
-        # else:
-        #     selection_par_defaut = entites_disponibles[:5]
-
         cle_selection_entites = (
             f"couverture_entites_{maille_selectionnee.lower()}"
         )
 
-        # Initialise automatiquement la sélection si elle est vide.
-        selection_actuelle = st.session_state.get(
-            cle_selection_entites,
-            [],
-        )
-
-        selection_actuelle_valide = [
-            entite
-            for entite in selection_actuelle
-            if entite in entites_disponibles
-        ]
-
-        if not selection_actuelle_valide:
-            st.session_state[cle_selection_entites] = (
-                selection_par_defaut
-            )
-        else:
-            st.session_state[cle_selection_entites] = (
-                selection_actuelle_valide
-            )
+        # On conserve uniquement les anciennes sélections
+        # qui existent encore dans les options disponibles.
+        if cle_selection_entites in st.session_state:
+            st.session_state[cle_selection_entites] = [
+                entite
+                for entite in st.session_state[
+                    cle_selection_entites
+                ]
+                if entite in entites_disponibles
+            ]
 
         entites_selectionnees = st.multiselect(
             f"{maille_selectionnee}(s) à comparer",
@@ -2774,7 +2759,7 @@ def afficher_evolution_couverture_esi(
                 f"{maille_selectionnee.lower()}s"
             ),
             key=cle_selection_entites,
-        )
+)
 
         if not entites_selectionnees:
             st.info(
