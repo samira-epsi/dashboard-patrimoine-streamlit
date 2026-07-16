@@ -5973,7 +5973,7 @@ elif vue_active == "Couverture":
                         textinfo="percent",
                         textposition="outside",
                         textfont=dict(
-                            size=14,
+                            size=13,
                             color="#201E1E",
                         ),
                         marker=dict(
