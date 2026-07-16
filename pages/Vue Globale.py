@@ -5835,10 +5835,10 @@ elif vue_active == "Couverture":
         # =================================================
 
         with colonne_indicateurs:
-            st.markdown(
-                '<div class="vg-mini-title">Indicateurs</div>',
-                unsafe_allow_html=True,
-            )
+            # st.markdown(
+            #     '<div class="vg-mini-title">Indicateurs</div>',
+            #     unsafe_allow_html=True,
+            # )
 
             afficher_carte_indicateur(
                 label="Moyenne",
