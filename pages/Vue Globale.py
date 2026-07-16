@@ -2736,20 +2736,29 @@ def afficher_evolution_couverture_esi(
         # Par défaut :
         # toutes les sociétés si elles sont peu nombreuses ;
         # seulement les 5 premières pour les mailles plus détaillées.
-        cle_selection_entites = (
-            f"couverture_entites_{maille_selectionnee.lower()}"
+        mode_selection = (
+            "metier"
+            if type_analyse == "Couverture par métier"
+            else "globale"
         )
 
-        # On conserve uniquement les anciennes sélections
-        # qui existent encore dans les options disponibles.
-        if cle_selection_entites in st.session_state:
-            st.session_state[cle_selection_entites] = [
-                entite
-                for entite in st.session_state[
-                    cle_selection_entites
-                ]
-                if entite in entites_disponibles
-            ]
+        metier_cle = (
+            str(metier_selectionne)
+            if metier_selectionne is not None
+            else "tous"
+        )
+
+        cle_selection_entites = (
+            f"couverture_entites_v4_"
+            f"{mode_selection}_"
+            f"{maille_selectionnee}_"
+            f"{metier_cle}"
+        )
+
+        # À la première ouverture de cette combinaison,
+        # aucune entité n'est sélectionnée.
+        if cle_selection_entites not in st.session_state:
+            st.session_state[cle_selection_entites] = []
 
         entites_selectionnees = st.multiselect(
             f"{maille_selectionnee}(s) à comparer",
@@ -2759,7 +2768,7 @@ def afficher_evolution_couverture_esi(
                 f"{maille_selectionnee.lower()}s"
             ),
             key=cle_selection_entites,
-)
+        )
 
         if not entites_selectionnees:
             st.info(
