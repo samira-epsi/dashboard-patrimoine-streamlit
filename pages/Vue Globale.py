@@ -32,7 +32,7 @@ SOURCE_GLOBAL = "dashboard.kpi_globale"
 SOURCE_CREATIONS = "dashboard.kpi_creation_detail"
 SOURCE_QUALITE = "dashboard.qualite_donnees"
 SOURCE_QUALITE_RESUME = "dashboard.qualite_donnees_resume"
-
+SOURCE_ALERTES = "dashboard.alertes_couverture"
 CACHE_TTL = 3600
 SQL_TIMEOUT_MS = 20000
 
@@ -869,6 +869,130 @@ def inject_style():
             font-size: 10.5px;
             font-weight: 700;
         }
+  
+                /* SYNTHÈSE ALERTES ET ANOMALIES */
+        .vg-priority-grid {
+            display: grid;
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+            gap: 14px;
+            margin: 4px 0 22px 0;
+        }
+
+        .vg-priority-card {
+            min-height: 126px;
+            padding: 17px 18px;
+            background: #FFFFFF;
+            border: 1px solid var(--border);
+            border-top: 4px solid var(--priority-color);
+            border-radius: 15px;
+            box-shadow: 0 8px 20px -18px rgba(27, 36, 48, 0.24);
+            box-sizing: border-box;
+        }
+
+        .vg-priority-head {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 12px;
+        }
+
+        .vg-priority-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background: var(--priority-color);
+        }
+
+        .vg-priority-label {
+            color: var(--text-soft);
+            font-size: 11px;
+            font-weight: 750;
+            letter-spacing: 0.45px;
+            text-transform: uppercase;
+        }
+
+        .vg-priority-value {
+            color: var(--text-main);
+            font-size: 30px;
+            line-height: 1;
+            font-weight: 800;
+            margin-bottom: 9px;
+        }
+
+        .vg-priority-help {
+            color: var(--text-muted);
+            font-size: 11.5px;
+            line-height: 1.45;
+            font-weight: 500;
+        }
+
+        .vg-family-card {
+            min-height: 142px;
+            padding: 17px 18px;
+            background: #FFFFFF;
+            border: 1px solid var(--border);
+            border-radius: 14px;
+            box-shadow: 0 7px 18px -17px rgba(27, 36, 48, 0.22);
+            box-sizing: border-box;
+        }
+
+        .vg-family-title {
+            color: var(--text-main);
+            font-size: 14px;
+            font-weight: 800;
+            margin-bottom: 8px;
+        }
+
+        .vg-family-value {
+            color: var(--family-color);
+            font-size: 25px;
+            font-weight: 800;
+            line-height: 1;
+            margin-bottom: 9px;
+        }
+
+        .vg-family-help {
+            color: var(--text-muted);
+            font-size: 11.5px;
+            line-height: 1.45;
+        }
+
+        .vg-status-banner {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 15px 17px;
+            margin: 4px 0 18px 0;
+            background: var(--status-background);
+            border: 1px solid var(--status-border);
+            border-radius: 13px;
+        }
+
+        .vg-status-banner-dot {
+            width: 11px;
+            height: 11px;
+            border-radius: 50%;
+            background: var(--status-color);
+            flex: 0 0 auto;
+        }
+
+        .vg-status-banner-title {
+            color: var(--text-main);
+            font-size: 13px;
+            font-weight: 800;
+        }
+
+        .vg-status-banner-help {
+            color: var(--text-soft);
+            font-size: 12px;
+            margin-top: 2px;
+        }
+
+        @media screen and (max-width: 900px) {
+            .vg-priority-grid {
+                grid-template-columns: 1fr;
+            }
+        }
 
         @media screen and (max-width: 900px) {
             .block-container {
@@ -1414,6 +1538,13 @@ def charger_donnees():
                 df_qualite_resume = pd.read_sql_query(text(f"SELECT * FROM {SOURCE_QUALITE_RESUME}"), conn)
             else:
                 df_qualite_resume = pd.DataFrame()
+            if table_exists(conn, SOURCE_ALERTES):
+                df_alertes = pd.read_sql_query(
+                    text(f"SELECT * FROM {SOURCE_ALERTES}"),
+                    conn,
+                )
+            else:
+                df_alertes = pd.DataFrame()
 
     except SQLAlchemyError as exc:
         raise RuntimeError(f"Erreur PostgreSQL : {exc}") from exc
@@ -1424,6 +1555,11 @@ def charger_donnees():
     df_equipements_couverture = nettoyer_df(df_equipements_couverture)
     df_equipements_contrats = nettoyer_df(df_equipements_contrats)
     df_creations = normaliser_creations(df_creations)
+    df_alertes = (
+        nettoyer_df(df_alertes)
+        if not df_alertes.empty
+        else df_alertes
+            )
     df_qualite = nettoyer_df(df_qualite) if not df_qualite.empty else df_qualite
     if not df_qualite.empty and "contract_end_date" in df_qualite.columns:
         df_qualite["contract_end_date"] = pd.to_datetime(
@@ -1441,7 +1577,9 @@ def charger_donnees():
         df_creations,
         df_qualite,
         df_qualite_resume,
+        df_alertes,
     )
+
 
 
 # =====================================================
@@ -3333,7 +3471,71 @@ def alert_card(title, value, help_text):
         unsafe_allow_html=True,
     )
 
+def priority_card(
+    label: str,
+    value: int,
+    help_text: str,
+    color: str,
+):
+    st.markdown(
+        f"""
+        <div class="vg-priority-card" style="--priority-color:{_safe(color)};">
+            <div class="vg-priority-head">
+                <span class="vg-priority-dot"></span>
+                <span class="vg-priority-label">{_safe(label)}</span>
+            </div>
+            <div class="vg-priority-value">{_safe(fmt_nombre(value))}</div>
+            <div class="vg-priority-help">{_safe(help_text)}</div>
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
 
+
+def family_card(
+    title: str,
+    value: int,
+    help_text: str,
+    color: str = C_NAVY,
+):
+    st.markdown(
+        f"""
+        <div class="vg-family-card" style="--family-color:{_safe(color)};">
+            <div class="vg-family-title">{_safe(title)}</div>
+            <div class="vg-family-value">{_safe(fmt_nombre(value))}</div>
+            <div class="vg-family-help">{_safe(help_text)}</div>
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
+
+
+def status_banner(
+    title: str,
+    help_text: str,
+    color: str,
+    background: str,
+    border: str,
+):
+    st.markdown(
+        f"""
+        <div
+            class="vg-status-banner"
+            style="
+                --status-color:{_safe(color)};
+                --status-background:{_safe(background)};
+                --status-border:{_safe(border)};
+            "
+        >
+            <span class="vg-status-banner-dot"></span>
+            <div>
+                <div class="vg-status-banner-title">{_safe(title)}</div>
+                <div class="vg-status-banner-help">{_safe(help_text)}</div>
+            </div>
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
 def _layout_plotly(fig, height):
     fig.update_layout(
         height=height,
@@ -3582,6 +3784,142 @@ def construire_graph_qualite(df_resume: pd.DataFrame, df_qualite: pd.DataFrame):
 
     return pd.DataFrame(columns=["Anomalie", "Objets distincts"])
 
+def trouver_colonne(
+    df: pd.DataFrame,
+    candidates: list[str],
+) -> str | None:
+    for candidate in candidates:
+        if candidate in df.columns:
+            return candidate
+    return None
+
+
+def normaliser_gravite(value) -> str:
+    valeur = str(value or "").strip().lower()
+
+    if any(mot in valeur for mot in ["bloquant", "critique", "critical"]):
+        return "Bloquante"
+
+    if any(
+        mot in valeur
+        for mot in ["important", "majeur", "major", "élevé", "eleve", "haute"]
+    ):
+        return "Importante"
+
+    return "À surveiller"
+
+
+def compter_objets_distincts(
+    df: pd.DataFrame,
+    colonne_reference: str | None,
+) -> int:
+    if df.empty:
+        return 0
+
+    if colonne_reference and colonne_reference in df.columns:
+        return int(df[colonne_reference].nunique())
+
+    return int(len(df))
+
+
+def preparer_alertes_table(df_alertes: pd.DataFrame) -> pd.DataFrame:
+    if df_alertes.empty:
+        return pd.DataFrame()
+
+    df = df_alertes.copy()
+
+    rename_map = {
+        "alerte_type": "Alerte",
+        "type_alerte": "Alerte",
+        "categorie": "Catégorie",
+        "priorite": "Priorité",
+        "gravite": "Priorité",
+        "description": "Description",
+        "esi_reference": "Référence ESI",
+        "esi_label": "Libellé ESI",
+        "contract_reference": "Référence contrat",
+        "contract_label": "Libellé contrat",
+        "contract_topic": "Métier",
+        "third_party_label": "Prestataire",
+        "societe": "Société",
+        "agence": "Agence",
+        "groupe": "Groupe",
+        "secteur": "Secteur",
+        "contract_end_date": "Date de fin",
+        "jours_avant_echeance": "Jours avant échéance",
+    }
+
+    colonnes = [
+        colonne
+        for colonne in rename_map
+        if colonne in df.columns
+    ]
+
+    if not colonnes:
+        return df
+
+    table = df[colonnes].rename(columns=rename_map).copy()
+
+    if "Priorité" in table.columns:
+        table["Priorité"] = table["Priorité"].apply(normaliser_gravite)
+
+    if "Date de fin" in table.columns:
+        table["Date de fin"] = table["Date de fin"].apply(fmt_date)
+
+    return table
+
+
+def preparer_resume_qualite(
+    df_qualite_resume: pd.DataFrame,
+    df_qualite: pd.DataFrame,
+) -> pd.DataFrame:
+    if not df_qualite_resume.empty:
+        resume = df_qualite_resume.copy()
+    elif not df_qualite.empty:
+        reference_col = trouver_colonne(
+            df_qualite,
+            ["objet_reference", "contract_reference", "esi_reference"],
+        )
+
+        if reference_col and "anomalie_type" in df_qualite.columns:
+            resume = (
+                df_qualite.groupby(
+                    ["anomalie_type", "objet_type", "gravite"],
+                    dropna=False,
+                    as_index=False,
+                )[reference_col]
+                .nunique()
+                .rename(columns={reference_col: "nb_objets_distincts"})
+            )
+        else:
+            return pd.DataFrame()
+    else:
+        return pd.DataFrame()
+
+    count_col = trouver_colonne(
+        resume,
+        [
+            "nombre_objets_distincts",
+            "nb_objets_distincts",
+            "nombre_occurrences",
+            "nb_lignes_detail",
+        ],
+    )
+
+    if count_col is None:
+        resume["Nombre"] = 1
+    else:
+        resume["Nombre"] = pd.to_numeric(
+            resume[count_col],
+            errors="coerce",
+        ).fillna(0)
+
+    if "gravite" not in resume.columns:
+        resume["gravite"] = "À surveiller"
+
+    resume["Niveau"] = resume["gravite"].apply(normaliser_gravite)
+
+    return resume
 
 def dataframe_download(
     label: str,
@@ -3952,123 +4290,123 @@ def filtrer_table_recherche(df: pd.DataFrame, recherche: str) -> pd.DataFrame:
     return df[masque].copy()
 
 
-def afficher_detail_qualite(
-    focus,
-    df_contrats_kpi,
-    df_esi_context,
-    df_qualite,
-    df_global,
-):
-    if not focus:
-        return
+# def afficher_detail_qualite(
+#     focus,
+#     df_contrats_kpi,
+#     df_esi_context,
+#     df_qualite,
+#     df_global,
+# ):
+#     if not focus:
+#         return
 
-    st.markdown("---")
+#     st.markdown("---")
 
-    if focus == "expired":
-        section(
-            "Détail : contrats actifs avec date de fin dépassée",
-            "Contrats exploitables dans le périmètre filtré.",
-        )
-        table = preparer_contrats_table(contrats_actifs_fin_depassee(df_contrats_kpi))
-        if table.empty:
-            st.success("Aucun contrat actif expiré dans le périmètre affiché.")
-        else:
-            st.dataframe(table.head(500), width="stretch", hide_index=True, height=360)
-            dataframe_download(
-                "Télécharger les contrats expirés",
-                table,
-                "contrats_actifs_expires.xlsx",
-            )
+#     if focus == "expired":
+#         section(
+#             "Détail : contrats actifs avec date de fin dépassée",
+#             "Contrats exploitables dans le périmètre filtré.",
+#         )
+#         table = preparer_contrats_table(contrats_actifs_fin_depassee(df_contrats_kpi))
+#         if table.empty:
+#             st.success("Aucun contrat actif expiré dans le périmètre affiché.")
+#         else:
+#             st.dataframe(table.head(500), width="stretch", hide_index=True, height=360)
+#             dataframe_download(
+#                 "Télécharger les contrats expirés",
+#                 table,
+#                 "contrats_actifs_expires.xlsx",
+#             )
 
-    elif focus == "unlinked_contracts":
-        section(
-            "Détail : contrats non rattachés",
-            "Contrats présents en source mais absents de la couverture programme.",
-        )
-        if not df_qualite.empty and "anomalie_type" in df_qualite.columns:
-            table = df_qualite[
-                df_qualite["anomalie_type"] == "CONTRAT_NON_RATTACHE_PROGRAMME"
-            ].copy()
-        else:
-            table = pd.DataFrame()
-        table = preparer_qualite_table(table)
-        if table.empty:
-            st.info("Aucun détail disponible dans la table qualité.")
-        else:
-            st.dataframe(table.head(500), width="stretch", hide_index=True, height=360)
-            dataframe_download(
-                "Télécharger les contrats non rattachés",
-                table,
-                "contrats_non_rattaches.xlsx",
-            )
+#     elif focus == "unlinked_contracts":
+#         section(
+#             "Détail : contrats non rattachés",
+#             "Contrats présents en source mais absents de la couverture programme.",
+#         )
+#         if not df_qualite.empty and "anomalie_type" in df_qualite.columns:
+#             table = df_qualite[
+#                 df_qualite["anomalie_type"] == "CONTRAT_NON_RATTACHE_PROGRAMME"
+#             ].copy()
+#         else:
+#             table = pd.DataFrame()
+#         table = preparer_qualite_table(table)
+#         if table.empty:
+#             st.info("Aucun détail disponible dans la table qualité.")
+#         else:
+#             st.dataframe(table.head(500), width="stretch", hide_index=True, height=360)
+#             dataframe_download(
+#                 "Télécharger les contrats non rattachés",
+#                 table,
+#                 "contrats_non_rattaches.xlsx",
+#             )
 
-    elif focus == "housing":
-        section(
-            "Détail : logements sans programme",
-            "Logements non exploitables dans les calculs de couverture ESI.",
-        )
-        if not df_qualite.empty and "anomalie_type" in df_qualite.columns:
-            table = df_qualite[
-                df_qualite["anomalie_type"] == "LOGEMENT_SANS_PROGRAMME"
-            ].copy()
-        else:
-            table = pd.DataFrame()
-        table = preparer_qualite_table(table)
-        if table.empty:
-            st.info("Aucun détail disponible dans la table qualité.")
-        else:
-            st.dataframe(table.head(500), width="stretch", hide_index=True, height=360)
-            dataframe_download(
-                "Télécharger les logements sans programme",
-                table,
-                "logements_sans_programme.xlsx",
-            )
-            if len(table) > 500:
-                st.caption(f"Affichage limité à 500 lignes sur {fmt_nombre(len(table))}.")
+#     elif focus == "housing":
+#         section(
+#             "Détail : logements sans programme",
+#             "Logements non exploitables dans les calculs de couverture ESI.",
+#         )
+#         if not df_qualite.empty and "anomalie_type" in df_qualite.columns:
+#             table = df_qualite[
+#                 df_qualite["anomalie_type"] == "LOGEMENT_SANS_PROGRAMME"
+#             ].copy()
+#         else:
+#             table = pd.DataFrame()
+#         table = preparer_qualite_table(table)
+#         if table.empty:
+#             st.info("Aucun détail disponible dans la table qualité.")
+#         else:
+#             st.dataframe(table.head(500), width="stretch", hide_index=True, height=360)
+#             dataframe_download(
+#                 "Télécharger les logements sans programme",
+#                 table,
+#                 "logements_sans_programme.xlsx",
+#             )
+#             if len(table) > 500:
+#                 st.caption(f"Affichage limité à 500 lignes sur {fmt_nombre(len(table))}.")
 
-    elif focus == "multi_topic":
-        section(
-            "Détail : ESI avec plusieurs contrats actifs sur le même métier",
-            "Ce signal peut révéler des doublons ou des chevauchements de contrats.",
-        )
-        if "esi_multi_meme_metier" not in df_esi_context.columns:
-            st.info("La colonne esi_multi_meme_metier n'est pas disponible.")
-            return
-        table = df_esi_context[
-            pd.to_numeric(
-                df_esi_context["esi_multi_meme_metier"],
-                errors="coerce",
-            ).fillna(0) > 0
-        ].copy()
-        table = preparer_esi_table(table)
-        if table.empty:
-            st.success("Aucun ESI multi même métier dans le périmètre affiché.")
-        else:
-            st.dataframe(table.head(500), width="stretch", hide_index=True, height=360)
-            dataframe_download(
-                "Télécharger les ESI multi même métier",
-                table,
-                "esi_multi_meme_metier.xlsx",
-            )
+#     elif focus == "multi_topic":
+#         section(
+#             "Détail : ESI avec plusieurs contrats actifs sur le même métier",
+#             "Ce signal peut révéler des doublons ou des chevauchements de contrats.",
+#         )
+#         if "esi_multi_meme_metier" not in df_esi_context.columns:
+#             st.info("La colonne esi_multi_meme_metier n'est pas disponible.")
+#             return
+#         table = df_esi_context[
+#             pd.to_numeric(
+#                 df_esi_context["esi_multi_meme_metier"],
+#                 errors="coerce",
+#             ).fillna(0) > 0
+#         ].copy()
+#         table = preparer_esi_table(table)
+#         if table.empty:
+#             st.success("Aucun ESI multi même métier dans le périmètre affiché.")
+#         else:
+#             st.dataframe(table.head(500), width="stretch", hide_index=True, height=360)
+#             dataframe_download(
+#                 "Télécharger les ESI multi même métier",
+#                 table,
+#                 "esi_multi_meme_metier.xlsx",
+#             )
 
-    elif focus == "no_contract":
-        section(
-            "Détail : ESI sans contrat actif",
-            "Programmes sans contrat actif rattaché dans le périmètre affiché.",
-        )
-        table = df_esi_context[
-            serie_numerique(df_esi_context, "nb_contrats_actifs") == 0
-        ].copy()
-        table = preparer_esi_table(table)
-        if table.empty:
-            st.success("Aucun ESI sans contrat actif dans le périmètre affiché.")
-        else:
-            st.dataframe(table.head(500), width="stretch", hide_index=True, height=360)
-            dataframe_download(
-                "Télécharger les ESI sans contrat actif",
-                table,
-                "esi_sans_contrat_actif.xlsx",
-            )
+#     elif focus == "no_contract":
+#         section(
+#             "Détail : ESI sans contrat actif",
+#             "Programmes sans contrat actif rattaché dans le périmètre affiché.",
+#         )
+#         table = df_esi_context[
+#             serie_numerique(df_esi_context, "nb_contrats_actifs") == 0
+#         ].copy()
+#         table = preparer_esi_table(table)
+#         if table.empty:
+#             st.success("Aucun ESI sans contrat actif dans le périmètre affiché.")
+#         else:
+#             st.dataframe(table.head(500), width="stretch", hide_index=True, height=360)
+#             dataframe_download(
+#                 "Télécharger les ESI sans contrat actif",
+#                 table,
+#                 "esi_sans_contrat_actif.xlsx",
+#             )
 
 
 # =====================================================
@@ -4092,7 +4430,12 @@ with nav_col:
     with st.container(key="dashboard_tabs"):
         vue_active = st.radio(
             "Navigation",
-            ["Vue globale", "Couverture", "Qualité et anomalies"],
+            [
+                "Vue globale",
+                "Couverture",
+                "Alertes",
+                "Anomalies",
+            ],
             horizontal=True,
             label_visibility="collapsed",
             key="dashboard_vue_active",
@@ -4115,6 +4458,7 @@ try:
             df_creations,
             df_qualite,
             df_qualite_resume,
+            df_alertes,
         ) = charger_donnees()
 except Exception as exc:
     st.error("Erreur pendant le chargement des données.")
@@ -6712,188 +7056,691 @@ elif vue_active == "Couverture":
     )
 
 
+
 # =====================================================
-# VUE 3 — QUALITÉ ET ANOMALIES
+# VUE 3 — ALERTES OPÉRATIONNELLES
+# =====================================================
+
+elif vue_active == "Alertes":
+    section(
+        "Alertes opérationnelles",
+        (
+            "Les situations qui nécessitent une décision, "
+            "une correction métier ou une action de suivi."
+        ),
+    )
+
+    expired_detail = contrats_actifs_fin_depassee(df_contrats_kpi)
+
+    alertes_calculees = []
+
+    # 1. Contrats actifs expirés
+    for _, row in expired_detail.iterrows():
+        alertes_calculees.append(
+            {
+                "Alerte": "Contrat actif avec date de fin dépassée",
+                "Catégorie": "Contrats",
+                "Priorité": "Bloquante",
+                "Référence contrat": row.get("contract_reference", ""),
+                "Libellé contrat": row.get("contract_label", ""),
+                "Référence ESI": row.get("esi_reference", ""),
+                "Libellé ESI": row.get("esi_label", ""),
+                "Métier": row.get("contract_topic", ""),
+                "Prestataire": row.get("third_party_label", ""),
+                "Date de fin": fmt_date(row.get("contract_end_date")),
+                "Action attendue": (
+                    "Vérifier le statut du contrat et le désactiver "
+                    "ou corriger sa date de fin."
+                ),
+            }
+        )
+
+    # 2. ESI sans contrat actif
+    esi_sans_contrat = df_esi_context[
+        serie_numerique(df_esi_context, "nb_contrats_actifs") == 0
+    ].copy()
+
+    for _, row in esi_sans_contrat.iterrows():
+        alertes_calculees.append(
+            {
+                "Alerte": "ESI sans contrat actif",
+                "Catégorie": "Couverture",
+                "Priorité": "Importante",
+                "Référence ESI": row.get("esi_reference", ""),
+                "Libellé ESI": row.get("esi_label", ""),
+                "Société": row.get("societe", ""),
+                "Agence": row.get("agence", ""),
+                "Groupe": row.get("groupe", ""),
+                "Secteur": row.get("secteur", ""),
+                "Action attendue": (
+                    "Vérifier si l'ESI doit être couvert "
+                    "et rattacher un contrat si nécessaire."
+                ),
+            }
+        )
+
+    # 3. ESI équipés sans contrat couvrant les équipements
+    colonne_couverture_equipement = trouver_colonne(
+        df_esi_context,
+        [
+            "esi_equipe_couvert",
+            "equipements_couverts",
+            "nb_equipements_couverts",
+        ],
+    )
+
+    if colonne_couverture_equipement:
+        esi_equipes_non_couverts = df_esi_context[
+            (serie_numerique(df_esi_context, "nb_equipements") > 0)
+            & (
+                serie_numerique(
+                    df_esi_context,
+                    colonne_couverture_equipement,
+                ) == 0
+            )
+        ].copy()
+    else:
+        esi_equipes_non_couverts = pd.DataFrame()
+
+    for _, row in esi_equipes_non_couverts.iterrows():
+        alertes_calculees.append(
+            {
+                "Alerte": "ESI équipé sans contrat couvrant les équipements",
+                "Catégorie": "Couverture équipements",
+                "Priorité": "Bloquante",
+                "Référence ESI": row.get("esi_reference", ""),
+                "Libellé ESI": row.get("esi_label", ""),
+                "Nombre d'équipements": row.get("nb_equipements", 0),
+                "Société": row.get("societe", ""),
+                "Agence": row.get("agence", ""),
+                "Action attendue": (
+                    "Identifier les équipements concernés "
+                    "et contrôler leurs rattachements contractuels."
+                ),
+            }
+        )
+
+    # 4. Surcouverture sur un même métier
+    esi_multi_metier = df_esi_context[
+        serie_numerique(df_esi_context, "esi_multi_meme_metier") > 0
+    ].copy()
+
+    for _, row in esi_multi_metier.iterrows():
+        alertes_calculees.append(
+            {
+                "Alerte": "Plusieurs contrats actifs sur un même métier",
+                "Catégorie": "Surcouverture",
+                "Priorité": "À surveiller",
+                "Référence ESI": row.get("esi_reference", ""),
+                "Libellé ESI": row.get("esi_label", ""),
+                "Société": row.get("societe", ""),
+                "Agence": row.get("agence", ""),
+                "Action attendue": (
+                    "Vérifier si les contrats se complètent "
+                    "ou s'ils se chevauchent inutilement."
+                ),
+            }
+        )
+
+    df_alertes_calculees = pd.DataFrame(alertes_calculees)
+    df_alertes_source = preparer_alertes_table(df_alertes)
+
+    if not df_alertes_source.empty:
+        table_alertes = df_alertes_source.copy()
+    else:
+        table_alertes = df_alertes_calculees.copy()
+
+    if "Priorité" not in table_alertes.columns:
+        table_alertes["Priorité"] = "À surveiller"
+
+    table_alertes["Priorité"] = (
+        table_alertes["Priorité"]
+        .fillna("À surveiller")
+        .apply(normaliser_gravite)
+    )
+
+    nb_bloquantes = int(
+        (table_alertes["Priorité"] == "Bloquante").sum()
+    )
+    nb_importantes = int(
+        (table_alertes["Priorité"] == "Importante").sum()
+    )
+    nb_surveillance = int(
+        (table_alertes["Priorité"] == "À surveiller").sum()
+    )
+
+    p1, p2, p3 = st.columns(3)
+
+    with p1:
+        priority_card(
+            "Bloquantes",
+            nb_bloquantes,
+            "Une action immédiate est nécessaire.",
+            C_RED,
+        )
+
+    with p2:
+        priority_card(
+            "Importantes",
+            nb_importantes,
+            "À traiter rapidement pour sécuriser la couverture.",
+            "#E5A000",
+        )
+
+    with p3:
+        priority_card(
+            "À surveiller",
+            nb_surveillance,
+            "À contrôler pour éviter une dégradation future.",
+            C_TEAL,
+        )
+
+    st.markdown("<br>", unsafe_allow_html=True)
+
+    section(
+        "Alertes par sujet",
+        "Les volumes sont regroupés selon l'action métier à entreprendre.",
+    )
+
+    categories_alertes = {
+        "Contrats": (
+            "Contrats",
+            "Statuts ou dates de contrats nécessitant une correction.",
+            C_RED,
+        ),
+        "Couverture": (
+            "Couverture ESI",
+            "Programmes ne disposant pas de contrat actif.",
+            "#E5A000",
+        ),
+        "Couverture équipements": (
+            "Couverture équipements",
+            "Équipements présents mais sans couverture contractuelle identifiée.",
+            C_VIOLET,
+        ),
+        "Surcouverture": (
+            "Surcouverture",
+            "Plusieurs contrats actifs potentiellement redondants.",
+            C_TEAL,
+        ),
+    }
+
+    colonnes_categories = st.columns(4)
+
+    for colonne, (categorie, contenu) in zip(
+        colonnes_categories,
+        categories_alertes.items(),
+    ):
+        titre, aide, couleur = contenu
+        nombre = (
+            int((table_alertes["Catégorie"] == categorie).sum())
+            if "Catégorie" in table_alertes.columns
+            else 0
+        )
+
+        with colonne:
+            family_card(
+                titre,
+                nombre,
+                aide,
+                couleur,
+            )
+
+    st.markdown("<br>", unsafe_allow_html=True)
+
+    section(
+        "Détail des alertes",
+        "Filtre les alertes selon leur priorité ou leur nature.",
+    )
+
+    filtre_col1, filtre_col2 = st.columns([1, 1])
+
+    with filtre_col1:
+        priorites_disponibles = [
+            valeur
+            for valeur in ["Bloquante", "Importante", "À surveiller"]
+            if valeur in table_alertes["Priorité"].unique()
+        ]
+
+        priorites_selectionnees = st.multiselect(
+            "Priorité",
+            priorites_disponibles,
+            default=priorites_disponibles,
+            key="alertes_priorites",
+        )
+
+    with filtre_col2:
+        categories_disponibles = (
+            sorted(table_alertes["Catégorie"].dropna().unique().tolist())
+            if "Catégorie" in table_alertes.columns
+            else []
+        )
+
+        categories_selectionnees = st.multiselect(
+            "Catégorie",
+            categories_disponibles,
+            default=categories_disponibles,
+            key="alertes_categories",
+        )
+
+    table_alertes_filtree = table_alertes.copy()
+
+    if priorites_selectionnees:
+        table_alertes_filtree = table_alertes_filtree[
+            table_alertes_filtree["Priorité"].isin(
+                priorites_selectionnees
+            )
+        ]
+
+    if (
+        categories_selectionnees
+        and "Catégorie" in table_alertes_filtree.columns
+    ):
+        table_alertes_filtree = table_alertes_filtree[
+            table_alertes_filtree["Catégorie"].isin(
+                categories_selectionnees
+            )
+        ]
+
+    recherche_alerte = st.text_input(
+        "Rechercher dans les alertes",
+        placeholder="Contrat, ESI, métier, prestataire ou description.",
+        key="alertes_recherche",
+    )
+
+    table_alertes_filtree = filtrer_table_recherche(
+        table_alertes_filtree,
+        recherche_alerte,
+    )
+
+    if table_alertes_filtree.empty:
+        st.success(
+            "Aucune alerte ne correspond aux critères sélectionnés."
+        )
+    else:
+        st.dataframe(
+            table_alertes_filtree,
+            width="stretch",
+            hide_index=True,
+            height=520,
+        )
+
+        dataframe_download(
+            "Télécharger les alertes",
+            table_alertes_filtree,
+            "alertes_operationnelles.xlsx",
+            cle="export_alertes_operationnelles",
+        )
+
+# =====================================================
+# VUE 4 — ANOMALIES ET QUALITÉ DES DONNÉES
 # =====================================================
 
 else:
     section(
-        "Qualité et anomalies",
-        "Les données non exploitables ou incohérentes sont rendues visibles pour être corrigées, pas masquées.",
+        "Anomalies et qualité des données",
+        (
+            "Les incohérences, informations manquantes et problèmes "
+            "de rattachement qui empêchent une exploitation fiable."
+        ),
     )
 
-    expired_detail = contrats_actifs_fin_depassee(df_contrats_kpi)
-    expired_value = (
-        int(global_value(df_global, "contrats_actifs_fin_depassee", 0))
-        if not perimetre_filtre_actif
-        else expired_detail["contract_reference"].nunique()
-    )
-    unlinked_contracts = int(
-        global_value(df_global, "contrats_non_rattaches_programme", 0)
-    )
-    housing_without_program = int(
-        global_value(df_global, "logements_sans_programme", 0)
-    )
-    multi_meme_metier = int(
-        serie_numerique(df_esi_context, "esi_multi_meme_metier").sum()
+    resume_qualite = preparer_resume_qualite(
+        df_qualite_resume,
+        df_qualite,
     )
 
-    q1, q2, q3, q4 = st.columns(4)
-    with q1:
-        alert_card(
-            "Contrats actifs expirés",
-            expired_value,
-            "Statut actif malgré une date de fin dépassée.",
+    if resume_qualite.empty:
+        status_banner(
+            "Aucune anomalie détectée",
+            "Les vues de qualité ne remontent actuellement aucun problème.",
+            C_TEAL,
+            "#F1FBF8",
+            "#CFECE3",
         )
-    with q2:
-        alert_card(
-            "Contrats non rattachés",
-            unlinked_contracts,
-            "Présents en source mais hors couverture programme.",
+
+        st.info(
+            "La table dashboard.qualite_donnees_resume est vide "
+            "ou ne contient aucune anomalie exploitable."
         )
-    with q3:
-        alert_card(
-            "Logements sans programme",
-            housing_without_program,
-            "Existants mais non exploitables pour la couverture ESI.",
+
+    else:
+        nb_bloquantes = int(
+            resume_qualite.loc[
+                resume_qualite["Niveau"] == "Bloquante",
+                "Nombre",
+            ].sum()
         )
-    with q4:
-        alert_card(
-            "ESI multi même métier",
-            multi_meme_metier,
-            "Plusieurs contrats actifs sur un même métier.",
+        nb_importantes = int(
+            resume_qualite.loc[
+                resume_qualite["Niveau"] == "Importante",
+                "Nombre",
+            ].sum()
         )
+        nb_surveillance = int(
+            resume_qualite.loc[
+                resume_qualite["Niveau"] == "À surveiller",
+                "Nombre",
+            ].sum()
+        )
+
+        if nb_bloquantes > 0:
+            status_banner(
+                f"{fmt_nombre(nb_bloquantes)} anomalies bloquantes",
+                (
+                    "Certaines données ne peuvent pas être exploitées "
+                    "fiablement avant correction."
+                ),
+                C_RED,
+                "#FFF3F5",
+                "#F3CCD5",
+            )
+        elif nb_importantes > 0:
+            status_banner(
+                f"{fmt_nombre(nb_importantes)} anomalies importantes",
+                (
+                    "Aucune anomalie bloquante, mais plusieurs corrections "
+                    "doivent être priorisées."
+                ),
+                "#D88A00",
+                "#FFF9EA",
+                "#F1DEAD",
+            )
+        else:
+            status_banner(
+                "Aucune anomalie critique",
+                (
+                    "Les anomalies restantes sont à surveiller "
+                    "mais ne bloquent pas l'exploitation."
+                ),
+                C_TEAL,
+                "#F1FBF8",
+                "#CFECE3",
+            )
+
+        p1, p2, p3 = st.columns(3)
+
+        with p1:
+            priority_card(
+                "Bloquantes",
+                nb_bloquantes,
+                "Empêchent ou faussent directement l'exploitation.",
+                C_RED,
+            )
+
+        with p2:
+            priority_card(
+                "Importantes",
+                nb_importantes,
+                "Dégradent la qualité et doivent être corrigées rapidement.",
+                "#E5A000",
+            )
+
+        with p3:
+            priority_card(
+                "À surveiller",
+                nb_surveillance,
+                "Problèmes mineurs ou incomplets à contrôler.",
+                C_TEAL,
+            )
 
     st.markdown("<br>", unsafe_allow_html=True)
+
     section(
-        "Choisir une anomalie",
-        "Un seul détail est affiché à la fois pour garder une lecture claire.",
+        "Familles d'anomalies",
+        "Une lecture par cause plutôt que par simple liste technique.",
     )
 
-    if "vg_detail_focus" not in st.session_state:
-        st.session_state["vg_detail_focus"] = "expired"
+    def categorie_anomalie(value: str) -> str:
+        texte = str(value or "").lower()
 
-    b1, b2, b3, b4, b5 = st.columns(5)
-    with b1:
-        if st.button("Contrats expirés", width="stretch", key="quality_expired"):
-            st.session_state["vg_detail_focus"] = "expired"
-    with b2:
-        if st.button("Non rattachés", width="stretch", key="quality_unlinked"):
-            st.session_state["vg_detail_focus"] = "unlinked_contracts"
-    with b3:
-        if st.button(
-            "Logements sans programme",
-            width="stretch",
-            key="quality_housing",
+        if any(
+            mot in texte
+            for mot in [
+                "rattach",
+                "orphelin",
+                "programme",
+                "esi",
+                "prestation sans contrat",
+            ]
         ):
-            st.session_state["vg_detail_focus"] = "housing"
-    with b4:
-        if st.button("Multi même métier", width="stretch", key="quality_multi"):
-            st.session_state["vg_detail_focus"] = "multi_topic"
-    with b5:
-        if st.button("ESI sans contrat", width="stretch", key="quality_no_contract"):
-            st.session_state["vg_detail_focus"] = "no_contract"
+            return "Rattachements"
 
-    afficher_detail_qualite(
-        st.session_state["vg_detail_focus"],
-        df_contrats_kpi=df_contrats_kpi,
-        df_esi_context=df_esi_context,
-        df_qualite=df_qualite,
-        df_global=df_global,
+        if any(
+            mot in texte
+            for mot in ["doublon", "duplicate", "dupliqué"]
+        ):
+            return "Doublons"
+
+        if any(
+            mot in texte
+            for mot in [
+                "date",
+                "statut",
+                "incoh",
+                "actif",
+                "inactif",
+                "contradic",
+            ]
+        ):
+            return "Cohérence métier"
+
+        return "Données manquantes"
+
+    if not resume_qualite.empty:
+        resume_qualite["Famille"] = (
+            resume_qualite.get(
+                "anomalie_type",
+                pd.Series("", index=resume_qualite.index),
+            )
+            .apply(categorie_anomalie)
+        )
+
+        familles = [
+            (
+                "Rattachements",
+                "Contrats, prestations ou objets sans rattachement exploitable.",
+                C_RED,
+            ),
+            (
+                "Doublons",
+                "Objets présents plusieurs fois ou relations dupliquées.",
+                C_VIOLET,
+            ),
+            (
+                "Cohérence métier",
+                "Dates, statuts ou règles métier contradictoires.",
+                "#E5A000",
+            ),
+            (
+                "Données manquantes",
+                "Références et informations obligatoires absentes.",
+                C_NAVY,
+            ),
+        ]
+
+        colonnes_familles = st.columns(4)
+
+        for colonne, (famille, aide, couleur) in zip(
+            colonnes_familles,
+            familles,
+        ):
+            nombre = int(
+                resume_qualite.loc[
+                    resume_qualite["Famille"] == famille,
+                    "Nombre",
+                ].sum()
+            )
+
+            with colonne:
+                family_card(
+                    famille,
+                    nombre,
+                    aide,
+                    couleur,
+                )
+
+    st.markdown("<br>", unsafe_allow_html=True)
+
+    section(
+        "Répartition des anomalies",
+        "Les anomalies les plus volumineuses sont affichées en priorité.",
     )
 
-    with st.expander("Vue consolidée de toutes les anomalies", expanded=False):
-        col_quality_graph, col_quality_table = st.columns([1, 1.15])
+    col_quality_graph, col_quality_table = st.columns([1, 1.15])
 
-        with col_quality_graph:
-            st.markdown(
-                '<div class="vg-mini-title">Anomalies principales</div>',
-                unsafe_allow_html=True,
-            )
-            df_q_graph = construire_graph_qualite(df_qualite_resume, df_qualite)
-            afficher_barres_horizontales(
-                df_q_graph,
-                "Anomalie",
-                "Objets distincts",
-                color=C_VIOLET,
-                height_base=320,
-            )
+    with col_quality_graph:
+        df_q_graph = construire_graph_qualite(
+            df_qualite_resume,
+            df_qualite,
+        )
 
-        with col_quality_table:
-            st.markdown(
-                '<div class="vg-mini-title">Résumé qualité</div>',
-                unsafe_allow_html=True,
-            )
-            if df_qualite_resume.empty:
-                st.info("Aucun résumé qualité disponible.")
-            else:
-                resume = df_qualite_resume.copy()
+        afficher_barres_horizontales(
+            df_q_graph,
+            "Anomalie",
+            "Objets distincts",
+            color=C_VIOLET,
+            height_base=360,
+        )
 
-                # Compatibilité avec l'ancienne et la nouvelle vue résumé.
-                rename_count = {}
-                if "nombre_objets_distincts" in resume.columns:
-                    rename_count["nombre_objets_distincts"] = "Objets distincts"
-                elif "nb_objets_distincts" in resume.columns:
-                    rename_count["nb_objets_distincts"] = "Objets distincts"
+    with col_quality_table:
+        if resume_qualite.empty:
+            st.info("Aucun résumé qualité disponible.")
+        else:
+            colonnes_resume = {
+                "anomalie_type": "Type d'anomalie",
+                "objet_type": "Type d'objet",
+                "Niveau": "Gravité",
+                "Famille": "Famille",
+                "Nombre": "Objets concernés",
+            }
 
-                if "nombre_occurrences" in resume.columns:
-                    rename_count["nombre_occurrences"] = "Lignes détail"
-                elif "nb_lignes_detail" in resume.columns:
-                    rename_count["nb_lignes_detail"] = "Lignes détail"
+            colonnes_disponibles = [
+                colonne
+                for colonne in colonnes_resume
+                if colonne in resume_qualite.columns
+            ]
 
-                cols = [
-                    col
-                    for col in [
-                        "anomalie_type",
-                        "objet_type",
-                        "gravite",
-                        "nombre_objets_distincts",
-                        "nb_objets_distincts",
-                        "nombre_occurrences",
-                        "nb_lignes_detail",
-                    ]
-                    if col in resume.columns
-                ]
-                resume = resume[cols].rename(
-                    columns={
-                        "anomalie_type": "Type anomalie",
-                        "objet_type": "Type objet",
-                        "gravite": "Gravité",
-                        **rename_count,
-                    }
+            table_resume = (
+                resume_qualite[colonnes_disponibles]
+                .rename(columns=colonnes_resume)
+                .sort_values(
+                    "Objets concernés",
+                    ascending=False,
                 )
-                if "Objets distincts" in resume.columns:
-                    resume = resume.sort_values("Objets distincts", ascending=False)
+            )
 
-                st.dataframe(
-                    resume,
-                    width="stretch",
-                    hide_index=True,
-                    height=320,
+            st.dataframe(
+                table_resume,
+                width="stretch",
+                hide_index=True,
+                height=360,
+            )
+
+    st.markdown("<br>", unsafe_allow_html=True)
+
+    section(
+        "Détail des anomalies",
+        "Recherche et export de toutes les données à corriger.",
+    )
+
+    if df_qualite.empty:
+        st.success("Aucune anomalie détaillée disponible.")
+    else:
+        df_qualite_affichage = df_qualite.copy()
+
+        if "gravite" in df_qualite_affichage.columns:
+            df_qualite_affichage["Niveau"] = (
+                df_qualite_affichage["gravite"]
+                .apply(normaliser_gravite)
+            )
+
+        if "anomalie_type" in df_qualite_affichage.columns:
+            df_qualite_affichage["Famille"] = (
+                df_qualite_affichage["anomalie_type"]
+                .apply(categorie_anomalie)
+            )
+
+        filtre_q1, filtre_q2 = st.columns(2)
+
+        with filtre_q1:
+            niveaux_disponibles = (
+                sorted(
+                    df_qualite_affichage["Niveau"]
+                    .dropna()
+                    .unique()
+                    .tolist()
                 )
+                if "Niveau" in df_qualite_affichage.columns
+                else []
+            )
+
+            niveaux_selectionnes = st.multiselect(
+                "Gravité",
+                niveaux_disponibles,
+                default=niveaux_disponibles,
+                key="anomalies_gravite",
+            )
+
+        with filtre_q2:
+            familles_disponibles = (
+                sorted(
+                    df_qualite_affichage["Famille"]
+                    .dropna()
+                    .unique()
+                    .tolist()
+                )
+                if "Famille" in df_qualite_affichage.columns
+                else []
+            )
+
+            familles_selectionnees = st.multiselect(
+                "Famille",
+                familles_disponibles,
+                default=familles_disponibles,
+                key="anomalies_famille",
+            )
+
+        if niveaux_selectionnes and "Niveau" in df_qualite_affichage.columns:
+            df_qualite_affichage = df_qualite_affichage[
+                df_qualite_affichage["Niveau"].isin(
+                    niveaux_selectionnes
+                )
+            ]
+
+        if familles_selectionnees and "Famille" in df_qualite_affichage.columns:
+            df_qualite_affichage = df_qualite_affichage[
+                df_qualite_affichage["Famille"].isin(
+                    familles_selectionnees
+                )
+            ]
 
         recherche_anomalie = st.text_input(
-            "Rechercher dans toutes les anomalies",
-            placeholder="Référence, type, description, société, agence...",
+            "Rechercher dans les anomalies",
+            placeholder=(
+                "Référence, anomalie, description, société, agence ou contrat."
+            ),
             key="quality_search_all",
         )
+
         table_qualite = filtrer_table_recherche(
-            preparer_qualite_table(df_qualite),
+            preparer_qualite_table(df_qualite_affichage),
             recherche_anomalie,
         )
+
         st.dataframe(
             table_qualite,
             width="stretch",
             hide_index=True,
-            height=460,
+            height=520,
         )
+
         dataframe_download(
             "Télécharger les anomalies",
             table_qualite,
-            "anomalies_patrimoine.xlsx",
+            "anomalies_qualite_donnees.xlsx",
+            cle="export_anomalies_qualite",
         )
-
-
 # =====================================================
 # FOOTER TECHNIQUE
 # =====================================================
