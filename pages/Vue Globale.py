@@ -1313,11 +1313,11 @@ def inject_style():
             position: relative;
             overflow: hidden;
             margin: 4px 0 18px 0;
-            padding: 20px 22px;
+            padding: 18px 22px;
             background:
                 radial-gradient(circle at 92% 8%, rgba(255,255,255,.22), transparent 24%),
-                linear-gradient(135deg, #3226A8 0%, #432ABD 52%, #6857D8 100%);
-            border: 1px solid #3827A8;
+                linear-gradient(135deg, #3B2CAD 0%, #5140C5 55%, #7D70DD 100%);
+            border: 1px solid #4938B8;
             border-radius: 17px;
             box-shadow: 0 15px 32px -25px rgba(67, 42, 189, .65);
         }
@@ -1336,6 +1336,51 @@ def inject_style():
         .vg-anomaly-hero-main {
             position: relative;
             z-index: 1;
+        }
+
+        .vg-anomaly-hero-kicker {
+            display: inline-flex;
+            align-items: center;
+            margin-bottom: 8px;
+            padding: 5px 10px;
+            color: #FFFFFF;
+            background: rgba(255,255,255,.14);
+            border: 1px solid rgba(255,255,255,.22);
+            border-radius: 999px;
+            font-size: 9.5px;
+            font-weight: 850;
+            letter-spacing: .5px;
+            text-transform: uppercase;
+        }
+
+        .vg-anomaly-hero-line {
+            display: flex;
+            align-items: baseline;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-bottom: 6px;
+        }
+
+        .vg-anomaly-hero-value {
+            color: #FFFFFF;
+            font-size: 36px;
+            line-height: 1;
+            letter-spacing: -1.1px;
+            font-weight: 900;
+        }
+
+        .vg-anomaly-hero-title {
+            color: #FFFFFF;
+            font-size: 16px;
+            font-weight: 850;
+        }
+
+        .vg-anomaly-hero-help {
+            max-width: 720px;
+            color: rgba(255,255,255,.84);
+            font-size: 11.5px;
+            line-height: 1.45;
+            font-weight: 550;
         }
 
         .vg-anomaly-main-card {
