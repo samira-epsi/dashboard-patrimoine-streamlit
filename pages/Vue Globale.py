@@ -2094,6 +2094,7 @@ def inject_style():
         }
 
         .vg-intensity-kpi {
+            min-height: 94px;
             padding: 11px 13px;
             background: #FFFFFF;
             border: 1px solid var(--border);
@@ -5911,8 +5912,7 @@ def equipment_overview(
     definition: str,
 ):
     contenu = (
-        '<div class="vg-equipment-summary">'
-        '<div class="vg-equipment-main-card">'
+        '<div class="vg-equipment-main-card" style="max-width:none;">'
         f'<div class="vg-equipment-ring" style="--ring-rate:{max(0.0, min(rate, 100.0)):.2f};">'
         '<div class="vg-equipment-ring-center">'
         f'<div class="vg-equipment-ring-value">{_safe(fmt_pourcentage(rate))}</div>'
@@ -5921,45 +5921,12 @@ def equipment_overview(
         '</div>'
         '<div>'
         '<div class="vg-equipment-main-title">'
-        f'{_safe(fmt_nombre(covered))} équipements couverts '
-        f'sur {_safe(fmt_nombre(total))}'
+        f'{_safe(fmt_nombre(covered))} équipements couverts sur {_safe(fmt_nombre(total))}'
         '</div>'
         '<div class="vg-equipment-main-help">'
-        f'Un équipement est couvert lorsqu’il possède {_safe(definition)} '
+        f'{_safe(fmt_nombre(uncovered))} équipements restent sans contrat actif exploitable. '
+        f'Un équipement est considéré comme couvert lorsqu’il possède {_safe(definition)} '
         'directement rattaché dans Intent.'
-        '</div>'
-        '</div>'
-        '</div>'
-        '<div class="vg-equipment-kpis">'
-        '<div class="vg-equipment-kpi" style="--equipment-color:#4F9B88;">'
-        '<div class="vg-equipment-kpi-label">Avec contrat</div>'
-        '<div class="vg-equipment-kpi-line">'
-        f'<span class="vg-equipment-kpi-value">{_safe(fmt_nombre(covered))}</span>'
-        f'<span class="vg-equipment-kpi-rate">{_safe(fmt_pourcentage(rate))}</span>'
-        '</div>'
-        '<div class="vg-equipment-kpi-help">Couverture exploitable.</div>'
-        '</div>'
-        '<div class="vg-equipment-kpi" style="--equipment-color:#D65A83;">'
-        '<div class="vg-equipment-kpi-label">Sans contrat</div>'
-        '<div class="vg-equipment-kpi-line">'
-        f'<span class="vg-equipment-kpi-value">{_safe(fmt_nombre(uncovered))}</span>'
-        f'<span class="vg-equipment-kpi-rate">{_safe(fmt_pourcentage(100.0-rate))}</span>'
-        '</div>'
-        '<div class="vg-equipment-kpi-help">À vérifier ou rattacher.</div>'
-        '</div>'
-        '<div class="vg-equipment-kpi" style="--equipment-color:#67AFCF;">'
-        '<div class="vg-equipment-kpi-label">Parc analysé</div>'
-        '<div class="vg-equipment-kpi-line">'
-        f'<span class="vg-equipment-kpi-value">{_safe(fmt_nombre(total))}</span>'
-        '</div>'
-        '<div class="vg-equipment-kpi-help">Équipements distincts.</div>'
-        '</div>'
-        '<div class="vg-equipment-kpi" style="--equipment-color:#7967C8;">'
-        '<div class="vg-equipment-kpi-label">Écart à traiter</div>'
-        '<div class="vg-equipment-kpi-line">'
-        f'<span class="vg-equipment-kpi-value">{_safe(fmt_nombre(uncovered))}</span>'
-        '</div>'
-        '<div class="vg-equipment-kpi-help">Reste avant couverture complète.</div>'
         '</div>'
         '</div>'
         '</div>'
@@ -6754,6 +6721,58 @@ def preparer_esi_table(df: pd.DataFrame) -> pd.DataFrame:
     )
 
 
+def preparer_equipements_table(df: pd.DataFrame) -> pd.DataFrame:
+    """Prépare un tableau lisible à partir des colonnes réellement disponibles."""
+    if df.empty:
+        return pd.DataFrame()
+
+    colonnes_candidates = [
+        ("equipment_reference", "Référence équipement"),
+        ("equipment_label", "Libellé équipement"),
+        ("equipment_type", "Type d’équipement"),
+        ("equipment_asset_type", "Type d’équipement"),
+        ("esi_reference", "Référence ESI"),
+        ("esi_label", "Libellé ESI"),
+        ("societe", "Société"),
+        ("agence", "Agence"),
+        ("groupe", "Groupe"),
+        ("secteur", "Secteur"),
+        ("nb_contrats_actifs", "Contrats actifs"),
+        ("nb_contrats_inactifs", "Contrats inactifs"),
+        ("equipment_has_contract_link", "Avec contrat"),
+        ("equipment_covered_valid", "Couvert par contrat actif"),
+    ]
+
+    colonnes_source = []
+    renommage = {}
+
+    for source_col, label in colonnes_candidates:
+        if source_col in df.columns and source_col not in colonnes_source:
+            colonnes_source.append(source_col)
+            renommage[source_col] = label
+
+    if not colonnes_source:
+        return df.copy()
+
+    table = df[colonnes_source].copy().rename(columns=renommage)
+
+    for colonne in ["Avec contrat", "Couvert par contrat actif"]:
+        if colonne in table.columns:
+            table[colonne] = (
+                pd.to_numeric(table[colonne], errors="coerce")
+                .fillna(0)
+                .gt(0)
+                .map({True: "Oui", False: "Non"})
+            )
+
+    colonne_ref = "Référence équipement"
+    if colonne_ref in table.columns:
+        table = table.drop_duplicates(colonne_ref)
+
+    return table.reset_index(drop=True)
+
+
+
 def preparer_qualite_table(df: pd.DataFrame) -> pd.DataFrame:
     if df.empty:
         return pd.DataFrame()
@@ -7143,8 +7162,9 @@ if vue_active == "Couverture":
             unsafe_allow_html=True,
         )
 
-# Le statut des contrats ne concerne que la Vue globale et la Couverture.
-if vue_active in ["Vue globale", "Couverture"]:
+# La Vue globale permet de comparer les statuts.
+# La page Couverture analyse toujours les contrats actifs.
+if vue_active == "Vue globale":
     with st.container(key="contract_status_filter"):
         st.markdown(
             '<div class="vg-mini-title">Statut des contrats</div>',
@@ -7155,10 +7175,11 @@ if vue_active in ["Vue globale", "Couverture"]:
 
         st.caption(
             "Les totaux source restent fixes dans la vue globale. "
-            "La couverture et les détails suivent les filtres sélectionnés."
+            "Les détails suivent les filtres sélectionnés."
         )
+elif vue_active == "Couverture":
+    statut_selectionne = "active"
 else:
-    # Alertes et Anomalies utilisent leurs propres règles métier.
     statut_selectionne = None
 
 # Calculs communs.
@@ -8512,47 +8533,6 @@ elif vue_active == "Couverture":
 
         step_header(
             1,
-            "Comparer les deux niveaux de couverture",
-            "Distinguer la présence d’un contrat de la couverture réelle des équipements.",
-        )
-
-        col_contractuelle, col_reelle = st.columns(
-            2,
-            gap="medium",
-        )
-
-        with col_contractuelle:
-            coverage_reading_card(
-                eyebrow="Niveau 1",
-                title="Couverture contractuelle des ESI",
-                question="Combien d’ESI disposent d’au moins un contrat ?",
-                rate=taux_contractuel,
-                covered=nb_esi_avec_contrat_programme,
-                uncovered=nb_esi_sans_contrat_programme,
-                base_label=f"{fmt_nombre(total_esi_situation)} ESI",
-                color="#D65A83",
-                gap_color="#F2D6E0",
-                covered_label="ESI avec contrat",
-                uncovered_label="ESI sans contrat",
-            )
-
-        with col_reelle:
-            coverage_reading_card(
-                eyebrow="Niveau 2",
-                title="Couverture réelle des ESI équipés",
-                question="Parmi les ESI équipés, combien ont un contrat couvrant leurs équipements ?",
-                rate=taux_reel_equipements,
-                covered=nb_esi_avec_contrat_equipement,
-                uncovered=nb_esi_sans_contrat_equipement,
-                base_label=f"{fmt_nombre(base_esi_equipes)} ESI équipés analysables",
-                color="#4F9B88",
-                gap_color="#F2C9D8",
-                covered_label="Équipés couverts",
-                uncovered_label="Équipés non couverts",
-            )
-
-        step_header(
-            2,
             "Comprendre la composition du patrimoine",
             "Identifier les ESI équipés et ceux qui ne portent aucun équipement.",
         )
@@ -8578,6 +8558,47 @@ elif vue_active == "Couverture":
                 nb_esi_sans_equipement,
                 taux_sur(nb_esi_sans_equipement, total_esi_situation),
                 "#D7A93C",
+            )
+
+        step_header(
+            2,
+            "Comparer les deux niveaux de couverture",
+            "Distinguer la présence d’un contrat actif de la couverture réelle des équipements.",
+        )
+
+        col_contractuelle, col_reelle = st.columns(
+            2,
+            gap="medium",
+        )
+
+        with col_contractuelle:
+            coverage_reading_card(
+                eyebrow="Couverture contractuelle",
+                title="ESI disposant d’un contrat actif",
+                question="Combien d’ESI disposent d’au moins un contrat actif ?",
+                rate=taux_contractuel,
+                covered=nb_esi_avec_contrat_programme,
+                uncovered=nb_esi_sans_contrat_programme,
+                base_label=f"{fmt_nombre(total_esi_situation)} ESI",
+                color="#D65A83",
+                gap_color="#F2D6E0",
+                covered_label="Avec contrat actif",
+                uncovered_label="Sans contrat actif",
+            )
+
+        with col_reelle:
+            coverage_reading_card(
+                eyebrow="Couverture réelle",
+                title="ESI équipés réellement couverts",
+                question="Parmi les ESI équipés, combien ont un contrat actif couvrant leurs équipements ?",
+                rate=taux_reel_equipements,
+                covered=nb_esi_avec_contrat_equipement,
+                uncovered=nb_esi_sans_contrat_equipement,
+                base_label=f"{fmt_nombre(base_esi_equipes)} ESI équipés analysables",
+                color="#4F9B88",
+                gap_color="#F2C9D8",
+                covered_label="Équipés couverts",
+                uncovered_label="Équipés non couverts",
             )
 
         # Un nombre de contrats DISTINCTS par ESI, zéro inclus.
@@ -8649,48 +8670,47 @@ elif vue_active == "Couverture":
             "Observer combien de contrats sont rattachés à chaque ESI.",
         )
 
-        intensity_left, intensity_right = st.columns(
-            [1.7, .9],
-            gap="medium",
+        intensity_distribution_html(
+            [
+                {
+                    "label": "Aucun contrat actif",
+                    "count": nb_0_contrat,
+                    "rate": taux_sur(nb_0_contrat, total_esi_situation),
+                    "color": "#E7A1C5",
+                },
+                {
+                    "label": "1 à 3 contrats actifs",
+                    "count": nb_1_a_3,
+                    "rate": taux_sur(nb_1_a_3, total_esi_situation),
+                    "color": "#67AFCF",
+                },
+                {
+                    "label": "4 contrats actifs ou plus",
+                    "count": nb_4_plus,
+                    "rate": taux_sur(nb_4_plus, total_esi_situation),
+                    "color": "#7967C8",
+                },
+            ]
         )
 
-        with intensity_left:
-            intensity_distribution_html(
-                [
-                    {
-                        "label": "Aucun contrat",
-                        "count": nb_0_contrat,
-                        "rate": taux_sur(nb_0_contrat, total_esi_situation),
-                        "color": "#E7A1C5",
-                    },
-                    {
-                        "label": "1 à 3 contrats",
-                        "count": nb_1_a_3,
-                        "rate": taux_sur(nb_1_a_3, total_esi_situation),
-                        "color": "#67AFCF",
-                    },
-                    {
-                        "label": "4 contrats ou plus",
-                        "count": nb_4_plus,
-                        "rate": taux_sur(nb_4_plus, total_esi_situation),
-                        "color": "#7967C8",
-                    },
-                ]
-            )
+        st.markdown("<div style='height:10px'></div>", unsafe_allow_html=True)
 
-        with intensity_right:
+        intensite_kpi_cols = st.columns(3)
+        with intensite_kpi_cols[0]:
             intensity_kpi(
                 "Moyenne",
                 f"{moyenne_contrats_esi:.2f}".replace(".", ","),
-                "Contrats distincts par ESI, zéro inclus.",
+                "Contrats actifs distincts par ESI, zéro inclus.",
                 "#4F9B88",
             )
+        with intensite_kpi_cols[1]:
             intensity_kpi(
                 "Médiane",
                 f"{mediane_contrats_esi:.0f}".replace(".", ","),
                 "La moitié des ESI en possède autant ou moins.",
                 "#67AFCF",
             )
+        with intensite_kpi_cols[2]:
             intensity_kpi(
                 "Multi-contrats même métier",
                 fmt_nombre(nb_esi_multi_metier),
@@ -8898,7 +8918,7 @@ elif vue_active == "Couverture":
 
         section(
             "Couverture par métier",
-            "Les principaux métiers présents sur les ESI du périmètre.",
+            "Tous les métiers présents sur les ESI du périmètre actif.",
         )
 
         # -----------------------------------------------------
@@ -8920,7 +8940,7 @@ elif vue_active == "Couverture":
         presence_metiers = construire_presence_metiers(
             df_contrats=df_contrats_kpi,
             total_esi=total_esi_metiers,
-            top_n=8,
+            top_n=10_000,
         )
 
         st.caption(
