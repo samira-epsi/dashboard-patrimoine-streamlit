@@ -4298,8 +4298,6 @@ def anomaly_hero(
         '<span class="vg-anomaly-hero-title">anomalies détectées</span>'
         '</div>'
         '<div class="vg-anomaly-hero-help">'
-        'Des objets ne peuvent pas être replacés correctement '
-        'dans la hiérarchie patrimoine.'
         '</div>'
         '</div>'
         '</div>'
