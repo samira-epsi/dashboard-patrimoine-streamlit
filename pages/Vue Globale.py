@@ -1055,6 +1055,35 @@ def inject_style():
             border-color: var(--3f-red-dark) !important;
         }
 
+
+        /* TÉLÉCHARGEMENTS COMPACTS DES ÉQUIPEMENTS */
+        .st-key-export_repartition_types_equipement,
+        .st-key-export_couverture_equipements {
+            display: flex !important;
+            justify-content: flex-end !important;
+        }
+
+        .st-key-export_repartition_types_equipement button,
+        .st-key-export_couverture_equipements button {
+            min-height: 36px !important;
+            width: auto !important;
+            padding: 7px 12px !important;
+            color: #A3184A !important;
+            background: #FFFFFF !important;
+            border: 1px solid #E7C8D6 !important;
+            border-radius: 10px !important;
+            box-shadow: none !important;
+            font-size: 11.5px !important;
+            font-weight: 700 !important;
+        }
+
+        .st-key-export_repartition_types_equipement button:hover,
+        .st-key-export_couverture_equipements button:hover {
+            color: var(--3f-red) !important;
+            background: #FFF7FA !important;
+            border-color: var(--3f-red) !important;
+        }
+
         @media screen and (max-width: 900px) {
             .vg-coverage-alert {
                 align-items: stretch;
@@ -4548,6 +4577,137 @@ df_esi_filtre, df_contrats_filtre, filtres_selectionnes = render_filtres_patrimo
     df_contrats=df_contrats,
 )
 
+# =====================================================
+# SYNTHÈSE DES ALERTES AVANT LE FILTRE DE STATUT
+# =====================================================
+
+# Les alertes opérationnelles suivent le périmètre patrimoine sélectionné,
+# mais sont volontairement indépendantes du filtre de statut affiché ensuite.
+df_esi_alertes_entree = dedupliquer_esi(df_esi_filtre)
+
+contrats_expires_entree = contrats_actifs_fin_depassee(df_contrats_filtre)
+nb_contrats_expires_entree = int(
+    contrats_expires_entree["contract_reference"].nunique()
+    if (
+        not contrats_expires_entree.empty
+        and "contract_reference" in contrats_expires_entree.columns
+    )
+    else len(contrats_expires_entree)
+)
+
+nb_esi_sans_contrat_entree = int(
+    (serie_numerique(df_esi_alertes_entree, "nb_contrats_actifs") == 0).sum()
+)
+
+colonne_non_couverte_entree = trouver_colonne(
+    df_esi_alertes_entree,
+    [
+        "esi_avec_equipement_sans_couverture_valide",
+        "esi_avec_equipement_sans_contrat_equipement",
+    ],
+)
+if colonne_non_couverte_entree:
+    nb_esi_equipes_non_couverts_entree = int(
+        (serie_numerique(df_esi_alertes_entree, colonne_non_couverte_entree) > 0).sum()
+    )
+else:
+    nb_esi_equipes_non_couverts_entree = int(
+        (
+            (serie_numerique(df_esi_alertes_entree, "nb_equipements") > 0)
+            & (serie_numerique(df_esi_alertes_entree, "nb_contrats_actifs") == 0)
+        ).sum()
+    )
+
+nb_esi_multi_metier_entree = int(
+    (serie_numerique(df_esi_alertes_entree, "esi_multi_meme_metier") > 0).sum()
+)
+
+contrats_source_entree = construire_contrats_uniques_source(
+    df_prestations=df_prestations,
+    df_contrats_rattaches=df_contrats,
+)
+if not contrats_source_entree.empty and "esi_reference" in contrats_source_entree.columns:
+    contrats_sans_rattachement_entree = contrats_source_entree[
+        contrats_source_entree["esi_reference"].isna()
+        | contrats_source_entree["esi_reference"].astype(str).str.strip().isin(
+            ["", "nan", "None", "<NA>", "Non renseigné"]
+        )
+    ].copy()
+else:
+    contrats_sans_rattachement_entree = pd.DataFrame()
+
+nb_contrats_sans_rattachement_entree = int(
+    contrats_sans_rattachement_entree["contract_reference"].nunique()
+    if (
+        not contrats_sans_rattachement_entree.empty
+        and "contract_reference" in contrats_sans_rattachement_entree.columns
+    )
+    else int(global_value(df_global, "contrats_non_rattaches_programme", 0))
+)
+
+nb_situations_alertes = (
+    nb_contrats_expires_entree
+    + nb_esi_sans_contrat_entree
+    + nb_esi_equipes_non_couverts_entree
+    + nb_esi_multi_metier_entree
+    + nb_contrats_sans_rattachement_entree
+)
+
+# Dans Couverture, l'alerte est le premier élément métier affiché.
+if vue_active == "Couverture":
+    if nb_situations_alertes > 0:
+        alerte_col, bouton_alerte_col = st.columns(
+            [5, 1.2],
+            gap="medium",
+            vertical_alignment="center",
+        )
+        with alerte_col:
+            st.markdown(
+                f"""
+                <div class="vg-coverage-alert">
+                    <div class="vg-coverage-alert-content">
+                        <div class="vg-coverage-alert-icon">!</div>
+                        <div>
+                            <div class="vg-coverage-alert-title">
+                                {fmt_nombre(nb_situations_alertes)} signal(s) à vérifier
+                            </div>
+                            <div class="vg-coverage-alert-help">
+                                Contrats expirés ou non rattachés, ESI non couverts
+                                et chevauchements contractuels détectés.
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                """,
+                unsafe_allow_html=True,
+            )
+        with bouton_alerte_col:
+            st.button(
+                "Voir les alertes",
+                key="ouvrir_alertes_depuis_couverture",
+                width="stretch",
+                on_click=ouvrir_onglet_alertes,
+            )
+    else:
+        st.markdown(
+            """
+            <div class="vg-coverage-alert"
+                 style="background:#F1FBF8;border-color:#CFECE3;border-left-color:#008080;">
+                <div class="vg-coverage-alert-content">
+                    <div class="vg-coverage-alert-icon"
+                         style="color:#008080;border-color:#CFECE3;">✓</div>
+                    <div>
+                        <div class="vg-coverage-alert-title">Aucun signal prioritaire</div>
+                        <div class="vg-coverage-alert-help">
+                            Aucun cas nécessitant une action immédiate n'est détecté.
+                        </div>
+                    </div>
+                </div>
+            </div>
+            """,
+            unsafe_allow_html=True,
+        )
+
 # Le statut des contrats ne concerne que la Vue globale et la Couverture.
 if vue_active in ["Vue globale", "Couverture"]:
     with st.container(key="contract_status_filter"):
@@ -4594,85 +4754,6 @@ df_esi_kpi = filtrer_esi_depuis_contrats(
 )
 df_esi_base = dedupliquer_esi(df_esi_filtre)
 df_esi_context = dedupliquer_esi(df_esi_kpi)
-
-# =====================================================
-# SYNTHÈSE DES ALERTES POUR LA PAGE COUVERTURE
-# =====================================================
-
-# Les alertes suivent le périmètre patrimoine sélectionné,
-# mais ne dépendent pas du filtre visuel de statut dans les onglets
-# Alertes et Anomalies.
-contrats_expires_alerte = contrats_actifs_fin_depassee(
-    df_contrats_filtre
-)
-
-nb_contrats_expires_alerte = int(
-    contrats_expires_alerte["contract_reference"].nunique()
-    if (
-        not contrats_expires_alerte.empty
-        and "contract_reference" in contrats_expires_alerte.columns
-    )
-    else len(contrats_expires_alerte)
-)
-
-df_esi_alertes = dedupliquer_esi(df_esi_filtre)
-
-nb_esi_sans_contrat_alerte = int(
-    (
-        serie_numerique(
-            df_esi_alertes,
-            "nb_contrats_actifs",
-        ) == 0
-    ).sum()
-)
-
-colonne_esi_non_couvert_alerte = trouver_colonne(
-    df_esi_alertes,
-    [
-        "esi_avec_equipement_sans_couverture_valide",
-        "esi_avec_equipement_sans_contrat_equipement",
-    ],
-)
-
-if colonne_esi_non_couvert_alerte:
-    nb_esi_equipes_non_couverts_alerte = int(
-        (
-            serie_numerique(
-                df_esi_alertes,
-                colonne_esi_non_couvert_alerte,
-            ) > 0
-        ).sum()
-    )
-else:
-    # Repli lorsque la colonne de couverture réelle n'existe pas encore.
-    nb_esi_equipes_non_couverts_alerte = int(
-        (
-            (serie_numerique(df_esi_alertes, "nb_equipements") > 0)
-            & (
-                serie_numerique(
-                    df_esi_alertes,
-                    "nb_contrats_actifs",
-                ) == 0
-            )
-        ).sum()
-    )
-
-nb_esi_multi_metier_alerte = int(
-    (
-        serie_numerique(
-            df_esi_alertes,
-            "esi_multi_meme_metier",
-        ) > 0
-    ).sum()
-)
-
-nb_situations_alertes = (
-    nb_contrats_expires_alerte
-    + nb_esi_sans_contrat_alerte
-    + nb_esi_equipes_non_couverts_alerte
-    + nb_esi_multi_metier_alerte
-)
-
 
 df_prestations_kpi = filtrer_prestations_depuis_contrats(
     df_prestations=df_prestations,
@@ -5620,74 +5701,6 @@ if vue_active == "Vue globale":
 # =====================================================
 
 elif vue_active == "Couverture":
-
-    # Renvoi vers l'onglet Alertes.
-    if nb_situations_alertes > 0:
-        alerte_col, bouton_alerte_col = st.columns(
-            [5, 1.25],
-            gap="medium",
-            vertical_alignment="center",
-        )
-
-        with alerte_col:
-            st.markdown(
-                f"""
-                <div class="vg-coverage-alert">
-                    <div class="vg-coverage-alert-content">
-                        <div class="vg-coverage-alert-icon">!</div>
-                        <div>
-                            <div class="vg-coverage-alert-title">
-                                {fmt_nombre(nb_situations_alertes)}
-                                signal(s) nécessitent une vérification
-                            </div>
-                            <div class="vg-coverage-alert-help">
-                                Des contrats expirés, des ESI non couverts
-                                ou des chevauchements contractuels ont été
-                                détectés sur le périmètre sélectionné.
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                """,
-                unsafe_allow_html=True,
-            )
-
-        with bouton_alerte_col:
-            st.button(
-                "Voir les alertes",
-                key="ouvrir_alertes_depuis_couverture",
-                width="stretch",
-                on_click=ouvrir_onglet_alertes,
-            )
-    else:
-        st.markdown(
-            """
-            <div class="vg-coverage-alert"
-                 style="
-                    background:#F1FBF8;
-                    border-color:#CFECE3;
-                    border-left-color:#008080;
-                 ">
-                <div class="vg-coverage-alert-content">
-                    <div class="vg-coverage-alert-icon"
-                         style="color:#008080;border-color:#CFECE3;">
-                        ✓
-                    </div>
-                    <div>
-                        <div class="vg-coverage-alert-title">
-                            Aucun signal prioritaire détecté
-                        </div>
-                        <div class="vg-coverage-alert-help">
-                            La couverture du périmètre sélectionné ne présente
-                            pas d’alerte opérationnelle connue.
-                        </div>
-                    </div>
-                </div>
-            </div>
-            """,
-            unsafe_allow_html=True,
-        )
-
     if statut_selectionne == "active":
         section(
             "Couverture du patrimoine",
@@ -5713,7 +5726,6 @@ elif vue_active == "Couverture":
                 ),
             )
 
-    
     # Même base de lecture que la Vue globale.
     if statut_selectionne is None and not perimetre_filtre_actif:
         contrats_value = global_value(df_global, "contrats_total")
@@ -5883,7 +5895,7 @@ elif vue_active == "Couverture":
 
 
     with st.expander(
-        "Situation actuelle des ESI",
+        "ESI — synthèse",
         expanded=True,
     ):
         # =====================================================
@@ -5892,8 +5904,8 @@ elif vue_active == "Couverture":
 
         st.markdown("<br>", unsafe_allow_html=True)
         section(
-            "Situation actuelle des ESI",
-            "Trois lectures complémentaires : présence des équipements, couverture réelle et répartition des contrats par ESI.",
+            "ESI : l’essentiel",
+            "Équipements, couverture et intensité contractuelle — en un coup d’œil.",
         )
 
         df_esi_situation = dedupliquer_esi(df_esi_context)
@@ -6148,85 +6160,146 @@ elif vue_active == "Couverture":
                 unsafe_allow_html=True,
             )
 
-            donnees_couverture = pd.DataFrame(
-                {
-                    "Situation": [
-                        "ESI équipés avec contrat équipement",
-                        "ESI équipés sans contrat équipement",
-                        "ESI avec au moins un contrat",
-                        "ESI sans contrat",
-                    ],
-                    "ESI": [
-                        nb_esi_avec_contrat_equipement,
-                        nb_esi_sans_contrat_equipement,
-                        nb_esi_avec_contrat_programme,
-                        nb_esi_sans_contrat_programme,
-                    ],
-                    "Couleur": [
-                        "#2F7C6D",
-                        "#E89BC7",
-                        "#173B69",
-                        "#F4D84E",
-                    ],
-                }
+            # Deux lectures distinctes :
+            # 1) couverture des ESI équipés ; 2) présence d'au moins un contrat sur tous les ESI.
+            taux_equipe_couvert = taux_esi(
+                nb_esi_avec_contrat_equipement,
+                nb_esi_avec_equipement,
             )
-            donnees_couverture["Taux"] = donnees_couverture["ESI"].map(
-                lambda nombre: taux_esi(int(nombre))
-            )
-            donnees_couverture = donnees_couverture.iloc[::-1].reset_index(
-                drop=True
-            )
+            taux_equipe_non_couvert = max(100.0 - taux_equipe_couvert, 0.0)
+            taux_avec_contrat = taux_esi(nb_esi_avec_contrat_programme)
+            taux_sans_contrat = max(100.0 - taux_avec_contrat, 0.0)
 
             if go is None:
+                donnees_couverture = pd.DataFrame(
+                    {
+                        "Lecture": [
+                            "ESI équipés couverts",
+                            "ESI avec contrat",
+                        ],
+                        "Taux": [
+                            taux_equipe_couvert,
+                            taux_avec_contrat,
+                        ],
+                    }
+                )
                 st.bar_chart(
-                    donnees_couverture.set_index("Situation")["Taux"],
+                    donnees_couverture.set_index("Lecture")["Taux"],
                     width="stretch",
                 )
             else:
-                fig_couverture = go.Figure(
+                fig_couverture = go.Figure()
+
+                # Ligne 1 : uniquement les ESI disposant d'équipements.
+                fig_couverture.add_trace(
                     go.Bar(
-                        x=donnees_couverture["Taux"],
-                        y=donnees_couverture["Situation"],
+                        y=["Couverture des équipements"],
+                        x=[taux_equipe_couvert],
                         orientation="h",
-                        text=donnees_couverture["Taux"].map(
-                            lambda valeur: fmt_pourcentage(valeur)
-                        ),
-                        textposition="outside",
-                        textfont=dict(size=13),
-                        customdata=donnees_couverture["ESI"],
-                        marker=dict(
-                            color=donnees_couverture["Couleur"],
-                        ),
+                        name="Couverts",
+                        marker_color="#2F7C6D",
+                        text=[fmt_pourcentage(taux_equipe_couvert)],
+                        textposition="inside",
+                        insidetextanchor="middle",
+                        customdata=[[nb_esi_avec_contrat_equipement]],
                         hovertemplate=(
-                            "<b>%{y}</b><br>"
-                            "ESI : %{customdata:,}<br>"
+                            "<b>ESI équipés couverts</b><br>"
+                            "ESI : %{customdata[0]:,}<br>"
+                            "Taux parmi les ESI équipés : %{x:.1f} %<extra></extra>"
+                        ),
+                    )
+                )
+                fig_couverture.add_trace(
+                    go.Bar(
+                        y=["Couverture des équipements"],
+                        x=[taux_equipe_non_couvert],
+                        orientation="h",
+                        name="Non couverts",
+                        marker_color="#F3B4D6",
+                        customdata=[[nb_esi_sans_contrat_equipement]],
+                        hovertemplate=(
+                            "<b>ESI équipés non couverts</b><br>"
+                            "ESI : %{customdata[0]:,}<br>"
+                            "Taux parmi les ESI équipés : %{x:.1f} %<extra></extra>"
+                        ),
+                    )
+                )
+
+                # Ligne 2 : présence contractuelle sur l'ensemble des ESI.
+                fig_couverture.add_trace(
+                    go.Bar(
+                        y=["Couverture contractuelle"],
+                        x=[taux_avec_contrat],
+                        orientation="h",
+                        name="Avec contrat",
+                        marker_color="#173B69",
+                        text=[fmt_pourcentage(taux_avec_contrat)],
+                        textposition="inside",
+                        insidetextanchor="middle",
+                        customdata=[[nb_esi_avec_contrat_programme]],
+                        hovertemplate=(
+                            "<b>ESI avec au moins un contrat</b><br>"
+                            "ESI : %{customdata[0]:,}<br>"
                             "Taux : %{x:.1f} %<extra></extra>"
                         ),
                     )
                 )
+                fig_couverture.add_trace(
+                    go.Bar(
+                        y=["Couverture contractuelle"],
+                        x=[taux_sans_contrat],
+                        orientation="h",
+                        name="Sans contrat",
+                        marker_color="#F4D84E",
+                        customdata=[[nb_esi_sans_contrat_programme]],
+                        hovertemplate=(
+                            "<b>ESI sans contrat</b><br>"
+                            "ESI : %{customdata[0]:,}<br>"
+                            "Taux : %{x:.1f} %<extra></extra>"
+                        ),
+                    )
+                )
+
                 _layout_plotly(fig_couverture, 390)
                 fig_couverture.update_layout(
+                    barmode="stack",
                     xaxis=dict(
                         title=None,
                         ticksuffix=" %",
-                        range=[0, 108],
+                        range=[0, 100],
                         gridcolor=C_GRID,
                         tickfont=dict(size=11),
                     ),
                     yaxis=dict(
                         title=None,
+                        categoryorder="array",
+                        categoryarray=[
+                            "Couverture contractuelle",
+                            "Couverture des équipements",
+                        ],
                         automargin=True,
                         tickfont=dict(size=12),
                     ),
-                    margin=dict(l=18, r=70, t=16, b=45),
-                    showlegend=False,
-                    bargap=0.38,
+                    legend=dict(
+                        orientation="h",
+                        yanchor="bottom",
+                        y=-0.28,
+                        xanchor="center",
+                        x=0.5,
+                        font=dict(size=10),
+                    ),
+                    margin=dict(l=18, r=18, t=18, b=82),
+                    bargap=0.48,
                 )
                 st.plotly_chart(
                     fig_couverture,
                     use_container_width=True,
                     config=config_plotly("couverture_reelle_esi"),
                 )
+
+            st.caption(
+                "Équipements : base = ESI équipés. Contrats : base = tous les ESI."
+            )
 
         # st.markdown("<br>", unsafe_allow_html=True)
         # st.markdown(
@@ -6900,7 +6973,7 @@ elif vue_active == "Couverture":
 
         with export_types:
             dataframe_download(
-                "Télécharger la répartition des équipements",
+                "⇩ Répartition",
                 repartition_types,
                 "repartition_types_equipement.xlsx",
                 cle="export_repartition_types_equipement",
@@ -6908,7 +6981,7 @@ elif vue_active == "Couverture":
 
         with export_couverture:
             dataframe_download(
-                "Télécharger la synthèse de couverture",
+                "⇩ Couverture",
                 couverture_equipements,
                 "couverture_equipements.xlsx",
                 cle="export_couverture_equipements",
@@ -7328,7 +7401,24 @@ elif vue_active == "Alertes":
         alertes_esi_equipes_non_couverts = pd.DataFrame()
 
     # -------------------------------------------------
-    # 4. PLUSIEURS CONTRATS SUR LE MÊME MÉTIER
+    # 4. CONTRATS SANS RATTACHEMENT À UN PROGRAMME / ESI
+    # -------------------------------------------------
+    contrats_source_alertes = construire_contrats_uniques_source(
+        df_prestations=df_prestations,
+        df_contrats_rattaches=df_contrats,
+    )
+    if not contrats_source_alertes.empty and "esi_reference" in contrats_source_alertes.columns:
+        alertes_contrats_sans_rattachement = contrats_source_alertes[
+            contrats_source_alertes["esi_reference"].isna()
+            | contrats_source_alertes["esi_reference"].astype(str).str.strip().isin(
+                ["", "nan", "None", "<NA>", "Non renseigné"]
+            )
+        ].copy()
+    else:
+        alertes_contrats_sans_rattachement = pd.DataFrame()
+
+    # -------------------------------------------------
+    # 5. PLUSIEURS CONTRATS SUR LE MÊME MÉTIER
     # -------------------------------------------------
     alertes_multi_metier = df_esi_context[
         serie_numerique(df_esi_context, "esi_multi_meme_metier") > 0
@@ -7349,6 +7439,14 @@ elif vue_active == "Alertes":
         if "esi_reference" in alertes_esi_equipes_non_couverts.columns
         else len(alertes_esi_equipes_non_couverts)
     )
+    nb_contrats_sans_rattachement = int(
+        alertes_contrats_sans_rattachement["contract_reference"].nunique()
+        if (
+            not alertes_contrats_sans_rattachement.empty
+            and "contract_reference" in alertes_contrats_sans_rattachement.columns
+        )
+        else int(global_value(df_global, "contrats_non_rattaches_programme", 0))
+    )
     nb_esi_multi_metier = int(
         alertes_multi_metier["esi_reference"].nunique()
         if "esi_reference" in alertes_multi_metier.columns
@@ -7359,6 +7457,7 @@ elif vue_active == "Alertes":
         nb_contrats_expires
         + nb_esi_sans_contrat
         + nb_esi_equipes_non_couverts
+        + nb_contrats_sans_rattachement
         + nb_esi_multi_metier
     )
 
@@ -7379,37 +7478,47 @@ elif vue_active == "Alertes":
             "#F3CCD5",
         )
 
-    colonnes_alertes = st.columns(4)
+    ligne_alertes_1 = st.columns(3)
 
-    with colonnes_alertes[0]:
+    with ligne_alertes_1[0]:
         family_card(
             "Contrats actifs expirés",
             nb_contrats_expires,
-            "Contrats encore actifs alors que leur date de fin est dépassée.",
+            "Actifs malgré une date de fin dépassée.",
             C_RED,
         )
 
-    with colonnes_alertes[1]:
+    with ligne_alertes_1[1]:
         family_card(
             "ESI sans contrat actif",
             nb_esi_sans_contrat,
-            "Programmes ne disposant d'aucun contrat actif dans le périmètre.",
+            "Programmes sans contrat actif.",
             "#E5A000",
         )
 
-    with colonnes_alertes[2]:
+    with ligne_alertes_1[2]:
         family_card(
             "ESI équipés non couverts",
             nb_esi_equipes_non_couverts,
-            "ESI avec équipements mais sans couverture contractuelle exploitable.",
+            "Équipements sans couverture exploitable.",
             C_VIOLET,
         )
 
-    with colonnes_alertes[3]:
+    ligne_alertes_2 = st.columns(2)
+
+    with ligne_alertes_2[0]:
+        family_card(
+            "Contrats sans rattachement",
+            nb_contrats_sans_rattachement,
+            "Contrats non reliés à un programme / ESI.",
+            "#D06B2C",
+        )
+
+    with ligne_alertes_2[1]:
         family_card(
             "Multi-contrats même métier",
             nb_esi_multi_metier,
-            "ESI avec plusieurs contrats rattachés au même métier.",
+            "Plusieurs contrats sur un même métier.",
             C_NAVY,
         )
 
@@ -7426,6 +7535,7 @@ elif vue_active == "Alertes":
             "Contrats actifs expirés",
             "ESI sans contrat actif",
             "ESI équipés non couverts",
+            "Contrats sans rattachement",
             "Multi-contrats sur un même métier",
         ],
         key="type_alerte_detail",
@@ -7451,6 +7561,13 @@ elif vue_active == "Alertes":
         )
         nom_export = "esi_equipes_non_couverts.xlsx"
         message_vide = "Aucun ESI équipé sans couverture contractuelle."
+
+    elif type_alerte == "Contrats sans rattachement":
+        table_alerte = preparer_contrats_table(
+            alertes_contrats_sans_rattachement
+        )
+        nom_export = "contrats_sans_rattachement.xlsx"
+        message_vide = "Aucun contrat sans rattachement à un programme / ESI."
 
     else:
         table_alerte = preparer_esi_table(
@@ -7632,7 +7749,7 @@ else:
         repartition_anomalies,
         "Anomalie",
         "Objets concernés",
-        color=C_BLUE_LIGHT,
+        color=C_VIOLET,
         height_base=300,
     )
 
