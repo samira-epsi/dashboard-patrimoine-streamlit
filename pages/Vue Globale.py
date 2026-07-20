@@ -1323,7 +1323,14 @@ def inject_style():
         }
 
         .vg-anomaly-hero::after {
-            display: none;
+            content: "?";
+            position: absolute;
+            right: 26px;
+            top: -40px;
+            color: rgba(255,255,255,.07);
+            font-size: 145px;
+            line-height: 1;
+            font-weight: 900;
         }
 
         .vg-anomaly-hero-main {
@@ -1565,6 +1572,191 @@ def inject_style():
                 position: static;
                 display: inline-flex;
                 margin-top: 12px;
+            }
+        }
+
+
+        /* COUVERTURE — SYNTHÈSE MÉTIER */
+        .vg-coverage-summary {
+            position: relative;
+            overflow: hidden;
+            display: grid;
+            grid-template-columns: minmax(285px, 1.1fr) minmax(0, 2fr);
+            gap: 18px;
+            margin: 8px 0 18px 0;
+            padding: 18px;
+            background: linear-gradient(145deg, #F4FAFD 0%, #FFFFFF 70%);
+            border: 1px solid #DCE8F0;
+            border-radius: 18px;
+            box-shadow: 0 14px 30px -26px rgba(23, 59, 105, .36);
+        }
+
+        .vg-coverage-summary::after {
+            content: "";
+            position: absolute;
+            width: 150px;
+            height: 150px;
+            right: -72px;
+            top: -78px;
+            border-radius: 50%;
+            background: rgba(128, 205, 255, .16);
+        }
+
+        .vg-coverage-main {
+            position: relative;
+            z-index: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            min-height: 154px;
+            padding: 18px 20px;
+            color: #FFFFFF;
+            background:
+                radial-gradient(circle at 88% 12%, rgba(255,255,255,.16), transparent 26%),
+                linear-gradient(135deg, #173B69 0%, #285B8E 58%, #4A8DB8 100%);
+            border-radius: 15px;
+            box-sizing: border-box;
+        }
+
+        .vg-coverage-main-kicker {
+            display: inline-flex;
+            width: fit-content;
+            margin-bottom: 11px;
+            padding: 4px 9px;
+            color: rgba(255,255,255,.88);
+            background: rgba(255,255,255,.13);
+            border: 1px solid rgba(255,255,255,.2);
+            border-radius: 999px;
+            font-size: 9.5px;
+            font-weight: 850;
+            letter-spacing: .5px;
+            text-transform: uppercase;
+        }
+
+        .vg-coverage-main-line {
+            display: flex;
+            align-items: baseline;
+            flex-wrap: wrap;
+            gap: 9px;
+            margin-bottom: 8px;
+        }
+
+        .vg-coverage-main-value {
+            color: #FFFFFF;
+            font-size: 43px;
+            line-height: .95;
+            letter-spacing: -1.5px;
+            font-weight: 900;
+        }
+
+        .vg-coverage-main-label {
+            color: #FFFFFF;
+            font-size: 16px;
+            font-weight: 850;
+        }
+
+        .vg-coverage-main-help {
+            color: rgba(255,255,255,.8);
+            font-size: 11.5px;
+            line-height: 1.45;
+        }
+
+        .vg-coverage-kpi-grid {
+            position: relative;
+            z-index: 1;
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 10px;
+        }
+
+        .vg-coverage-kpi {
+            min-height: 72px;
+            padding: 12px 14px;
+            background: #FFFFFF;
+            border: 1px solid var(--border);
+            border-left: 4px solid var(--coverage-color);
+            border-radius: 12px;
+            box-shadow: 0 7px 18px -18px rgba(27, 36, 48, .22);
+            box-sizing: border-box;
+        }
+
+        .vg-coverage-kpi-label {
+            margin-bottom: 5px;
+            color: var(--text-muted);
+            font-size: 9.5px;
+            font-weight: 800;
+            letter-spacing: .4px;
+            text-transform: uppercase;
+        }
+
+        .vg-coverage-kpi-line {
+            display: flex;
+            align-items: baseline;
+            gap: 8px;
+        }
+
+        .vg-coverage-kpi-value {
+            color: var(--text-main);
+            font-size: 23px;
+            line-height: 1;
+            letter-spacing: -.5px;
+            font-weight: 900;
+        }
+
+        .vg-coverage-kpi-rate {
+            color: var(--coverage-color);
+            font-size: 11px;
+            font-weight: 850;
+        }
+
+        .vg-coverage-kpi-help {
+            margin-top: 5px;
+            color: var(--text-soft);
+            font-size: 10.5px;
+            line-height: 1.35;
+        }
+
+        .vg-coverage-context {
+            display: flex;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin: 0 0 18px 0;
+            padding: 9px 12px;
+            background: #FFFFFF;
+            border: 1px solid var(--border);
+            border-radius: 11px;
+        }
+
+        .vg-coverage-context-label {
+            color: var(--text-muted);
+            font-size: 10px;
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: .42px;
+        }
+
+        .vg-coverage-context-pill {
+            padding: 5px 8px;
+            color: var(--navy);
+            background: #F2F7FB;
+            border: 1px solid #DEEAF2;
+            border-radius: 999px;
+            font-size: 10.5px;
+            font-weight: 750;
+        }
+
+        @media screen and (max-width: 900px) {
+            .vg-coverage-summary {
+                grid-template-columns: 1fr;
+            }
+
+            .vg-coverage-kpi-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .vg-coverage-main {
+                min-height: 138px;
             }
         }
 
@@ -4298,6 +4490,8 @@ def anomaly_hero(
         '<span class="vg-anomaly-hero-title">anomalies détectées</span>'
         '</div>'
         '<div class="vg-anomaly-hero-help">'
+        'Des objets ne peuvent pas être replacés correctement '
+        'dans la hiérarchie patrimoine.'
         '</div>'
         '</div>'
         '</div>'
@@ -4360,6 +4554,83 @@ def anomaly_detail_intro(
         """,
         unsafe_allow_html=True,
     )
+
+
+
+def coverage_summary(
+    taux_couverture: float,
+    nb_esi_couverts: int,
+    nb_esi_sans_contrat: int,
+    nb_esi_equipes_non_couverts: int,
+    taux_equipements_couverts: float,
+    nb_equipements_couverts: int,
+):
+    html_summary = (
+        '<div class="vg-coverage-summary">'
+        '<div class="vg-coverage-main">'
+        '<div class="vg-coverage-main-kicker">Couverture actuelle</div>'
+        '<div class="vg-coverage-main-line">'
+        f'<span class="vg-coverage-main-value">{_safe(fmt_pourcentage(taux_couverture))}</span>'
+        '<span class="vg-coverage-main-label">des ESI couverts</span>'
+        '</div>'
+        '<div class="vg-coverage-main-help">'
+        'Part des ESI disposant d’au moins un contrat actif '
+        'sur le périmètre analysé.'
+        '</div>'
+        '</div>'
+        '<div class="vg-coverage-kpi-grid">'
+        '<div class="vg-coverage-kpi" style="--coverage-color:#008080;">'
+        '<div class="vg-coverage-kpi-label">ESI couverts</div>'
+        '<div class="vg-coverage-kpi-line">'
+        f'<span class="vg-coverage-kpi-value">{_safe(fmt_nombre(nb_esi_couverts))}</span>'
+        f'<span class="vg-coverage-kpi-rate">{_safe(fmt_pourcentage(taux_couverture))}</span>'
+        '</div>'
+        '<div class="vg-coverage-kpi-help">Au moins un contrat actif.</div>'
+        '</div>'
+        '<div class="vg-coverage-kpi" style="--coverage-color:#E5A000;">'
+        '<div class="vg-coverage-kpi-label">ESI sans contrat actif</div>'
+        '<div class="vg-coverage-kpi-line">'
+        f'<span class="vg-coverage-kpi-value">{_safe(fmt_nombre(nb_esi_sans_contrat))}</span>'
+        '</div>'
+        '<div class="vg-coverage-kpi-help">À vérifier selon le besoin métier.</div>'
+        '</div>'
+        '<div class="vg-coverage-kpi" style="--coverage-color:#432ABD;">'
+        '<div class="vg-coverage-kpi-label">ESI équipés non couverts</div>'
+        '<div class="vg-coverage-kpi-line">'
+        f'<span class="vg-coverage-kpi-value">{_safe(fmt_nombre(nb_esi_equipes_non_couverts))}</span>'
+        '</div>'
+        '<div class="vg-coverage-kpi-help">Équipements sans couverture exploitable.</div>'
+        '</div>'
+        '<div class="vg-coverage-kpi" style="--coverage-color:#2F7C6D;">'
+        '<div class="vg-coverage-kpi-label">Équipements avec contrat</div>'
+        '<div class="vg-coverage-kpi-line">'
+        f'<span class="vg-coverage-kpi-value">{_safe(fmt_nombre(nb_equipements_couverts))}</span>'
+        f'<span class="vg-coverage-kpi-rate">{_safe(fmt_pourcentage(taux_equipements_couverts))}</span>'
+        '</div>'
+        '<div class="vg-coverage-kpi-help">Contrat directement rattaché dans Intent.</div>'
+        '</div>'
+        '</div>'
+        '</div>'
+    )
+    st.markdown(html_summary, unsafe_allow_html=True)
+
+
+def coverage_context(
+    contrats: int,
+    esi: int,
+    logements: int,
+    equipements: int,
+):
+    contenu = (
+        '<div class="vg-coverage-context">'
+        '<span class="vg-coverage-context-label">Périmètre</span>'
+        f'<span class="vg-coverage-context-pill">{_safe(fmt_nombre(esi))} ESI</span>'
+        f'<span class="vg-coverage-context-pill">{_safe(fmt_nombre(logements))} logements</span>'
+        f'<span class="vg-coverage-context-pill">{_safe(fmt_nombre(equipements))} équipements</span>'
+        f'<span class="vg-coverage-context-pill">{_safe(fmt_nombre(contrats))} contrats</span>'
+        '</div>'
+    )
+    st.markdown(contenu, unsafe_allow_html=True)
 
 
 def status_banner(
@@ -6586,51 +6857,126 @@ elif vue_active == "Couverture":
         logements_pill = logements_help = ""
         equipements_pill = equipements_help = ""
 
-    cartes_compactes = (
-    statut_selectionne in {
-        "active",
-        "inactive",
-    }
-    or perimetre_filtre_actif
-)
+    # =====================================================
+    # SYNTHÈSE MÉTIER DE LA COUVERTURE
+    # =====================================================
 
-    c1, c2, c3, c4 = st.columns(4)
-    with c1:
-        kpi_card(
-            contrats_label,
-            contrats_value,
-            contrats_pill,
-            contrats_help,
-            accent=C_NAVY,
-            compact=cartes_compactes,
+    df_esi_synthese_couverture = dedupliquer_esi(df_esi_context)
+    total_esi_couverture = len(
+        liste_refs_valides(
+            df_esi_synthese_couverture,
+            "esi_reference",
         )
-    with c2:
-        kpi_card(
-            programmes_label,
-            programmes_value,
-            programmes_pill,
-            programmes_help,
-            accent=C_NAVY,
-            compact=cartes_compactes,
+    )
+
+    if statut_selectionne == "inactive":
+        refs_contrats_couverture = set(
+            liste_refs_valides(
+                df_contrats_kpi,
+                "esi_reference",
+            )
         )
-    with c3:
-        kpi_card(
-            logements_label,
-            logements_value,
-            logements_pill,
-            logements_help,
-            accent=C_PINK,
-            compact=cartes_compactes,
+        refs_esi_couverture = set(
+            liste_refs_valides(
+                df_esi_synthese_couverture,
+                "esi_reference",
+            )
         )
-    with c4:
-        kpi_card(
-            equipements_label,
-            equipements_value,
-            equipements_pill,
-            equipements_help,
-            accent=C_VIOLET,
-            compact=cartes_compactes,
+        nb_esi_couverts_synthese = len(
+            refs_contrats_couverture & refs_esi_couverture
         )
+    else:
+        colonne_couverture_esi = trouver_colonne(
+            df_esi_synthese_couverture,
+            ["esi_couvert", "nb_contrats_actifs"],
+        )
+        if colonne_couverture_esi:
+            nb_esi_couverts_synthese = int(
+                (
+                    serie_numerique(
+                        df_esi_synthese_couverture,
+                        colonne_couverture_esi,
+                    ) > 0
+                ).sum()
+            )
+        else:
+            nb_esi_couverts_synthese = 0
+
+    nb_esi_sans_contrat_synthese = max(
+        total_esi_couverture - nb_esi_couverts_synthese,
+        0,
+    )
+    taux_couverture_synthese = (
+        nb_esi_couverts_synthese / total_esi_couverture * 100
+        if total_esi_couverture
+        else 0.0
+    )
+
+    colonne_non_couvert_synthese = trouver_colonne(
+        df_esi_synthese_couverture,
+        [
+            "esi_avec_equipement_sans_couverture_valide",
+            "esi_avec_equipement_sans_contrat_equipement",
+        ],
+    )
+    nb_esi_equipes_non_couverts_synthese = (
+        int(
+            (
+                serie_numerique(
+                    df_esi_synthese_couverture,
+                    colonne_non_couvert_synthese,
+                ) > 0
+            ).sum()
+        )
+        if colonne_non_couvert_synthese
+        else 0
+    )
+
+    couverture_equipements_synthese = (
+        construire_couverture_reelle_equipements(
+            df_equipements=df_equipements_couverture_kpi,
+            statut=statut_selectionne,
+        )
+    )
+
+    if couverture_equipements_synthese.empty:
+        nb_equipements_couverts_synthese = 0
+        total_equipements_synthese = 0
+    else:
+        ligne_equipements_couverts = couverture_equipements_synthese[
+            couverture_equipements_synthese["Couverture"]
+            == "Équipements avec contrat"
+        ]
+        nb_equipements_couverts_synthese = int(
+            ligne_equipements_couverts["Équipements"].sum()
+        )
+        total_equipements_synthese = int(
+            couverture_equipements_synthese["Équipements"].sum()
+        )
+
+    taux_equipements_couverts_synthese = (
+        nb_equipements_couverts_synthese
+        / total_equipements_synthese
+        * 100
+        if total_equipements_synthese
+        else 0.0
+    )
+
+    coverage_summary(
+        taux_couverture=taux_couverture_synthese,
+        nb_esi_couverts=nb_esi_couverts_synthese,
+        nb_esi_sans_contrat=nb_esi_sans_contrat_synthese,
+        nb_esi_equipes_non_couverts=nb_esi_equipes_non_couverts_synthese,
+        taux_equipements_couverts=taux_equipements_couverts_synthese,
+        nb_equipements_couverts=nb_equipements_couverts_synthese,
+    )
+
+    coverage_context(
+        contrats=contrats_value,
+        esi=programmes_value,
+        logements=logements_value,
+        equipements=equipements_value,
+    )
 
     if statut_selectionne is not None:
         statut_texte = "actifs" if statut_selectionne == "active" else "inactifs"
@@ -7302,7 +7648,7 @@ elif vue_active == "Couverture":
         presence_metiers = construire_presence_metiers(
             df_contrats=df_contrats_kpi,
             total_esi=total_esi_situation,
-            top_n=15,
+            top_n=8,
         )
 
         repartition_types = construire_repartition_types_equipement(
@@ -7905,7 +8251,7 @@ elif vue_active == "Couverture":
 
 
     with st.expander(
-        "Contrats par métier",
+        "Couverture par métier",
         expanded=False,
     ):
         # =====================================================
@@ -7913,8 +8259,8 @@ elif vue_active == "Couverture":
         # =====================================================
 
         section(
-            "Contrats par métier",
-            "Pour chaque métier, on compte les ESI qui possèdent au moins un contrat de ce métier.",
+            "Couverture par métier",
+            "Les principaux métiers présents sur les ESI du périmètre.",
         )
 
         # -----------------------------------------------------
