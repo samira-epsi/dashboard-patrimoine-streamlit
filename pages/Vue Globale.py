@@ -990,7 +990,295 @@ def inject_style():
             margin-top: 2px;
         }
 
-                /* RENVOI COUVERTURE VERS ALERTES */
+        
+        /* PAGE ALERTES — VERSION IMPACTANTE */
+        .vg-alerts-hero {
+            position: relative;
+            overflow: hidden;
+            display: grid;
+            grid-template-columns: minmax(0, 1.7fr) minmax(260px, 0.8fr);
+            gap: 24px;
+            align-items: center;
+            margin: 4px 0 20px 0;
+            padding: 24px 26px;
+            color: #FFFFFF;
+            background:
+                radial-gradient(circle at 88% 12%, rgba(255,255,255,.18), transparent 25%),
+                linear-gradient(135deg, #C80E43 0%, #E5114D 56%, #F34A73 100%);
+            border: 1px solid #C80E43;
+            border-radius: 19px;
+            box-shadow: 0 18px 38px -24px rgba(156, 15, 58, .65);
+        }
+
+        .vg-alerts-hero::after {
+            content: "!";
+            position: absolute;
+            right: 28px;
+            top: -36px;
+            color: rgba(255,255,255,.08);
+            font-size: 190px;
+            line-height: 1;
+            font-weight: 900;
+        }
+
+        .vg-alerts-hero-main,
+        .vg-alerts-hero-side {
+            position: relative;
+            z-index: 1;
+        }
+
+        .vg-alerts-hero-kicker {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 8px;
+            padding: 5px 10px;
+            color: #FFFFFF;
+            background: rgba(255,255,255,.15);
+            border: 1px solid rgba(255,255,255,.22);
+            border-radius: 999px;
+            font-size: 10.5px;
+            font-weight: 800;
+            letter-spacing: .55px;
+            text-transform: uppercase;
+        }
+
+        .vg-alerts-hero-value {
+            color: #FFFFFF;
+            font-size: 47px;
+            line-height: .95;
+            letter-spacing: -1.6px;
+            font-weight: 900;
+            margin-bottom: 10px;
+        }
+
+        .vg-alerts-hero-title {
+            color: #FFFFFF;
+            font-size: 18px;
+            font-weight: 850;
+            margin-bottom: 7px;
+        }
+
+        .vg-alerts-hero-help {
+            max-width: 720px;
+            color: rgba(255,255,255,.83);
+            font-size: 12.5px;
+            line-height: 1.55;
+            font-weight: 550;
+        }
+
+        .vg-alerts-hero-side {
+            display: grid;
+            gap: 9px;
+        }
+
+        .vg-alerts-hero-stat {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 14px;
+            padding: 10px 12px;
+            background: rgba(255,255,255,.12);
+            border: 1px solid rgba(255,255,255,.19);
+            border-radius: 11px;
+            backdrop-filter: blur(5px);
+        }
+
+        .vg-alerts-hero-stat-label {
+            color: rgba(255,255,255,.82);
+            font-size: 11px;
+            font-weight: 700;
+        }
+
+        .vg-alerts-hero-stat-value {
+            color: #FFFFFF;
+            font-size: 16px;
+            font-weight: 900;
+            white-space: nowrap;
+        }
+
+        .vg-alert-zone-title {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin: 20px 0 10px 0;
+            color: var(--text-main);
+            font-size: 12px;
+            font-weight: 850;
+            letter-spacing: .65px;
+            text-transform: uppercase;
+        }
+
+        .vg-alert-zone-title::before {
+            content: "";
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: var(--zone-color);
+            box-shadow: 0 0 0 5px color-mix(in srgb, var(--zone-color) 12%, transparent);
+        }
+
+        .vg-impact-alert-card {
+            position: relative;
+            overflow: hidden;
+            min-height: 176px;
+            padding: 18px 19px 16px 19px;
+            background: linear-gradient(
+                145deg,
+                color-mix(in srgb, var(--alert-color) 8%, #FFFFFF),
+                #FFFFFF 64%
+            );
+            border: 1px solid color-mix(in srgb, var(--alert-color) 22%, #E7E3E8);
+            border-top: 5px solid var(--alert-color);
+            border-radius: 16px;
+            box-shadow: 0 12px 26px -22px color-mix(in srgb, var(--alert-color) 55%, transparent);
+            box-sizing: border-box;
+        }
+
+        .vg-impact-alert-card::after {
+            content: "";
+            position: absolute;
+            width: 80px;
+            height: 80px;
+            right: -34px;
+            top: -34px;
+            border-radius: 50%;
+            background: color-mix(in srgb, var(--alert-color) 10%, transparent);
+        }
+
+        .vg-impact-alert-top {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+
+        .vg-impact-alert-icon {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 34px;
+            height: 34px;
+            color: var(--alert-color);
+            background: #FFFFFF;
+            border: 1px solid color-mix(in srgb, var(--alert-color) 25%, #E7E3E8);
+            border-radius: 10px;
+            font-size: 16px;
+            font-weight: 900;
+        }
+
+        .vg-impact-alert-badge {
+            padding: 5px 9px;
+            color: var(--alert-color);
+            background: color-mix(in srgb, var(--alert-color) 10%, #FFFFFF);
+            border: 1px solid color-mix(in srgb, var(--alert-color) 20%, #FFFFFF);
+            border-radius: 999px;
+            font-size: 9.5px;
+            font-weight: 850;
+            letter-spacing: .4px;
+            text-transform: uppercase;
+        }
+
+        .vg-impact-alert-value {
+            color: var(--text-main);
+            font-size: 36px;
+            line-height: 1;
+            letter-spacing: -1px;
+            font-weight: 900;
+            margin-bottom: 7px;
+        }
+
+        .vg-impact-alert-title {
+            color: var(--text-main);
+            font-size: 14px;
+            font-weight: 850;
+            line-height: 1.25;
+            margin-bottom: 7px;
+        }
+
+        .vg-impact-alert-action {
+            color: var(--text-soft);
+            font-size: 11.5px;
+            line-height: 1.45;
+            font-weight: 550;
+        }
+
+        .vg-alert-detail-intro {
+            margin: 12px 0 14px 0;
+            padding: 15px 17px;
+            background: #FFFFFF;
+            border: 1px solid var(--border);
+            border-left: 5px solid var(--detail-color);
+            border-radius: 13px;
+            box-shadow: 0 8px 20px -19px rgba(27, 36, 48, .25);
+        }
+
+        .vg-alert-detail-intro-title {
+            color: var(--text-main);
+            font-size: 14px;
+            font-weight: 850;
+            margin-bottom: 5px;
+        }
+
+        .vg-alert-detail-intro-help {
+            color: var(--text-soft);
+            font-size: 12px;
+            line-height: 1.5;
+        }
+
+        .st-key-alertes_navigation_rapide div[role="radiogroup"] {
+            display: flex !important;
+            flex-wrap: wrap !important;
+            gap: 7px !important;
+            padding: 6px !important;
+            background: #F5F6F8 !important;
+            border: 1px solid var(--border) !important;
+            border-radius: 13px !important;
+        }
+
+        .st-key-alertes_navigation_rapide div[role="radiogroup"] label {
+            min-height: 40px !important;
+            padding: 8px 12px !important;
+            color: var(--text-soft) !important;
+            background: #FFFFFF !important;
+            border: 1px solid transparent !important;
+            border-radius: 9px !important;
+            font-size: 11px !important;
+            font-weight: 750 !important;
+        }
+
+        .st-key-alertes_navigation_rapide div[role="radiogroup"] label:has(input:checked) {
+            color: #FFFFFF !important;
+            background: var(--3f-red) !important;
+            border-color: var(--3f-red) !important;
+        }
+
+        .st-key-alertes_navigation_rapide div[role="radiogroup"] label:has(input:checked) * {
+            color: #FFFFFF !important;
+        }
+
+        .st-key-alertes_navigation_rapide div[role="radiogroup"] label input[type="radio"],
+        .st-key-alertes_navigation_rapide div[role="radiogroup"] label div[data-baseweb="radio"] > div:first-child {
+            display: none !important;
+        }
+
+        @media screen and (max-width: 900px) {
+            .vg-alerts-hero {
+                grid-template-columns: 1fr;
+                padding: 21px 20px;
+            }
+
+            .vg-alerts-hero-value {
+                font-size: 39px;
+            }
+
+            .vg-impact-alert-card {
+                min-height: 158px;
+            }
+        }
+
+        /* RENVOI COUVERTURE VERS ALERTES */
         .vg-coverage-alert {
             display: flex;
             align-items: center;
@@ -3613,6 +3901,97 @@ def family_card(
     )
 
 
+
+def impact_alert_card(
+    title: str,
+    value: int,
+    action: str,
+    color: str,
+    badge: str,
+    icon: str = "!",
+):
+    st.markdown(
+        f"""
+        <div class="vg-impact-alert-card" style="--alert-color:{_safe(color)};">
+            <div class="vg-impact-alert-top">
+                <span class="vg-impact-alert-icon">{_safe(icon)}</span>
+                <span class="vg-impact-alert-badge">{_safe(badge)}</span>
+            </div>
+            <div class="vg-impact-alert-value">{_safe(fmt_nombre(value))}</div>
+            <div class="vg-impact-alert-title">{_safe(title)}</div>
+            <div class="vg-impact-alert-action">{_safe(action)}</div>
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
+
+
+def alert_zone_title(title: str, color: str):
+    st.markdown(
+        f"""
+        <div class="vg-alert-zone-title" style="--zone-color:{_safe(color)};">
+            {_safe(title)}
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
+
+
+def alerts_hero(
+    total: int,
+    prioritaires: int,
+    a_traiter: int,
+    a_controler: int,
+):
+    st.markdown(
+        f"""
+        <div class="vg-alerts-hero">
+            <div class="vg-alerts-hero-main">
+                <div class="vg-alerts-hero-kicker">Centre de vigilance</div>
+                <div class="vg-alerts-hero-value">{_safe(fmt_nombre(total))}</div>
+                <div class="vg-alerts-hero-title">alertes détectées</div>
+                <div class="vg-alerts-hero-help">
+                    Des situations nécessitent une action, une régularisation
+                    ou un contrôle métier sur le périmètre sélectionné.
+                </div>
+            </div>
+
+            <div class="vg-alerts-hero-side">
+                <div class="vg-alerts-hero-stat">
+                    <span class="vg-alerts-hero-stat-label">Prioritaires</span>
+                    <span class="vg-alerts-hero-stat-value">{_safe(fmt_nombre(prioritaires))}</span>
+                </div>
+                <div class="vg-alerts-hero-stat">
+                    <span class="vg-alerts-hero-stat-label">À traiter</span>
+                    <span class="vg-alerts-hero-stat-value">{_safe(fmt_nombre(a_traiter))}</span>
+                </div>
+                <div class="vg-alerts-hero-stat">
+                    <span class="vg-alerts-hero-stat-label">À contrôler</span>
+                    <span class="vg-alerts-hero-stat-value">{_safe(fmt_nombre(a_controler))}</span>
+                </div>
+            </div>
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
+
+
+def alert_detail_intro(
+    title: str,
+    message: str,
+    color: str,
+):
+    st.markdown(
+        f"""
+        <div class="vg-alert-detail-intro" style="--detail-color:{_safe(color)};">
+            <div class="vg-alert-detail-intro-title">{_safe(title)}</div>
+            <div class="vg-alert-detail-intro-help">{_safe(message)}</div>
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
+
+
 def status_banner(
     title: str,
     help_text: str,
@@ -6090,13 +6469,12 @@ elif vue_active == "Couverture":
             donnees_equipements = pd.DataFrame(
                 {
                     "Situation": [
-                        "Sans équipement",
                         "Avec équipement",
+                        "Sans équipement",
                     ],
                     "ESI": [
-                        nb_esi_sans_equipement,
                         nb_esi_avec_equipement,
-                
+                        nb_esi_sans_equipement,
                     ],
                 }
             )
@@ -7366,7 +7744,7 @@ elif vue_active == "Couverture":
 elif vue_active == "Alertes":
     section(
         "Alertes opérationnelles",
-        "Les situations concrètes qui nécessitent une vérification ou une action métier.",
+        "Prioriser les situations qui nécessitent une action, une régularisation ou un contrôle.",
     )
 
     # -------------------------------------------------
@@ -7408,12 +7786,17 @@ elif vue_active == "Alertes":
         df_prestations=df_prestations,
         df_contrats_rattaches=df_contrats,
     )
-    if not contrats_source_alertes.empty and "esi_reference" in contrats_source_alertes.columns:
+
+    if (
+        not contrats_source_alertes.empty
+        and "esi_reference" in contrats_source_alertes.columns
+    ):
         alertes_contrats_sans_rattachement = contrats_source_alertes[
             contrats_source_alertes["esi_reference"].isna()
-            | contrats_source_alertes["esi_reference"].astype(str).str.strip().isin(
-                ["", "nan", "None", "<NA>", "Non renseigné"]
-            )
+            | contrats_source_alertes["esi_reference"]
+                .astype(str)
+                .str.strip()
+                .isin(["", "nan", "None", "<NA>", "Non renseigné"])
         ].copy()
     else:
         alertes_contrats_sans_rattachement = pd.DataFrame()
@@ -7430,16 +7813,19 @@ elif vue_active == "Alertes":
         if "contract_reference" in alertes_contrats_expires.columns
         else len(alertes_contrats_expires)
     )
+
     nb_esi_sans_contrat = int(
         alertes_esi_sans_contrat["esi_reference"].nunique()
         if "esi_reference" in alertes_esi_sans_contrat.columns
         else len(alertes_esi_sans_contrat)
     )
+
     nb_esi_equipes_non_couverts = int(
         alertes_esi_equipes_non_couverts["esi_reference"].nunique()
         if "esi_reference" in alertes_esi_equipes_non_couverts.columns
         else len(alertes_esi_equipes_non_couverts)
     )
+
     nb_contrats_sans_rattachement = int(
         alertes_contrats_sans_rattachement["contract_reference"].nunique()
         if (
@@ -7448,18 +7834,25 @@ elif vue_active == "Alertes":
         )
         else int(global_value(df_global, "contrats_non_rattaches_programme", 0))
     )
+
     nb_esi_multi_metier = int(
         alertes_multi_metier["esi_reference"].nunique()
         if "esi_reference" in alertes_multi_metier.columns
         else len(alertes_multi_metier)
     )
 
-    total_alertes = (
+    nb_alertes_prioritaires = (
         nb_contrats_expires
-        + nb_esi_sans_contrat
-        + nb_esi_equipes_non_couverts
         + nb_contrats_sans_rattachement
-        + nb_esi_multi_metier
+        + nb_esi_equipes_non_couverts
+    )
+    nb_alertes_a_traiter = nb_esi_sans_contrat
+    nb_alertes_a_controler = nb_esi_multi_metier
+
+    total_alertes = (
+        nb_alertes_prioritaires
+        + nb_alertes_a_traiter
+        + nb_alertes_a_controler
     )
 
     if total_alertes == 0:
@@ -7471,76 +7864,100 @@ elif vue_active == "Alertes":
             "#CFECE3",
         )
     else:
-        status_banner(
-            f"{fmt_nombre(total_alertes)} situation(s) à vérifier",
-            "Les alertes sont comptées par contrat ou par ESI selon leur nature.",
-            C_RED,
-            "#FFF3F5",
-            "#F3CCD5",
+        alerts_hero(
+            total=total_alertes,
+            prioritaires=nb_alertes_prioritaires,
+            a_traiter=nb_alertes_a_traiter,
+            a_controler=nb_alertes_a_controler,
         )
 
-    ligne_alertes_1 = st.columns(3)
+    # -------------------------------------------------
+    # ALERTES PRIORITAIRES
+    # -------------------------------------------------
+    alert_zone_title("Prioritaires — action recommandée", C_RED)
 
-    with ligne_alertes_1[0]:
-        family_card(
+    ligne_prioritaire = st.columns(3)
+
+    with ligne_prioritaire[0]:
+        impact_alert_card(
             "Contrats actifs expirés",
             nb_contrats_expires,
-            "Actifs malgré une date de fin dépassée.",
+            "Prolonger, désactiver ou corriger le statut.",
             C_RED,
+            "Prioritaire",
+            "!",
         )
 
-    with ligne_alertes_1[1]:
-        family_card(
-            "ESI sans contrat actif",
-            nb_esi_sans_contrat,
-            "Programmes sans contrat actif.",
-            "#E5A000",
-        )
-
-    with ligne_alertes_1[2]:
-        family_card(
-            "ESI équipés non couverts",
-            nb_esi_equipes_non_couverts,
-            "Équipements sans couverture exploitable.",
-            C_VIOLET,
-        )
-
-    ligne_alertes_2 = st.columns(2)
-
-    with ligne_alertes_2[0]:
-        family_card(
+    with ligne_prioritaire[1]:
+        impact_alert_card(
             "Contrats sans rattachement",
             nb_contrats_sans_rattachement,
-            "Contrats non reliés à un programme / ESI.",
+            "Rattacher le contrat à un programme ou un ESI.",
             "#D06B2C",
+            "Prioritaire",
+            "↗",
         )
 
-    with ligne_alertes_2[1]:
-        family_card(
+    with ligne_prioritaire[2]:
+        impact_alert_card(
+            "ESI équipés non couverts",
+            nb_esi_equipes_non_couverts,
+            "Vérifier le contrat couvrant les équipements.",
+            C_VIOLET,
+            "Prioritaire",
+            "◆",
+        )
+
+    # -------------------------------------------------
+    # À TRAITER / À CONTRÔLER
+    # -------------------------------------------------
+    alert_zone_title("À traiter et à contrôler", "#E5A000")
+
+    ligne_secondaire = st.columns(2)
+
+    with ligne_secondaire[0]:
+        impact_alert_card(
+            "ESI sans contrat actif",
+            nb_esi_sans_contrat,
+            "Confirmer si l'absence de contrat est normale.",
+            "#E5A000",
+            "À traiter",
+            "•",
+        )
+
+    with ligne_secondaire[1]:
+        impact_alert_card(
             "Multi-contrats même métier",
             nb_esi_multi_metier,
-            "Plusieurs contrats sur un même métier.",
+            "Identifier les éventuels chevauchements.",
             C_NAVY,
+            "À contrôler",
+            "≡",
         )
 
     st.markdown("<br>", unsafe_allow_html=True)
 
     section(
-        "Détail des alertes",
-        "Sélectionne une alerte pour afficher les objets concernés et les exporter.",
+        "Traiter les alertes",
+        "Choisis une catégorie pour comprendre la situation et afficher les objets concernés.",
     )
 
-    type_alerte = st.selectbox(
-        "Alerte à analyser",
-        [
-            "Contrats actifs expirés",
-            "ESI sans contrat actif",
-            "ESI équipés non couverts",
-            "Contrats sans rattachement",
-            "Multi-contrats sur un même métier",
-        ],
-        key="type_alerte_detail",
+    libelles_alertes = {
+        "Expirés": "Contrats actifs expirés",
+        "Sans contrat": "ESI sans contrat actif",
+        "Non couverts": "ESI équipés non couverts",
+        "Non rattachés": "Contrats sans rattachement",
+        "Multi-contrats": "Multi-contrats sur un même métier",
+    }
+
+    choix_court = st.radio(
+        "Catégorie d'alerte",
+        list(libelles_alertes.keys()),
+        horizontal=True,
+        label_visibility="collapsed",
+        key="alertes_navigation_rapide",
     )
+    type_alerte = libelles_alertes[choix_court]
 
     if type_alerte == "Contrats actifs expirés":
         table_alerte = preparer_contrats_table(
@@ -7548,6 +7965,15 @@ elif vue_active == "Alertes":
         )
         nom_export = "contrats_actifs_expires.xlsx"
         message_vide = "Aucun contrat actif avec une date de fin dépassée."
+        detail_title = (
+            f"{fmt_nombre(nb_contrats_expires)} contrat(s) "
+            "encore actif(s) malgré une date de fin dépassée"
+        )
+        detail_message = (
+            "Ces contrats doivent être prolongés, désactivés ou corrigés "
+            "afin que leur statut corresponde à leur période de validité."
+        )
+        detail_color = C_RED
 
     elif type_alerte == "ESI sans contrat actif":
         table_alerte = preparer_esi_table(
@@ -7555,6 +7981,15 @@ elif vue_active == "Alertes":
         )
         nom_export = "esi_sans_contrat_actif.xlsx"
         message_vide = "Aucun ESI sans contrat actif."
+        detail_title = (
+            f"{fmt_nombre(nb_esi_sans_contrat)} ESI "
+            "sans contrat actif"
+        )
+        detail_message = (
+            "Vérifiez si l'absence de contrat est normale ou si un "
+            "rattachement contractuel doit être créé ou réactivé."
+        )
+        detail_color = "#E5A000"
 
     elif type_alerte == "ESI équipés non couverts":
         table_alerte = preparer_esi_table(
@@ -7562,6 +7997,15 @@ elif vue_active == "Alertes":
         )
         nom_export = "esi_equipes_non_couverts.xlsx"
         message_vide = "Aucun ESI équipé sans couverture contractuelle."
+        detail_title = (
+            f"{fmt_nombre(nb_esi_equipes_non_couverts)} ESI équipé(s) "
+            "sans couverture exploitable"
+        )
+        detail_message = (
+            "Ces ESI disposent d'équipements mais aucun contrat exploitable "
+            "ne couvre actuellement les équipements concernés."
+        )
+        detail_color = C_VIOLET
 
     elif type_alerte == "Contrats sans rattachement":
         table_alerte = preparer_contrats_table(
@@ -7569,6 +8013,15 @@ elif vue_active == "Alertes":
         )
         nom_export = "contrats_sans_rattachement.xlsx"
         message_vide = "Aucun contrat sans rattachement à un programme / ESI."
+        detail_title = (
+            f"{fmt_nombre(nb_contrats_sans_rattachement)} contrat(s) "
+            "sans rattachement patrimonial"
+        )
+        detail_message = (
+            "Ces contrats existent dans Intent mais ne sont reliés à aucun "
+            "programme ou ESI, ce qui empêche d'analyser correctement leur couverture."
+        )
+        detail_color = "#D06B2C"
 
     else:
         table_alerte = preparer_esi_table(
@@ -7576,6 +8029,22 @@ elif vue_active == "Alertes":
         )
         nom_export = "esi_multi_contrats_meme_metier.xlsx"
         message_vide = "Aucun ESI avec plusieurs contrats sur le même métier."
+        detail_title = (
+            f"{fmt_nombre(nb_esi_multi_metier)} ESI présentent "
+            "plusieurs contrats sur un même métier"
+        )
+        detail_message = (
+            "Ces situations ne sont pas automatiquement anormales. "
+            "Elles doivent être contrôlées pour identifier les chevauchements "
+            "réels et les cas métier légitimes."
+        )
+        detail_color = C_NAVY
+
+    alert_detail_intro(
+        detail_title,
+        detail_message,
+        detail_color,
+    )
 
     recherche_alerte = st.text_input(
         "Rechercher dans le détail",
