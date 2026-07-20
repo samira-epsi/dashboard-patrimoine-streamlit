@@ -7630,7 +7630,7 @@ else:
         repartition_anomalies,
         "Anomalie",
         "Objets concernés",
-        color=C_VIOLET,
+        color=C_BLUE_LIGHT,
         height_base=300,
     )
 
