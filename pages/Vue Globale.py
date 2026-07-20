@@ -6094,8 +6094,9 @@ elif vue_active == "Couverture":
                         "Avec équipement",
                     ],
                     "ESI": [
-                        nb_esi_avec_equipement,
                         nb_esi_sans_equipement,
+                        nb_esi_avec_equipement,
+                
                     ],
                 }
             )
