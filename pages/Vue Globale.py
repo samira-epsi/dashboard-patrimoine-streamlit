@@ -1307,6 +1307,321 @@ def inject_style():
             }
         }
 
+
+        /* PAGE ANOMALIES — VERSION IMPACTANTE */
+        .vg-anomaly-hero {
+            position: relative;
+            overflow: hidden;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 24px;
+            margin: 4px 0 18px 0;
+            padding: 20px 22px;
+            background:
+                radial-gradient(circle at 92% 8%, rgba(255,255,255,.22), transparent 24%),
+                linear-gradient(135deg, #3226A8 0%, #432ABD 52%, #6857D8 100%);
+            border: 1px solid #3827A8;
+            border-radius: 17px;
+            box-shadow: 0 15px 32px -25px rgba(67, 42, 189, .65);
+        }
+
+        .vg-anomaly-hero::after {
+            content: "?";
+            position: absolute;
+            right: 26px;
+            top: -40px;
+            color: rgba(255,255,255,.07);
+            font-size: 145px;
+            line-height: 1;
+            font-weight: 900;
+        }
+
+        .vg-anomaly-hero-main,
+        .vg-anomaly-hero-focus {
+            position: relative;
+            z-index: 1;
+        }
+
+        .vg-anomaly-hero-kicker {
+            display: inline-flex;
+            align-items: center;
+            margin-bottom: 7px;
+            padding: 4px 9px;
+            color: #FFFFFF;
+            background: rgba(255,255,255,.14);
+            border: 1px solid rgba(255,255,255,.21);
+            border-radius: 999px;
+            font-size: 9.5px;
+            font-weight: 850;
+            letter-spacing: .5px;
+            text-transform: uppercase;
+        }
+
+        .vg-anomaly-hero-line {
+            display: flex;
+            align-items: baseline;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-bottom: 5px;
+        }
+
+        .vg-anomaly-hero-value {
+            color: #FFFFFF;
+            font-size: 36px;
+            line-height: 1;
+            letter-spacing: -1.1px;
+            font-weight: 900;
+        }
+
+        .vg-anomaly-hero-title {
+            color: #FFFFFF;
+            font-size: 16px;
+            font-weight: 850;
+        }
+
+        .vg-anomaly-hero-help {
+            max-width: 650px;
+            color: rgba(255,255,255,.83);
+            font-size: 11.5px;
+            line-height: 1.45;
+            font-weight: 550;
+        }
+
+        .vg-anomaly-hero-focus {
+            min-width: 250px;
+            padding: 12px 14px;
+            background: rgba(255,255,255,.13);
+            border: 1px solid rgba(255,255,255,.2);
+            border-radius: 12px;
+            backdrop-filter: blur(5px);
+        }
+
+        .vg-anomaly-hero-focus-label {
+            display: block;
+            margin-bottom: 4px;
+            color: rgba(255,255,255,.78);
+            font-size: 9.5px;
+            font-weight: 800;
+            letter-spacing: .4px;
+            text-transform: uppercase;
+        }
+
+        .vg-anomaly-hero-focus-value {
+            display: block;
+            margin-bottom: 3px;
+            color: #FFFFFF;
+            font-size: 24px;
+            line-height: 1;
+            font-weight: 900;
+        }
+
+        .vg-anomaly-hero-focus-help {
+            color: rgba(255,255,255,.82);
+            font-size: 10.5px;
+            line-height: 1.35;
+        }
+
+        .vg-anomaly-main-card {
+            position: relative;
+            overflow: hidden;
+            min-height: 205px;
+            padding: 22px 23px;
+            background:
+                radial-gradient(circle at 90% 10%, rgba(229,17,77,.08), transparent 28%),
+                linear-gradient(145deg, #FFF3F7 0%, #FFFFFF 72%);
+            border: 1px solid #F0C8D6;
+            border-left: 6px solid var(--3f-red);
+            border-radius: 17px;
+            box-shadow: 0 14px 30px -24px rgba(229, 17, 77, .45);
+            box-sizing: border-box;
+        }
+
+        .vg-anomaly-main-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 7px;
+            margin-bottom: 14px;
+            padding: 5px 10px;
+            color: #A3184A;
+            background: #FFFFFF;
+            border: 1px solid #EFC8D6;
+            border-radius: 999px;
+            font-size: 9.5px;
+            font-weight: 850;
+            letter-spacing: .42px;
+            text-transform: uppercase;
+        }
+
+        .vg-anomaly-main-value {
+            color: var(--text-main);
+            font-size: 47px;
+            line-height: .95;
+            letter-spacing: -1.7px;
+            font-weight: 900;
+            margin-bottom: 9px;
+        }
+
+        .vg-anomaly-main-title {
+            color: var(--text-main);
+            font-size: 17px;
+            font-weight: 900;
+            margin-bottom: 8px;
+        }
+
+        .vg-anomaly-main-help {
+            max-width: 650px;
+            color: var(--text-soft);
+            font-size: 12px;
+            line-height: 1.5;
+            font-weight: 550;
+        }
+
+        .vg-anomaly-main-share {
+            position: absolute;
+            right: 22px;
+            top: 22px;
+            padding: 8px 10px;
+            color: #A3184A;
+            background: #FFFFFF;
+            border: 1px solid #EFC8D6;
+            border-radius: 10px;
+            font-size: 12px;
+            font-weight: 900;
+        }
+
+        .vg-anomaly-secondary-card {
+            min-height: 205px;
+            padding: 20px;
+            background: #FFFFFF;
+            border: 1px solid var(--border);
+            border-top: 5px solid var(--anomaly-color);
+            border-radius: 16px;
+            box-shadow: 0 10px 24px -22px rgba(27, 36, 48, .28);
+            box-sizing: border-box;
+        }
+
+        .vg-anomaly-secondary-icon {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 34px;
+            height: 34px;
+            margin-bottom: 15px;
+            color: var(--anomaly-color);
+            background: color-mix(in srgb, var(--anomaly-color) 9%, #FFFFFF);
+            border: 1px solid color-mix(in srgb, var(--anomaly-color) 20%, #FFFFFF);
+            border-radius: 10px;
+            font-size: 15px;
+            font-weight: 900;
+        }
+
+        .vg-anomaly-secondary-value {
+            color: var(--text-main);
+            font-size: 34px;
+            line-height: 1;
+            letter-spacing: -1px;
+            font-weight: 900;
+            margin-bottom: 8px;
+        }
+
+        .vg-anomaly-secondary-title {
+            color: var(--text-main);
+            font-size: 14px;
+            font-weight: 850;
+            margin-bottom: 7px;
+        }
+
+        .vg-anomaly-secondary-help {
+            color: var(--text-soft);
+            font-size: 11.5px;
+            line-height: 1.45;
+        }
+
+        .vg-anomaly-detail-intro {
+            margin: 12px 0 14px 0;
+            padding: 15px 17px;
+            background: #FFFFFF;
+            border: 1px solid var(--border);
+            border-left: 5px solid var(--anomaly-detail-color);
+            border-radius: 13px;
+            box-shadow: 0 8px 20px -19px rgba(27, 36, 48, .25);
+        }
+
+        .vg-anomaly-detail-title {
+            color: var(--text-main);
+            font-size: 14px;
+            font-weight: 850;
+            margin-bottom: 5px;
+        }
+
+        .vg-anomaly-detail-help {
+            color: var(--text-soft);
+            font-size: 12px;
+            line-height: 1.5;
+        }
+
+        .st-key-anomalies_navigation_rapide div[role="radiogroup"] {
+            display: flex !important;
+            flex-wrap: wrap !important;
+            gap: 7px !important;
+            padding: 6px !important;
+            background: #F5F6F8 !important;
+            border: 1px solid var(--border) !important;
+            border-radius: 13px !important;
+        }
+
+        .st-key-anomalies_navigation_rapide div[role="radiogroup"] label {
+            min-height: 40px !important;
+            padding: 8px 13px !important;
+            color: var(--text-soft) !important;
+            background: #FFFFFF !important;
+            border: 1px solid transparent !important;
+            border-radius: 9px !important;
+            font-size: 11px !important;
+            font-weight: 750 !important;
+        }
+
+        .st-key-anomalies_navigation_rapide div[role="radiogroup"] label:has(input:checked) {
+            color: #FFFFFF !important;
+            background: var(--3f-violet, #432ABD) !important;
+            border-color: #432ABD !important;
+        }
+
+        .st-key-anomalies_navigation_rapide div[role="radiogroup"] label:has(input:checked) * {
+            color: #FFFFFF !important;
+        }
+
+        .st-key-anomalies_navigation_rapide div[role="radiogroup"] label input[type="radio"],
+        .st-key-anomalies_navigation_rapide div[role="radiogroup"] label div[data-baseweb="radio"] > div:first-child {
+            display: none !important;
+        }
+
+        @media screen and (max-width: 900px) {
+            .vg-anomaly-hero {
+                align-items: flex-start;
+                flex-direction: column;
+                padding: 17px 18px;
+            }
+
+            .vg-anomaly-hero-focus {
+                width: 100%;
+                min-width: 0;
+                box-sizing: border-box;
+            }
+
+            .vg-anomaly-main-card,
+            .vg-anomaly-secondary-card {
+                min-height: 170px;
+            }
+
+            .vg-anomaly-main-share {
+                position: static;
+                display: inline-flex;
+                margin-top: 12px;
+            }
+        }
+
         /* RENVOI COUVERTURE VERS ALERTES */
         .vg-coverage-alert {
             display: flex;
@@ -4018,6 +4333,94 @@ def alert_detail_intro(
         <div class="vg-alert-detail-intro" style="--detail-color:{_safe(color)};">
             <div class="vg-alert-detail-intro-title">{_safe(title)}</div>
             <div class="vg-alert-detail-intro-help">{_safe(message)}</div>
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
+
+
+
+def anomaly_hero(
+    total: int,
+    principale: int,
+    part_principale: float,
+):
+    contenu = (
+        '<div class="vg-anomaly-hero">'
+        '<div class="vg-anomaly-hero-main">'
+        '<div class="vg-anomaly-hero-kicker">Qualité des rattachements</div>'
+        '<div class="vg-anomaly-hero-line">'
+        f'<span class="vg-anomaly-hero-value">{_safe(fmt_nombre(total))}</span>'
+        '<span class="vg-anomaly-hero-title">anomalies détectées</span>'
+        '</div>'
+        '<div class="vg-anomaly-hero-help">'
+        'Des objets ne peuvent pas être replacés correctement '
+        'dans la hiérarchie patrimoine.'
+        '</div>'
+        '</div>'
+        '<div class="vg-anomaly-hero-focus">'
+        '<span class="vg-anomaly-hero-focus-label">Anomalie principale</span>'
+        f'<span class="vg-anomaly-hero-focus-value">{_safe(fmt_pourcentage(part_principale))}</span>'
+        '<span class="vg-anomaly-hero-focus-help">'
+        f'{_safe(fmt_nombre(principale))} logements sont sans programme.'
+        '</span>'
+        '</div>'
+        '</div>'
+    )
+    st.markdown(contenu, unsafe_allow_html=True)
+
+
+def anomaly_main_card(
+    value: int,
+    share: float,
+):
+    st.markdown(
+        f"""
+        <div class="vg-anomaly-main-card">
+            <div class="vg-anomaly-main-badge">Anomalie principale</div>
+            <div class="vg-anomaly-main-value">{_safe(fmt_nombre(value))}</div>
+            <div class="vg-anomaly-main-title">Logements sans programme</div>
+            <div class="vg-anomaly-main-help">
+                Ces logements ne peuvent pas être replacés dans la hiérarchie patrimoine.
+                Le rattachement au programme doit être retrouvé ou corrigé.
+            </div>
+            <div class="vg-anomaly-main-share">{_safe(fmt_pourcentage(share))} du total</div>
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
+
+
+def anomaly_secondary_card(
+    title: str,
+    value: int,
+    help_text: str,
+    color: str,
+    icon: str,
+):
+    st.markdown(
+        f"""
+        <div class="vg-anomaly-secondary-card" style="--anomaly-color:{_safe(color)};">
+            <div class="vg-anomaly-secondary-icon">{_safe(icon)}</div>
+            <div class="vg-anomaly-secondary-value">{_safe(fmt_nombre(value))}</div>
+            <div class="vg-anomaly-secondary-title">{_safe(title)}</div>
+            <div class="vg-anomaly-secondary-help">{_safe(help_text)}</div>
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
+
+
+def anomaly_detail_intro(
+    title: str,
+    message: str,
+    color: str,
+):
+    st.markdown(
+        f"""
+        <div class="vg-anomaly-detail-intro" style="--anomaly-detail-color:{_safe(color)};">
+            <div class="vg-anomaly-detail-title">{_safe(title)}</div>
+            <div class="vg-anomaly-detail-help">{_safe(message)}</div>
         </div>
         """,
         unsafe_allow_html=True,
@@ -8113,7 +8516,7 @@ elif vue_active == "Alertes":
 else:
     section(
         "Anomalies de rattachement",
-        "Les objets patrimoniaux absents de leur niveau de rattachement attendu.",
+        "Identifier les objets qui ne peuvent pas être replacés correctement dans la hiérarchie patrimoine.",
     )
 
     # -------------------------------------------------
@@ -8124,7 +8527,7 @@ else:
     ].copy()
 
     # -------------------------------------------------
-    # 2. LOGEMENTS SANS PROGRAMME
+    # 2. LOGEMENTS ET ÉQUIPEMENTS SANS PROGRAMME
     # -------------------------------------------------
     if not df_qualite.empty and "anomalie_type" in df_qualite.columns:
         types_qualite = (
@@ -8182,6 +8585,14 @@ else:
         + nb_equipements_sans_programme
     )
 
+    part_logements_sans_programme = (
+        nb_logements_sans_programme
+        / total_anomalies_rattachement
+        * 100
+        if total_anomalies_rattachement
+        else 0.0
+    )
+
     if total_anomalies_rattachement == 0:
         status_banner(
             "Aucune anomalie de rattachement détectée",
@@ -8191,95 +8602,70 @@ else:
             "#CFECE3",
         )
     else:
-        status_banner(
-            f"{fmt_nombre(total_anomalies_rattachement)} objet(s) à contrôler",
-            "Ces objets ne disposent pas du rattachement patrimonial attendu.",
-            "#E5A000",
-            "#FFF9EA",
-            "#F1DEAD",
+        anomaly_hero(
+            total=total_anomalies_rattachement,
+            principale=nb_logements_sans_programme,
+            part_principale=part_logements_sans_programme,
         )
 
-    colonnes_anomalies = st.columns(3)
+    # -------------------------------------------------
+    # SYNTHÈSE VISUELLE
+    # -------------------------------------------------
+    colonne_principale, colonne_secondaire = st.columns(
+        [1.55, 1],
+        gap="medium",
+    )
 
-    with colonnes_anomalies[0]:
-        family_card(
-            "Programmes sans logement",
-            nb_programmes_sans_logement,
-            "Programmes présents dans le référentiel mais sans logement rattaché.",
-            C_NAVY,
-        )
-
-    with colonnes_anomalies[1]:
-        family_card(
-            "Logements sans programme",
+    with colonne_principale:
+        anomaly_main_card(
             nb_logements_sans_programme,
-            "Logements qui ne peuvent pas être replacés dans un programme.",
-            C_RED,
+            part_logements_sans_programme,
         )
 
-    with colonnes_anomalies[2]:
-        family_card(
-            "Équipements sans programme",
-            nb_equipements_sans_programme,
-            "Équipements qui ne peuvent pas être rattachés à un programme.",
-            C_VIOLET,
-        )
+    with colonne_secondaire:
+        secondaires = st.columns(2)
 
-    st.markdown("<br>", unsafe_allow_html=True)
-
-    section(
-        "Répartition des anomalies",
-        "Nombre d'objets concernés pour chaque anomalie de rattachement.",
-    )
-
-    repartition_anomalies = pd.DataFrame(
-        {
-            "Anomalie": [
+        with secondaires[0]:
+            anomaly_secondary_card(
                 "Programmes sans logement",
-                "Logements sans programme",
-                "Équipements sans programme",
-            ],
-            "Objets concernés": [
                 nb_programmes_sans_logement,
-                nb_logements_sans_programme,
-                nb_equipements_sans_programme,
-            ],
-        }
-    ).sort_values("Objets concernés", ascending=True)
+                "Programmes présents dans le référentiel mais sans aucun logement rattaché.",
+                C_NAVY,
+                "P",
+            )
 
-    afficher_barres_horizontales(
-        repartition_anomalies,
-        "Anomalie",
-        "Objets concernés",
-        color=C_VIOLET,
-        height_base=300,
-    )
+        with secondaires[1]:
+            anomaly_secondary_card(
+                "Équipements sans programme",
+                nb_equipements_sans_programme,
+                "Équipements sans programme ou ESI identifiable.",
+                C_VIOLET,
+                "E",
+            )
 
     st.markdown("<br>", unsafe_allow_html=True)
 
     section(
-        "Détail des anomalies",
-        "Sélectionne une anomalie pour afficher et exporter les objets concernés.",
+        "Analyser les anomalies",
+        "Sélectionne une catégorie pour afficher les objets concernés et les exporter.",
     )
 
-    type_anomalie = st.selectbox(
-        "Anomalie à analyser",
-        [
-            "Programmes sans logement",
-            "Logements sans programme",
-            "Équipements sans programme",
-        ],
-        key="type_anomalie_rattachement",
+    libelles_anomalies = {
+        "Logements": "Logements sans programme",
+        "Programmes": "Programmes sans logement",
+        "Équipements": "Équipements sans programme",
+    }
+
+    choix_anomalie_court = st.radio(
+        "Catégorie d'anomalie",
+        list(libelles_anomalies.keys()),
+        horizontal=True,
+        label_visibility="collapsed",
+        key="anomalies_navigation_rapide",
     )
+    type_anomalie = libelles_anomalies[choix_anomalie_court]
 
-    if type_anomalie == "Programmes sans logement":
-        table_anomalie = preparer_esi_table(
-            anomalies_programmes_sans_logement
-        )
-        nom_export_anomalie = "programmes_sans_logement.xlsx"
-        message_anomalie_vide = "Aucun programme sans logement."
-
-    elif type_anomalie == "Logements sans programme":
+    if type_anomalie == "Logements sans programme":
         table_anomalie = preparer_qualite_table(
             anomalies_logements_sans_programme
         )
@@ -8287,6 +8673,31 @@ else:
         message_anomalie_vide = (
             "Aucun logement sans programme dans la table de qualité."
         )
+        titre_detail_anomalie = (
+            f"{fmt_nombre(nb_logements_sans_programme)} logement(s) "
+            "sans programme"
+        )
+        message_detail_anomalie = (
+            "Ces logements ne peuvent pas être replacés correctement dans la "
+            "hiérarchie patrimoine. Leur programme doit être retrouvé ou corrigé."
+        )
+        couleur_detail_anomalie = C_RED
+
+    elif type_anomalie == "Programmes sans logement":
+        table_anomalie = preparer_esi_table(
+            anomalies_programmes_sans_logement
+        )
+        nom_export_anomalie = "programmes_sans_logement.xlsx"
+        message_anomalie_vide = "Aucun programme sans logement."
+        titre_detail_anomalie = (
+            f"{fmt_nombre(nb_programmes_sans_logement)} programme(s) "
+            "sans logement"
+        )
+        message_detail_anomalie = (
+            "Ces programmes existent dans le référentiel mais aucun logement "
+            "ne leur est rattaché. Vérifiez s'ils sont réellement vides ou mal alimentés."
+        )
+        couleur_detail_anomalie = C_NAVY
 
     else:
         table_anomalie = preparer_qualite_table(
@@ -8296,6 +8707,21 @@ else:
         message_anomalie_vide = (
             "Aucun équipement sans programme dans la table de qualité."
         )
+        titre_detail_anomalie = (
+            f"{fmt_nombre(nb_equipements_sans_programme)} équipement(s) "
+            "sans programme"
+        )
+        message_detail_anomalie = (
+            "Ces équipements ne peuvent pas être rattachés à un programme ou "
+            "à un ESI identifiable. Leur rattachement patrimonial doit être vérifié."
+        )
+        couleur_detail_anomalie = C_VIOLET
+
+    anomaly_detail_intro(
+        titre_detail_anomalie,
+        message_detail_anomalie,
+        couleur_detail_anomalie,
+    )
 
     recherche_anomalie = st.text_input(
         "Rechercher dans le détail",
@@ -8310,10 +8736,12 @@ else:
 
     if table_anomalie.empty:
         st.info(message_anomalie_vide)
+
         if type_anomalie != "Programmes sans logement":
             st.caption(
-                "Le compteur global peut rester supérieur à zéro si la vue résumé contient le volume, "
-                "mais que dashboard.qualite_donnees ne contient pas encore le détail correspondant."
+                "Le compteur global peut rester supérieur à zéro si la vue résumé "
+                "contient le volume, mais que dashboard.qualite_donnees ne contient "
+                "pas encore le détail correspondant."
             )
     else:
         st.dataframe(
