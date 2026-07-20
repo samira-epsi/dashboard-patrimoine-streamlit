@@ -4304,7 +4304,6 @@ def anomaly_hero(
         f'<span class="vg-anomaly-hero-value">{_safe(fmt_nombre(total))}</span>'
         '<span class="vg-anomaly-hero-title">anomalies détectées</span>'
         '</div>'
-        '<div class="vg-anomaly-hero-help">'
         'Des objets ne peuvent pas être replacés correctement '
         'dans la hiérarchie patrimoine.'
         '</div>'
