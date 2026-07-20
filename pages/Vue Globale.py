@@ -5618,7 +5618,10 @@ if vue_active == "Vue globale":
 # =====================================================
 # VUE 2 — COUVERTURE
 # =====================================================
-# Renvoi vers l'onglet Alertes.
+
+elif vue_active == "Couverture":
+
+    # Renvoi vers l'onglet Alertes.
     if nb_situations_alertes > 0:
         alerte_col, bouton_alerte_col = st.columns(
             [5, 1.25],
@@ -5685,8 +5688,6 @@ if vue_active == "Vue globale":
             unsafe_allow_html=True,
         )
 
-
-elif vue_active == "Couverture":
     if statut_selectionne == "active":
         section(
             "Couverture du patrimoine",
