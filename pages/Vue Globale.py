@@ -6090,8 +6090,8 @@ elif vue_active == "Couverture":
             donnees_equipements = pd.DataFrame(
                 {
                     "Situation": [
-                        "Avec équipement",
                         "Sans équipement",
+                        "Avec équipement",
                     ],
                     "ESI": [
                         nb_esi_avec_equipement,
