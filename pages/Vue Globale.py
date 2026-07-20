@@ -999,11 +999,11 @@ def inject_style():
             padding: 19px 22px;
             color: #FFFFFF;
             background:
-                radial-gradient(circle at 92% 12%, rgba(255,255,255,.16), transparent 24%),
-                linear-gradient(135deg, #C80E43 0%, #E5114D 58%, #F34A73 100%);
-            border: 1px solid #C80E43;
+                radial-gradient(circle at 92% 12%, rgba(255,255,255,.20), transparent 24%),
+                linear-gradient(135deg, #B92B57 0%, #D94B73 58%, #E97A99 100%);
+            border: 1px solid #C94A70;
             border-radius: 16px;
-            box-shadow: 0 14px 30px -24px rgba(156, 15, 58, .62);
+            box-shadow: 0 12px 28px -23px rgba(150, 47, 82, .48);
         }
 
         .vg-alerts-hero::after {
@@ -1037,8 +1037,8 @@ def inject_style():
             margin-bottom: 7px;
             padding: 4px 9px;
             color: #FFFFFF;
-            background: rgba(255,255,255,.14);
-            border: 1px solid rgba(255,255,255,.22);
+            background: rgba(255,255,255,.16);
+            border: 1px solid rgba(255,255,255,.26);
             border-radius: 999px;
             font-size: 9.5px;
             font-weight: 800;
@@ -1087,8 +1087,8 @@ def inject_style():
         .vg-alerts-hero-stat {
             min-width: 112px;
             padding: 9px 11px;
-            background: rgba(255,255,255,.13);
-            border: 1px solid rgba(255,255,255,.2);
+            background: rgba(255,255,255,.16);
+            border: 1px solid rgba(255,255,255,.25);
             border-radius: 10px;
             backdrop-filter: blur(4px);
         }
@@ -1312,10 +1312,6 @@ def inject_style():
         .vg-anomaly-hero {
             position: relative;
             overflow: hidden;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            gap: 24px;
             margin: 4px 0 18px 0;
             padding: 20px 22px;
             background:
@@ -1337,89 +1333,9 @@ def inject_style():
             font-weight: 900;
         }
 
-        .vg-anomaly-hero-main,
-        .vg-anomaly-hero-focus {
+        .vg-anomaly-hero-main {
             position: relative;
             z-index: 1;
-        }
-
-        .vg-anomaly-hero-kicker {
-            display: inline-flex;
-            align-items: center;
-            margin-bottom: 7px;
-            padding: 4px 9px;
-            color: #FFFFFF;
-            background: rgba(255,255,255,.14);
-            border: 1px solid rgba(255,255,255,.21);
-            border-radius: 999px;
-            font-size: 9.5px;
-            font-weight: 850;
-            letter-spacing: .5px;
-            text-transform: uppercase;
-        }
-
-        .vg-anomaly-hero-line {
-            display: flex;
-            align-items: baseline;
-            flex-wrap: wrap;
-            gap: 10px;
-            margin-bottom: 5px;
-        }
-
-        .vg-anomaly-hero-value {
-            color: #FFFFFF;
-            font-size: 36px;
-            line-height: 1;
-            letter-spacing: -1.1px;
-            font-weight: 900;
-        }
-
-        .vg-anomaly-hero-title {
-            color: #FFFFFF;
-            font-size: 16px;
-            font-weight: 850;
-        }
-
-        .vg-anomaly-hero-help {
-            max-width: 650px;
-            color: rgba(255,255,255,.83);
-            font-size: 11.5px;
-            line-height: 1.45;
-            font-weight: 550;
-        }
-
-        .vg-anomaly-hero-focus {
-            min-width: 250px;
-            padding: 12px 14px;
-            background: rgba(255,255,255,.13);
-            border: 1px solid rgba(255,255,255,.2);
-            border-radius: 12px;
-            backdrop-filter: blur(5px);
-        }
-
-        .vg-anomaly-hero-focus-label {
-            display: block;
-            margin-bottom: 4px;
-            color: rgba(255,255,255,.78);
-            font-size: 9.5px;
-            font-weight: 800;
-            letter-spacing: .4px;
-            text-transform: uppercase;
-        }
-
-        .vg-anomaly-hero-focus-value {
-            display: block;
-            margin-bottom: 3px;
-            color: #FFFFFF;
-            font-size: 24px;
-            line-height: 1;
-            font-weight: 900;
-        }
-
-        .vg-anomaly-hero-focus-help {
-            color: rgba(255,255,255,.82);
-            font-size: 10.5px;
-            line-height: 1.35;
         }
 
         .vg-anomaly-main-card {
@@ -1599,15 +1515,7 @@ def inject_style():
 
         @media screen and (max-width: 900px) {
             .vg-anomaly-hero {
-                align-items: flex-start;
-                flex-direction: column;
                 padding: 17px 18px;
-            }
-
-            .vg-anomaly-hero-focus {
-                width: 100%;
-                min-width: 0;
-                box-sizing: border-box;
             }
 
             .vg-anomaly-main-card,
@@ -4342,8 +4250,6 @@ def alert_detail_intro(
 
 def anomaly_hero(
     total: int,
-    principale: int,
-    part_principale: float,
 ):
     contenu = (
         '<div class="vg-anomaly-hero">'
@@ -4357,13 +4263,6 @@ def anomaly_hero(
         'Des objets ne peuvent pas être replacés correctement '
         'dans la hiérarchie patrimoine.'
         '</div>'
-        '</div>'
-        '<div class="vg-anomaly-hero-focus">'
-        '<span class="vg-anomaly-hero-focus-label">Anomalie principale</span>'
-        f'<span class="vg-anomaly-hero-focus-value">{_safe(fmt_pourcentage(part_principale))}</span>'
-        '<span class="vg-anomaly-hero-focus-help">'
-        f'{_safe(fmt_nombre(principale))} logements sont sans programme.'
-        '</span>'
         '</div>'
         '</div>'
     )
@@ -8604,8 +8503,6 @@ else:
     else:
         anomaly_hero(
             total=total_anomalies_rattachement,
-            principale=nb_logements_sans_programme,
-            part_principale=part_logements_sans_programme,
         )
 
     # -------------------------------------------------
