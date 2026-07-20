@@ -2944,6 +2944,165 @@ def inject_style():
             }
         }
 
+
+        /* COUVERTURE — LECTURE EXECUTIVE */
+        .vg-coverage-insights {
+            display: grid;
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+            gap: 10px;
+            margin: 4px 0 18px 0;
+        }
+
+        .vg-coverage-insight {
+            display: flex;
+            align-items: flex-start;
+            gap: 11px;
+            min-height: 88px;
+            padding: 13px 14px;
+            background: #FFFFFF;
+            border: 1px solid #E5E8EC;
+            border-left: 4px solid var(--insight-color);
+            border-radius: 12px;
+            box-shadow: 0 7px 18px -19px rgba(27,36,48,.24);
+            box-sizing: border-box;
+        }
+
+        .vg-coverage-insight-icon {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            flex: 0 0 auto;
+            width: 30px;
+            height: 30px;
+            color: var(--insight-color);
+            background: color-mix(in srgb, var(--insight-color) 9%, #FFFFFF);
+            border: 1px solid color-mix(in srgb, var(--insight-color) 18%, #FFFFFF);
+            border-radius: 9px;
+            font-size: 14px;
+            font-weight: 900;
+        }
+
+        .vg-coverage-insight-value {
+            color: var(--text-main);
+            font-size: 19px;
+            line-height: 1;
+            font-weight: 900;
+            margin-bottom: 5px;
+        }
+
+        .vg-coverage-insight-text {
+            color: var(--text-soft);
+            font-size: 10.5px;
+            line-height: 1.4;
+            font-weight: 600;
+        }
+
+        /* Cartes patrimoine plus compactes */
+        .vg-park-card {
+            min-height: 86px !important;
+            padding: 12px 14px !important;
+            border-left: 4px solid var(--park-color) !important;
+            box-sizing: border-box !important;
+        }
+
+        .vg-park-label {
+            margin-bottom: 7px !important;
+        }
+
+        .vg-park-value {
+            font-size: 25px !important;
+        }
+
+        /* Deux niveaux plus différenciés */
+        .vg-coverage-reading-card {
+            min-height: 244px !important;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .vg-coverage-reading-card.primary {
+            background: linear-gradient(145deg, #FFF7FA 0%, #FFFFFF 68%);
+            border-top-color: #D65A83 !important;
+        }
+
+        .vg-coverage-reading-card.secondary {
+            background: linear-gradient(145deg, #F3FAF7 0%, #FFFFFF 68%);
+            border-top-color: #4F9B88 !important;
+        }
+
+        .vg-coverage-reading-card::after {
+            content: "";
+            position: absolute;
+            width: 82px;
+            height: 82px;
+            right: -40px;
+            top: -40px;
+            border-radius: 50%;
+            background: color-mix(in srgb, var(--reading-color) 8%, transparent);
+        }
+
+        .vg-coverage-reading-title,
+        .vg-coverage-reading-question,
+        .vg-coverage-reading-main,
+        .vg-coverage-progress,
+        .vg-coverage-reading-stats,
+        .vg-coverage-reading-base,
+        .vg-coverage-reading-eyebrow {
+            position: relative;
+            z-index: 1;
+        }
+
+        /* Intensité : plus lisible et plus dashboard */
+        .vg-intensity-distribution {
+            padding: 17px 18px !important;
+            background: #FFFFFF !important;
+            border: 1px solid #E5E8EC !important;
+            border-radius: 14px !important;
+        }
+
+        .vg-intensity-row {
+            grid-template-columns: 175px minmax(0, 1fr) 105px !important;
+            margin-bottom: 15px !important;
+        }
+
+        .vg-intensity-track {
+            height: 12px !important;
+        }
+
+        .vg-intensity-label {
+            font-size: 11px !important;
+        }
+
+        .vg-intensity-value {
+            font-size: 11px !important;
+        }
+
+        .vg-intensity-kpi {
+            min-height: 94px !important;
+            padding: 13px 14px !important;
+        }
+
+        .vg-intensity-kpi-value {
+            font-size: 22px !important;
+        }
+
+        /* Lecture d'introduction moins vide */
+        .vg-reading-note {
+            margin-bottom: 12px !important;
+            padding: 11px 14px !important;
+            background: #F7FAFC !important;
+        }
+
+        @media screen and (max-width: 900px) {
+            .vg-coverage-insights {
+                grid-template-columns: 1fr;
+            }
+
+            .vg-intensity-row {
+                grid-template-columns: 120px minmax(0, 1fr) 88px !important;
+            }
+        }
+
         /* RENVOI COUVERTURE VERS ALERTES */
         .vg-coverage-alert {
             display: flex;
@@ -6015,6 +6174,50 @@ def step_header(
     )
 
 
+
+def coverage_insights(
+    nb_esi_couverts: int,
+    nb_esi_sans_contrat: int,
+    nb_esi_equipes_non_couverts: int,
+):
+    contenu = (
+        '<div class="vg-coverage-insights">'
+
+        '<div class="vg-coverage-insight" style="--insight-color:#4F9B88;">'
+        '<div class="vg-coverage-insight-icon">✓</div>'
+        '<div>'
+        f'<div class="vg-coverage-insight-value">{_safe(fmt_nombre(nb_esi_couverts))}</div>'
+        '<div class="vg-coverage-insight-text">'
+        'ESI disposent d’au moins un contrat actif.'
+        '</div>'
+        '</div>'
+        '</div>'
+
+        '<div class="vg-coverage-insight" style="--insight-color:#D65A83;">'
+        '<div class="vg-coverage-insight-icon">!</div>'
+        '<div>'
+        f'<div class="vg-coverage-insight-value">{_safe(fmt_nombre(nb_esi_sans_contrat))}</div>'
+        '<div class="vg-coverage-insight-text">'
+        'ESI restent sans contrat actif et nécessitent une vérification.'
+        '</div>'
+        '</div>'
+        '</div>'
+
+        '<div class="vg-coverage-insight" style="--insight-color:#173B69;">'
+        '<div class="vg-coverage-insight-icon">◆</div>'
+        '<div>'
+        f'<div class="vg-coverage-insight-value">{_safe(fmt_nombre(nb_esi_equipes_non_couverts))}</div>'
+        '<div class="vg-coverage-insight-text">'
+        'ESI équipés ne disposent pas encore d’une couverture exploitable.'
+        '</div>'
+        '</div>'
+        '</div>'
+
+        '</div>'
+    )
+    st.markdown(contenu, unsafe_allow_html=True)
+
+
 def status_banner(
     title: str,
     help_text: str,
@@ -8442,8 +8645,8 @@ elif vue_active == "Couverture":
     ):
         st.markdown("<br>", unsafe_allow_html=True)
         section(
-            "Deux niveaux de couverture",
-            "Un ESI peut disposer d’un contrat sans que ses équipements soient réellement couverts.",
+            "La couverture en un regard",
+            "Comprendre le patrimoine, distinguer la couverture contractuelle de la couverture réelle, puis mesurer l’intensité des contrats actifs.",
         )
 
         st.markdown(
@@ -8544,10 +8747,16 @@ elif vue_active == "Couverture":
             base_esi_equipes,
         )
 
+        coverage_insights(
+            nb_esi_couverts=nb_esi_avec_contrat_programme,
+            nb_esi_sans_contrat=nb_esi_sans_contrat_programme,
+            nb_esi_equipes_non_couverts=nb_esi_sans_contrat_equipement,
+        )
+
         step_header(
             1,
-            "Comprendre la composition du patrimoine",
-            "Identifier les ESI équipés et ceux qui ne portent aucun équipement.",
+            "Composition du patrimoine",
+            "Répartition des ESI selon la présence ou non d’équipements.",
         )
 
         parc_cols = st.columns(3)
@@ -8563,7 +8772,7 @@ elif vue_active == "Couverture":
                 "ESI avec équipements",
                 nb_esi_avec_equipement,
                 taux_sur(nb_esi_avec_equipement, total_esi_situation),
-                "#4F9B88",
+                "#173B69",
             )
         with parc_cols[2]:
             park_summary_card(
@@ -8575,8 +8784,8 @@ elif vue_active == "Couverture":
 
         step_header(
             2,
-            "Comparer les deux niveaux de couverture",
-            "Distinguer la présence d’un contrat actif de la couverture réelle des équipements.",
+            "Couverture contractuelle et couverture réelle",
+            "Deux lectures complémentaires pour mesurer la qualité de la couverture.",
         )
 
         col_contractuelle, col_reelle = st.columns(
@@ -8679,17 +8888,17 @@ elif vue_active == "Couverture":
 
         step_header(
             3,
-            "Mesurer l’intensité contractuelle",
-            "Observer combien de contrats sont rattachés à chaque ESI.",
+            "Intensité contractuelle",
+            "Répartition du nombre de contrats actifs distincts par ESI.",
         )
 
         intensity_distribution_html(
             [
                 {
-                    "label": "Aucun contrat actif",
-                    "count": nb_0_contrat,
-                    "rate": taux_sur(nb_0_contrat, total_esi_situation),
-                    "color": "#E7A1C5",
+                    "label": "4 contrats actifs ou plus",
+                    "count": nb_4_plus,
+                    "rate": taux_sur(nb_4_plus, total_esi_situation),
+                    "color": "#173B69",
                 },
                 {
                     "label": "1 à 3 contrats actifs",
@@ -8698,10 +8907,10 @@ elif vue_active == "Couverture":
                     "color": "#67AFCF",
                 },
                 {
-                    "label": "4 contrats actifs ou plus",
-                    "count": nb_4_plus,
-                    "rate": taux_sur(nb_4_plus, total_esi_situation),
-                    "color": "#7967C8",
+                    "label": "Aucun contrat actif",
+                    "count": nb_0_contrat,
+                    "rate": taux_sur(nb_0_contrat, total_esi_situation),
+                    "color": "#D65A83",
                 },
             ]
         )
@@ -8728,7 +8937,7 @@ elif vue_active == "Couverture":
                 "Multi-contrats même métier",
                 fmt_nombre(nb_esi_multi_metier),
                 "Situations à contrôler dans l’onglet Alertes.",
-                "#7967C8",
+                "#D65A83",
             )
 
         st.caption(
