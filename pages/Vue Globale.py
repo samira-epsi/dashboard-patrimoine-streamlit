@@ -1760,6 +1760,380 @@ def inject_style():
             }
         }
 
+
+        /* COUVERTURE — LECTURE CLAIRE ET DOUCE */
+        .vg-coverage-summary {
+            position: relative;
+            overflow: hidden;
+            display: block;
+            margin: 8px 0 14px 0;
+            padding: 20px 22px;
+            background: linear-gradient(135deg, #FFF5F9 0%, #FFFFFF 72%);
+            border: 1px solid #EEDBE4;
+            border-left: 6px solid #D65A83;
+            border-radius: 17px;
+            box-shadow: 0 12px 28px -25px rgba(145, 54, 88, .32);
+        }
+
+        .vg-coverage-summary::after {
+            content: "";
+            position: absolute;
+            width: 135px;
+            height: 135px;
+            right: -65px;
+            top: -70px;
+            border-radius: 50%;
+            background: rgba(128, 205, 255, .16);
+        }
+
+        .vg-coverage-summary-kicker {
+            position: relative;
+            z-index: 1;
+            display: inline-flex;
+            margin-bottom: 9px;
+            padding: 4px 9px;
+            color: #A53860;
+            background: #FFFFFF;
+            border: 1px solid #EACBD7;
+            border-radius: 999px;
+            font-size: 9.5px;
+            font-weight: 850;
+            letter-spacing: .45px;
+            text-transform: uppercase;
+        }
+
+        .vg-coverage-summary-title {
+            position: relative;
+            z-index: 1;
+            color: var(--text-main);
+            font-size: 22px;
+            line-height: 1.25;
+            font-weight: 900;
+            letter-spacing: -.35px;
+            margin-bottom: 7px;
+        }
+
+        .vg-coverage-summary-title strong {
+            color: #C63F6D;
+            font-size: 30px;
+            letter-spacing: -.8px;
+        }
+
+        .vg-coverage-summary-help {
+            position: relative;
+            z-index: 1;
+            max-width: 940px;
+            color: var(--text-soft);
+            font-size: 12px;
+            line-height: 1.5;
+            font-weight: 550;
+        }
+
+        .vg-coverage-context {
+            display: flex;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin: 0 0 18px 0;
+            padding: 9px 12px;
+            background: #FFFFFF;
+            border: 1px solid var(--border);
+            border-radius: 11px;
+        }
+
+        .vg-coverage-context-label {
+            color: var(--text-muted);
+            font-size: 10px;
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: .42px;
+        }
+
+        .vg-coverage-context-pill {
+            padding: 5px 8px;
+            color: #35566E;
+            background: #F3F8FB;
+            border: 1px solid #DFEAF1;
+            border-radius: 999px;
+            font-size: 10.5px;
+            font-weight: 750;
+        }
+
+        .vg-reading-note {
+            margin: 0 0 16px 0;
+            padding: 13px 15px;
+            color: #526373;
+            background: #F7FBFD;
+            border: 1px solid #DDEAF1;
+            border-radius: 12px;
+            font-size: 11.5px;
+            line-height: 1.5;
+        }
+
+        .vg-reading-note strong {
+            color: #263F50;
+        }
+
+        .vg-coverage-reading-card {
+            min-height: 255px;
+            padding: 19px 20px;
+            background: #FFFFFF;
+            border: 1px solid var(--border);
+            border-top: 5px solid var(--reading-color);
+            border-radius: 16px;
+            box-shadow: 0 10px 24px -23px rgba(27,36,48,.28);
+            box-sizing: border-box;
+        }
+
+        .vg-coverage-reading-eyebrow {
+            margin-bottom: 7px;
+            color: var(--reading-color);
+            font-size: 9.5px;
+            font-weight: 850;
+            letter-spacing: .48px;
+            text-transform: uppercase;
+        }
+
+        .vg-coverage-reading-title {
+            color: var(--text-main);
+            font-size: 16px;
+            font-weight: 900;
+            margin-bottom: 5px;
+        }
+
+        .vg-coverage-reading-question {
+            min-height: 38px;
+            color: var(--text-soft);
+            font-size: 11.5px;
+            line-height: 1.45;
+            margin-bottom: 16px;
+        }
+
+        .vg-coverage-reading-main {
+            display: flex;
+            align-items: baseline;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-bottom: 13px;
+        }
+
+        .vg-coverage-reading-rate {
+            color: var(--text-main);
+            font-size: 35px;
+            line-height: 1;
+            letter-spacing: -1.1px;
+            font-weight: 900;
+        }
+
+        .vg-coverage-reading-count {
+            color: var(--text-soft);
+            font-size: 11.5px;
+            font-weight: 700;
+        }
+
+        .vg-coverage-progress {
+            display: flex;
+            overflow: hidden;
+            width: 100%;
+            height: 12px;
+            margin-bottom: 14px;
+            background: #EEF2F4;
+            border-radius: 999px;
+        }
+
+        .vg-coverage-progress-covered {
+            height: 100%;
+            background: var(--reading-color);
+        }
+
+        .vg-coverage-progress-gap {
+            height: 100%;
+            background: var(--gap-color);
+        }
+
+        .vg-coverage-reading-stats {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 9px;
+        }
+
+        .vg-coverage-reading-stat {
+            padding: 10px 11px;
+            background: #FAFBFC;
+            border: 1px solid #EBEEF1;
+            border-radius: 10px;
+        }
+
+        .vg-coverage-reading-stat-label {
+            color: var(--text-muted);
+            font-size: 9px;
+            font-weight: 800;
+            letter-spacing: .35px;
+            text-transform: uppercase;
+            margin-bottom: 4px;
+        }
+
+        .vg-coverage-reading-stat-value {
+            color: var(--text-main);
+            font-size: 18px;
+            font-weight: 900;
+        }
+
+        .vg-coverage-reading-base {
+            margin-top: 11px;
+            color: var(--text-muted);
+            font-size: 10px;
+            font-weight: 600;
+        }
+
+        .vg-simple-section-title {
+            margin: 20px 0 10px 0;
+            color: var(--text-main);
+            font-size: 14px;
+            font-weight: 900;
+        }
+
+        .vg-park-grid {
+            display: grid;
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+            gap: 10px;
+        }
+
+        .vg-park-card {
+            padding: 14px 15px;
+            background: #FFFFFF;
+            border: 1px solid var(--border);
+            border-left: 4px solid var(--park-color);
+            border-radius: 12px;
+        }
+
+        .vg-park-label {
+            margin-bottom: 5px;
+            color: var(--text-muted);
+            font-size: 9.5px;
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: .38px;
+        }
+
+        .vg-park-line {
+            display: flex;
+            align-items: baseline;
+            gap: 7px;
+        }
+
+        .vg-park-value {
+            color: var(--text-main);
+            font-size: 24px;
+            line-height: 1;
+            font-weight: 900;
+        }
+
+        .vg-park-rate {
+            color: var(--park-color);
+            font-size: 11px;
+            font-weight: 850;
+        }
+
+        .vg-contract-intensity {
+            display: grid;
+            grid-template-columns: minmax(0, 1.7fr) minmax(260px, .9fr);
+            gap: 12px;
+        }
+
+        .vg-intensity-distribution {
+            padding: 16px;
+            background: #FFFFFF;
+            border: 1px solid var(--border);
+            border-radius: 14px;
+        }
+
+        .vg-intensity-row {
+            display: grid;
+            grid-template-columns: 135px minmax(0, 1fr) 78px;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 12px;
+        }
+
+        .vg-intensity-row:last-child {
+            margin-bottom: 0;
+        }
+
+        .vg-intensity-label {
+            color: var(--text-soft);
+            font-size: 11px;
+            font-weight: 750;
+        }
+
+        .vg-intensity-track {
+            overflow: hidden;
+            height: 10px;
+            background: #EEF1F4;
+            border-radius: 999px;
+        }
+
+        .vg-intensity-fill {
+            height: 100%;
+            width: var(--intensity-width);
+            background: var(--intensity-color);
+            border-radius: 999px;
+        }
+
+        .vg-intensity-value {
+            color: var(--text-main);
+            font-size: 11px;
+            font-weight: 850;
+            text-align: right;
+        }
+
+        .vg-intensity-kpis {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 8px;
+        }
+
+        .vg-intensity-kpi {
+            padding: 11px 13px;
+            background: #FFFFFF;
+            border: 1px solid var(--border);
+            border-left: 4px solid var(--intensity-color);
+            border-radius: 11px;
+        }
+
+        .vg-intensity-kpi-label {
+            color: var(--text-muted);
+            font-size: 9px;
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: .35px;
+            margin-bottom: 3px;
+        }
+
+        .vg-intensity-kpi-value {
+            color: var(--text-main);
+            font-size: 20px;
+            font-weight: 900;
+        }
+
+        .vg-intensity-kpi-help {
+            margin-top: 3px;
+            color: var(--text-soft);
+            font-size: 9.5px;
+            line-height: 1.35;
+        }
+
+        @media screen and (max-width: 900px) {
+            .vg-park-grid,
+            .vg-contract-intensity {
+                grid-template-columns: 1fr;
+            }
+
+            .vg-intensity-row {
+                grid-template-columns: 105px minmax(0, 1fr) 66px;
+            }
+        }
+
         /* RENVOI COUVERTURE VERS ALERTES */
         .vg-coverage-alert {
             display: flex;
@@ -4560,59 +4934,32 @@ def anomaly_detail_intro(
 def coverage_summary(
     taux_couverture: float,
     nb_esi_couverts: int,
-    nb_esi_sans_contrat: int,
+    total_esi: int,
     nb_esi_equipes_non_couverts: int,
-    taux_equipements_couverts: float,
-    nb_equipements_couverts: int,
 ):
-    html_summary = (
+    phrase = (
+        f"{fmt_nombre(nb_esi_couverts)} ESI sur {fmt_nombre(total_esi)} "
+        "disposent d’au moins un contrat actif."
+    )
+    complement = (
+        f" Toutefois, {fmt_nombre(nb_esi_equipes_non_couverts)} ESI équipés "
+        "ne disposent pas encore d’une couverture exploitable."
+        if nb_esi_equipes_non_couverts > 0
+        else " Aucun ESI équipé sans couverture exploitable n’est détecté."
+    )
+    contenu = (
         '<div class="vg-coverage-summary">'
-        '<div class="vg-coverage-main">'
-        '<div class="vg-coverage-main-kicker">Couverture actuelle</div>'
-        '<div class="vg-coverage-main-line">'
-        f'<span class="vg-coverage-main-value">{_safe(fmt_pourcentage(taux_couverture))}</span>'
-        '<span class="vg-coverage-main-label">des ESI couverts</span>'
+        '<div class="vg-coverage-summary-kicker">Synthèse de couverture</div>'
+        '<div class="vg-coverage-summary-title">'
+        f'<strong>{_safe(fmt_pourcentage(taux_couverture))}</strong> '
+        'des ESI disposent d’un contrat actif'
         '</div>'
-        '<div class="vg-coverage-main-help">'
-        'Part des ESI disposant d’au moins un contrat actif '
-        'sur le périmètre analysé.'
-        '</div>'
-        '</div>'
-        '<div class="vg-coverage-kpi-grid">'
-        '<div class="vg-coverage-kpi" style="--coverage-color:#008080;">'
-        '<div class="vg-coverage-kpi-label">ESI couverts</div>'
-        '<div class="vg-coverage-kpi-line">'
-        f'<span class="vg-coverage-kpi-value">{_safe(fmt_nombre(nb_esi_couverts))}</span>'
-        f'<span class="vg-coverage-kpi-rate">{_safe(fmt_pourcentage(taux_couverture))}</span>'
-        '</div>'
-        '<div class="vg-coverage-kpi-help">Au moins un contrat actif.</div>'
-        '</div>'
-        '<div class="vg-coverage-kpi" style="--coverage-color:#E5A000;">'
-        '<div class="vg-coverage-kpi-label">ESI sans contrat actif</div>'
-        '<div class="vg-coverage-kpi-line">'
-        f'<span class="vg-coverage-kpi-value">{_safe(fmt_nombre(nb_esi_sans_contrat))}</span>'
-        '</div>'
-        '<div class="vg-coverage-kpi-help">À vérifier selon le besoin métier.</div>'
-        '</div>'
-        '<div class="vg-coverage-kpi" style="--coverage-color:#432ABD;">'
-        '<div class="vg-coverage-kpi-label">ESI équipés non couverts</div>'
-        '<div class="vg-coverage-kpi-line">'
-        f'<span class="vg-coverage-kpi-value">{_safe(fmt_nombre(nb_esi_equipes_non_couverts))}</span>'
-        '</div>'
-        '<div class="vg-coverage-kpi-help">Équipements sans couverture exploitable.</div>'
-        '</div>'
-        '<div class="vg-coverage-kpi" style="--coverage-color:#2F7C6D;">'
-        '<div class="vg-coverage-kpi-label">Équipements avec contrat</div>'
-        '<div class="vg-coverage-kpi-line">'
-        f'<span class="vg-coverage-kpi-value">{_safe(fmt_nombre(nb_equipements_couverts))}</span>'
-        f'<span class="vg-coverage-kpi-rate">{_safe(fmt_pourcentage(taux_equipements_couverts))}</span>'
-        '</div>'
-        '<div class="vg-coverage-kpi-help">Contrat directement rattaché dans Intent.</div>'
-        '</div>'
+        '<div class="vg-coverage-summary-help">'
+        f'{_safe(phrase + complement)}'
         '</div>'
         '</div>'
     )
-    st.markdown(html_summary, unsafe_allow_html=True)
+    st.markdown(contenu, unsafe_allow_html=True)
 
 
 def coverage_context(
@@ -4623,7 +4970,7 @@ def coverage_context(
 ):
     contenu = (
         '<div class="vg-coverage-context">'
-        '<span class="vg-coverage-context-label">Périmètre</span>'
+        '<span class="vg-coverage-context-label">Périmètre analysé</span>'
         f'<span class="vg-coverage-context-pill">{_safe(fmt_nombre(esi))} ESI</span>'
         f'<span class="vg-coverage-context-pill">{_safe(fmt_nombre(logements))} logements</span>'
         f'<span class="vg-coverage-context-pill">{_safe(fmt_nombre(equipements))} équipements</span>'
@@ -4631,6 +4978,119 @@ def coverage_context(
         '</div>'
     )
     st.markdown(contenu, unsafe_allow_html=True)
+
+
+def coverage_reading_card(
+    eyebrow: str,
+    title: str,
+    question: str,
+    rate: float,
+    covered: int,
+    uncovered: int,
+    base_label: str,
+    color: str,
+    gap_color: str,
+    covered_label: str,
+    uncovered_label: str,
+):
+    covered_width = max(0.0, min(float(rate), 100.0))
+    gap_width = max(0.0, 100.0 - covered_width)
+
+    contenu = (
+        f'<div class="vg-coverage-reading-card" '
+        f'style="--reading-color:{_safe(color)};--gap-color:{_safe(gap_color)};">'
+        f'<div class="vg-coverage-reading-eyebrow">{_safe(eyebrow)}</div>'
+        f'<div class="vg-coverage-reading-title">{_safe(title)}</div>'
+        f'<div class="vg-coverage-reading-question">{_safe(question)}</div>'
+        '<div class="vg-coverage-reading-main">'
+        f'<span class="vg-coverage-reading-rate">{_safe(fmt_pourcentage(rate))}</span>'
+        f'<span class="vg-coverage-reading-count">{_safe(fmt_nombre(covered))} couverts</span>'
+        '</div>'
+        '<div class="vg-coverage-progress">'
+        f'<div class="vg-coverage-progress-covered" style="width:{covered_width:.2f}%;"></div>'
+        f'<div class="vg-coverage-progress-gap" style="width:{gap_width:.2f}%;"></div>'
+        '</div>'
+        '<div class="vg-coverage-reading-stats">'
+        '<div class="vg-coverage-reading-stat">'
+        f'<div class="vg-coverage-reading-stat-label">{_safe(covered_label)}</div>'
+        f'<div class="vg-coverage-reading-stat-value">{_safe(fmt_nombre(covered))}</div>'
+        '</div>'
+        '<div class="vg-coverage-reading-stat">'
+        f'<div class="vg-coverage-reading-stat-label">{_safe(uncovered_label)}</div>'
+        f'<div class="vg-coverage-reading-stat-value">{_safe(fmt_nombre(uncovered))}</div>'
+        '</div>'
+        '</div>'
+        f'<div class="vg-coverage-reading-base">Base : {_safe(base_label)}</div>'
+        '</div>'
+    )
+    st.markdown(contenu, unsafe_allow_html=True)
+
+
+def park_summary_card(
+    label: str,
+    value: int,
+    rate: float | None,
+    color: str,
+):
+    rate_html = (
+        f'<span class="vg-park-rate">{_safe(fmt_pourcentage(rate))}</span>'
+        if rate is not None
+        else ""
+    )
+    st.markdown(
+        (
+            f'<div class="vg-park-card" style="--park-color:{_safe(color)};">'
+            f'<div class="vg-park-label">{_safe(label)}</div>'
+            '<div class="vg-park-line">'
+            f'<span class="vg-park-value">{_safe(fmt_nombre(value))}</span>'
+            f'{rate_html}'
+            '</div>'
+            '</div>'
+        ),
+        unsafe_allow_html=True,
+    )
+
+
+def intensity_distribution_html(rows: list[dict]):
+    lignes = []
+    for row in rows:
+        lignes.append(
+            (
+                '<div class="vg-intensity-row">'
+                f'<div class="vg-intensity-label">{_safe(row["label"])}</div>'
+                '<div class="vg-intensity-track">'
+                f'<div class="vg-intensity-fill" '
+                f'style="--intensity-width:{float(row["rate"]):.2f}%;'
+                f'--intensity-color:{_safe(row["color"])};"></div>'
+                '</div>'
+                f'<div class="vg-intensity-value">'
+                f'{_safe(fmt_nombre(row["count"]))} · {_safe(fmt_pourcentage(row["rate"]))}'
+                '</div>'
+                '</div>'
+            )
+        )
+    st.markdown(
+        '<div class="vg-intensity-distribution">' + "".join(lignes) + "</div>",
+        unsafe_allow_html=True,
+    )
+
+
+def intensity_kpi(
+    label: str,
+    value: str,
+    help_text: str,
+    color: str,
+):
+    st.markdown(
+        (
+            f'<div class="vg-intensity-kpi" style="--intensity-color:{_safe(color)};">'
+            f'<div class="vg-intensity-kpi-label">{_safe(label)}</div>'
+            f'<div class="vg-intensity-kpi-value">{_safe(value)}</div>'
+            f'<div class="vg-intensity-kpi-help">{_safe(help_text)}</div>'
+            '</div>'
+        ),
+        unsafe_allow_html=True,
+    )
 
 
 def status_banner(
@@ -6965,10 +7425,8 @@ elif vue_active == "Couverture":
     coverage_summary(
         taux_couverture=taux_couverture_synthese,
         nb_esi_couverts=nb_esi_couverts_synthese,
-        nb_esi_sans_contrat=nb_esi_sans_contrat_synthese,
+        total_esi=total_esi_couverture,
         nb_esi_equipes_non_couverts=nb_esi_equipes_non_couverts_synthese,
-        taux_equipements_couverts=taux_equipements_couverts_synthese,
-        nb_equipements_couverts=nb_equipements_couverts_synthese,
     )
 
     coverage_context(
@@ -6990,17 +7448,24 @@ elif vue_active == "Couverture":
 
 
     with st.expander(
-        "ESI — synthèse",
+        "Comprendre la couverture des ESI",
         expanded=True,
     ):
-        # =====================================================
-        # SITUATION ACTUELLE DES ESI
-        # =====================================================
-
         st.markdown("<br>", unsafe_allow_html=True)
         section(
-            "ESI : l’essentiel",
-            "Équipements, couverture et intensité contractuelle — en un coup d’œil.",
+            "Deux niveaux de couverture",
+            "Un ESI peut disposer d’un contrat sans que ses équipements soient réellement couverts.",
+        )
+
+        st.markdown(
+            """
+            <div class="vg-reading-note">
+                <strong>Lecture :</strong> la couverture contractuelle mesure la présence
+                d’au moins un contrat sur l’ESI. La couverture réelle vérifie, uniquement
+                pour les ESI équipés, qu’un contrat est bien rattaché aux équipements.
+            </div>
+            """,
+            unsafe_allow_html=True,
         )
 
         df_esi_situation = dedupliquer_esi(df_esi_context)
@@ -7020,19 +7485,15 @@ elif vue_active == "Couverture":
                 ).sum()
             )
 
-        def taux_esi(nombre: int, denominateur: int | None = None) -> float:
-            base = (
-                total_esi_situation
-                if denominateur is None
-                else denominateur
-            )
-            return round(nombre / base * 100, 1) if base else 0.0
+        def taux_sur(nombre: int, base: int) -> float:
+            return nombre / base * 100 if base else 0.0
 
         nb_esi_avec_equipement = compter_indicateur(
             "esi_avec_equipement"
         )
-        nb_esi_sans_equipement = compter_indicateur(
-            "esi_sans_equipement"
+        nb_esi_sans_equipement = max(
+            total_esi_situation - nb_esi_avec_equipement,
+            0,
         )
 
         if statut_selectionne == "active":
@@ -7042,14 +7503,7 @@ elif vue_active == "Couverture":
             colonne_sans_contrat_equipement = (
                 "esi_avec_equipement_sans_couverture_valide"
             )
-            colonne_sans_contrat_programme = "esi_sans_contrat_valide"
             colonne_multi_metier = "esi_multi_meme_metier_valide"
-            libelle_contrat_equipement = (
-                "Avec contrat actif valide"
-            )
-            libelle_sans_contrat_equipement = (
-                "Équipés sans couverture active"
-            )
         else:
             colonne_avec_contrat_equipement = (
                 "esi_avec_equipement_et_contrat"
@@ -7057,14 +7511,7 @@ elif vue_active == "Couverture":
             colonne_sans_contrat_equipement = (
                 "esi_avec_equipement_sans_contrat_equipement"
             )
-            colonne_sans_contrat_programme = "esi_sans_aucun_contrat"
             colonne_multi_metier = "esi_multi_meme_metier"
-            libelle_contrat_equipement = (
-                "Avec contrat rattaché"
-            )
-            libelle_sans_contrat_equipement = (
-                "Équipés sans contrat équipement"
-            )
 
         nb_esi_avec_contrat_equipement = compter_indicateur(
             colonne_avec_contrat_equipement
@@ -7072,7 +7519,16 @@ elif vue_active == "Couverture":
         nb_esi_sans_contrat_equipement = compter_indicateur(
             colonne_sans_contrat_equipement
         )
-        # Présence d'au moins un contrat directement rattaché au programme.
+
+        # Lorsque les indicateurs détaillés ne couvrent pas toute la base,
+        # on conserve une lecture cohérente sur les ESI équipés.
+        base_esi_equipes = (
+            nb_esi_avec_contrat_equipement
+            + nb_esi_sans_contrat_equipement
+        )
+        if base_esi_equipes == 0:
+            base_esi_equipes = nb_esi_avec_equipement
+
         refs_esi_avec_contrat_programme = set(
             liste_refs_valides(
                 df_contrats_kpi,
@@ -7090,12 +7546,79 @@ elif vue_active == "Couverture":
             0,
         )
 
-        nb_esi_multi_metier = compter_indicateur(
-            colonne_multi_metier
+        taux_contractuel = taux_sur(
+            nb_esi_avec_contrat_programme,
+            total_esi_situation,
+        )
+        taux_reel_equipements = taux_sur(
+            nb_esi_avec_contrat_equipement,
+            base_esi_equipes,
         )
 
-        # Calcul fiable : un nombre de contrats DISTINCTS pour chaque ESI.
-        # Les ESI sans contrat sont explicitement conservés avec la valeur 0.
+        col_contractuelle, col_reelle = st.columns(
+            2,
+            gap="medium",
+        )
+
+        with col_contractuelle:
+            coverage_reading_card(
+                eyebrow="Niveau 1",
+                title="Couverture contractuelle des ESI",
+                question="Combien d’ESI disposent d’au moins un contrat ?",
+                rate=taux_contractuel,
+                covered=nb_esi_avec_contrat_programme,
+                uncovered=nb_esi_sans_contrat_programme,
+                base_label=f"{fmt_nombre(total_esi_situation)} ESI",
+                color="#D65A83",
+                gap_color="#F2D6E0",
+                covered_label="ESI avec contrat",
+                uncovered_label="ESI sans contrat",
+            )
+
+        with col_reelle:
+            coverage_reading_card(
+                eyebrow="Niveau 2",
+                title="Couverture réelle des ESI équipés",
+                question="Parmi les ESI équipés, combien ont un contrat couvrant leurs équipements ?",
+                rate=taux_reel_equipements,
+                covered=nb_esi_avec_contrat_equipement,
+                uncovered=nb_esi_sans_contrat_equipement,
+                base_label=f"{fmt_nombre(base_esi_equipes)} ESI équipés analysables",
+                color="#4F9B88",
+                gap_color="#F2C9D8",
+                covered_label="Équipés couverts",
+                uncovered_label="Équipés non couverts",
+            )
+
+        st.markdown(
+            '<div class="vg-simple-section-title">Composition du patrimoine</div>',
+            unsafe_allow_html=True,
+        )
+
+        parc_cols = st.columns(3)
+        with parc_cols[0]:
+            park_summary_card(
+                "Total des ESI",
+                total_esi_situation,
+                None,
+                "#67AFCF",
+            )
+        with parc_cols[1]:
+            park_summary_card(
+                "ESI avec équipements",
+                nb_esi_avec_equipement,
+                taux_sur(nb_esi_avec_equipement, total_esi_situation),
+                "#4F9B88",
+            )
+        with parc_cols[2]:
+            park_summary_card(
+                "ESI sans équipement",
+                nb_esi_sans_equipement,
+                taux_sur(nb_esi_sans_equipement, total_esi_situation),
+                "#D7A93C",
+            )
+
+        # Un nombre de contrats DISTINCTS par ESI, zéro inclus.
         base_esi_contrats = pd.DataFrame(
             {"esi_reference": refs_esi_situation}
         )
@@ -7145,521 +7668,78 @@ elif vue_active == "Couverture":
             else 0.0
         )
 
-        repartition_contrats_esi["Tranche"] = pd.cut(
-            repartition_contrats_esi["nb_contrats"],
-            bins=[-1, 0, 1, 2, 3, float("inf")],
-            labels=[
-                "0 contrat",
-                "1 contrat",
-                "2 contrats",
-                "3 contrats",
-                "4 contrats ou plus",
-            ],
+        nb_0_contrat = int(
+            (repartition_contrats_esi["nb_contrats"] == 0).sum()
+        )
+        nb_1_a_3 = int(
+            repartition_contrats_esi["nb_contrats"].between(1, 3).sum()
+        )
+        nb_4_plus = int(
+            (repartition_contrats_esi["nb_contrats"] >= 4).sum()
+        )
+        nb_esi_multi_metier = compter_indicateur(
+            colonne_multi_metier
         )
 
-        distribution_contrats = (
-            repartition_contrats_esi["Tranche"]
-            .value_counts(sort=False)
-            .rename_axis("Tranche")
-            .reset_index(name="ESI")
-        )
-        distribution_contrats["Taux"] = distribution_contrats["ESI"].map(
-            lambda nombre: taux_esi(int(nombre))
+        st.markdown(
+            '<div class="vg-simple-section-title">Intensité contractuelle</div>',
+            unsafe_allow_html=True,
         )
 
-        # =====================================================
-        # VISUELS DE COUVERTURE
-        # =====================================================
-
-        ligne_haute_gauche, ligne_haute_droite = st.columns(
-            2,
-            gap="large",
+        intensity_left, intensity_right = st.columns(
+            [1.7, .9],
+            gap="medium",
         )
 
-        with ligne_haute_gauche:
-            st.markdown(
-                '<div class="vg-mini-title">Présence des équipements</div>',
-                unsafe_allow_html=True,
-            )
-
-            donnees_equipements = pd.DataFrame(
-                {
-                    "Situation": [
-                        "Avec équipement",
-                        "Sans équipement",
-                    ],
-                    "ESI": [
-                        nb_esi_avec_equipement,
-                        nb_esi_sans_equipement,
-                    ],
-                }
-            )
-
-            if go is None:
-                st.bar_chart(
-                    donnees_equipements.set_index("Situation")["ESI"],
-                    width="stretch",
-                )
-            else:
-                fig_equipements = go.Figure(
-                    go.Pie(
-                        labels=donnees_equipements["Situation"],
-                        values=donnees_equipements["ESI"],
-                        hole=0.64,
-                        sort=False,
-                        textinfo="percent",
-                        textfont=dict(size=14),
-                        hovertemplate=(
-                            "<b>%{label}</b><br>"
-                            "ESI : %{value:,}<br>"
-                            "Part : %{percent}<extra></extra>"
-                        ),
-                        marker=dict(
-                            colors=["#173B69", "#63B9DF"],
-                            line=dict(color="#FFFFFF", width=4),
-                        ),
-                    )
-                )
-                fig_equipements.add_annotation(
-                    text=(
-                        f"<b>{fmt_nombre(total_esi_situation)}</b>"
-                        "<br><span style='font-size:12px'>ESI</span>"
-                    ),
-                    x=0.5,
-                    y=0.5,
-                    showarrow=False,
-                    font=dict(color=C_INK, size=22),
-                )
-                _layout_plotly(fig_equipements, 390)
-                fig_equipements.update_layout(
-                    showlegend=True,
-                    legend=dict(
-                        orientation="h",
-                        yanchor="bottom",
-                        y=-0.12,
-                        xanchor="center",
-                        x=0.5,
-                        font=dict(size=12),
-                    ),
-                    margin=dict(l=12, r=12, t=16, b=60),
-                )
-                st.plotly_chart(
-                    fig_equipements,
-                    use_container_width=True,
-                    config=config_plotly("presence_equipements_esi"),
-                )
-
-        with ligne_haute_droite:
-            st.markdown(
-                '<div class="vg-mini-title">Couverture réelle</div>',
-                unsafe_allow_html=True,
-            )
-
-            # Deux lectures distinctes :
-            # 1) couverture des ESI équipés ; 2) présence d'au moins un contrat sur tous les ESI.
-            taux_equipe_couvert = taux_esi(
-                nb_esi_avec_contrat_equipement,
-                nb_esi_avec_equipement,
-            )
-            taux_equipe_non_couvert = max(100.0 - taux_equipe_couvert, 0.0)
-            taux_avec_contrat = taux_esi(nb_esi_avec_contrat_programme)
-            taux_sans_contrat = max(100.0 - taux_avec_contrat, 0.0)
-
-            if go is None:
-                donnees_couverture = pd.DataFrame(
+        with intensity_left:
+            intensity_distribution_html(
+                [
                     {
-                        "Lecture": [
-                            "ESI équipés couverts",
-                            "ESI avec contrat",
-                        ],
-                        "Taux": [
-                            taux_equipe_couvert,
-                            taux_avec_contrat,
-                        ],
-                    }
-                )
-                st.bar_chart(
-                    donnees_couverture.set_index("Lecture")["Taux"],
-                    width="stretch",
-                )
-            else:
-                fig_couverture = go.Figure()
-
-                # Ligne 1 : uniquement les ESI disposant d'équipements.
-                fig_couverture.add_trace(
-                    go.Bar(
-                        y=["Couverture des équipements"],
-                        x=[taux_equipe_couvert],
-                        orientation="h",
-                        name="Couverts",
-                        marker_color="#2F7C6D",
-                        text=[fmt_pourcentage(taux_equipe_couvert)],
-                        textposition="inside",
-                        insidetextanchor="middle",
-                        customdata=[[nb_esi_avec_contrat_equipement]],
-                        hovertemplate=(
-                            "<b>ESI équipés couverts</b><br>"
-                            "ESI : %{customdata[0]:,}<br>"
-                            "Taux parmi les ESI équipés : %{x:.1f} %<extra></extra>"
-                        ),
-                    )
-                )
-                fig_couverture.add_trace(
-                    go.Bar(
-                        y=["Couverture des équipements"],
-                        x=[taux_equipe_non_couvert],
-                        orientation="h",
-                        name="Non couverts",
-                        marker_color="#F3B4D6",
-                        customdata=[[nb_esi_sans_contrat_equipement]],
-                        hovertemplate=(
-                            "<b>ESI équipés non couverts</b><br>"
-                            "ESI : %{customdata[0]:,}<br>"
-                            "Taux parmi les ESI équipés : %{x:.1f} %<extra></extra>"
-                        ),
-                    )
-                )
-
-                # Ligne 2 : présence contractuelle sur l'ensemble des ESI.
-                fig_couverture.add_trace(
-                    go.Bar(
-                        y=["Couverture contractuelle"],
-                        x=[taux_avec_contrat],
-                        orientation="h",
-                        name="Avec contrat",
-                        marker_color="#173B69",
-                        text=[fmt_pourcentage(taux_avec_contrat)],
-                        textposition="inside",
-                        insidetextanchor="middle",
-                        customdata=[[nb_esi_avec_contrat_programme]],
-                        hovertemplate=(
-                            "<b>ESI avec au moins un contrat</b><br>"
-                            "ESI : %{customdata[0]:,}<br>"
-                            "Taux : %{x:.1f} %<extra></extra>"
-                        ),
-                    )
-                )
-                fig_couverture.add_trace(
-                    go.Bar(
-                        y=["Couverture contractuelle"],
-                        x=[taux_sans_contrat],
-                        orientation="h",
-                        name="Sans contrat",
-                        marker_color="#F4D84E",
-                        customdata=[[nb_esi_sans_contrat_programme]],
-                        hovertemplate=(
-                            "<b>ESI sans contrat</b><br>"
-                            "ESI : %{customdata[0]:,}<br>"
-                            "Taux : %{x:.1f} %<extra></extra>"
-                        ),
-                    )
-                )
-
-                _layout_plotly(fig_couverture, 390)
-                fig_couverture.update_layout(
-                    barmode="stack",
-                    xaxis=dict(
-                        title=None,
-                        ticksuffix=" %",
-                        range=[0, 100],
-                        gridcolor=C_GRID,
-                        tickfont=dict(size=11),
-                    ),
-                    yaxis=dict(
-                        title=None,
-                        categoryorder="array",
-                        categoryarray=[
-                            "Couverture contractuelle",
-                            "Couverture des équipements",
-                        ],
-                        automargin=True,
-                        tickfont=dict(size=12),
-                    ),
-                    legend=dict(
-                        orientation="h",
-                        yanchor="bottom",
-                        y=-0.28,
-                        xanchor="center",
-                        x=0.5,
-                        font=dict(size=10),
-                    ),
-                    margin=dict(l=18, r=18, t=18, b=82),
-                    bargap=0.48,
-                )
-                st.plotly_chart(
-                    fig_couverture,
-                    use_container_width=True,
-                    config=config_plotly("couverture_reelle_esi"),
-                )
-
-            st.caption(
-                "Équipements : base = ESI équipés. Contrats : base = tous les ESI."
+                        "label": "Aucun contrat",
+                        "count": nb_0_contrat,
+                        "rate": taux_sur(nb_0_contrat, total_esi_situation),
+                        "color": "#E7A1C5",
+                    },
+                    {
+                        "label": "1 à 3 contrats",
+                        "count": nb_1_a_3,
+                        "rate": taux_sur(nb_1_a_3, total_esi_situation),
+                        "color": "#67AFCF",
+                    },
+                    {
+                        "label": "4 contrats ou plus",
+                        "count": nb_4_plus,
+                        "rate": taux_sur(nb_4_plus, total_esi_situation),
+                        "color": "#7967C8",
+                    },
+                ]
             )
 
-        # st.markdown("<br>", unsafe_allow_html=True)
-        # st.markdown(
-        #     '<div class="vg-mini-title">Répartition des contrats par ESI</div>',
-        #     unsafe_allow_html=True,
-        # )
-
-        st.markdown("<br>", unsafe_allow_html=True)
-
-        moyenne_texte = (
-            f"{moyenne_contrats_esi:.2f}"
-            .replace(".", ",")
-        )
-
-        mediane_texte = (
-            f"{mediane_contrats_esi:.0f}"
-            .replace(".", ",")
-        )
-
-        def afficher_carte_indicateur(
-            label: str,
-            valeur: str,
-            aide: str,
-            accent: str,
-            pourcentage: str | None = None,
-            hauteur: int = 128,
-        ):
-            if pourcentage:
-                contenu_valeur = (
-                    '<div style="display:flex;align-items:center;gap:10px;">'
-                    f'<div class="vg-card-value" '
-                    f'style="font-size:27px;margin-bottom:0;">'
-                    f'{_safe(valeur)}'
-                    '</div>'
-                    f'<div class="vg-card-pill" style="margin-bottom:0;">'
-                    f'{_safe(pourcentage)}'
-                    '</div>'
-                    '</div>'
-                )
-            else:
-                contenu_valeur = (
-                    f'<div class="vg-card-value" '
-                    f'style="font-size:27px;">'
-                    f'{_safe(valeur)}'
-                    '</div>'
-                )
-
-            carte_html = (
-                f'<div class="vg-card" '
-                f'style="--accent:{accent};'
-                f'height:{hauteur}px;'
-                f'min-height:{hauteur}px;'
-                f'padding:14px 16px;'
-                f'margin-bottom:10px;">'
-                f'<div class="vg-card-accent" '
-                f'style="margin-bottom:10px;"></div>'
-                f'<div class="vg-card-label" '
-                f'style="margin-bottom:7px;line-height:1.25;">'
-                f'{_safe(label)}'
-                f'</div>'
-                f'{contenu_valeur}'
-                f'<div class="vg-card-help">'
-                f'{_safe(aide)}'
-                f'</div>'
-                f'</div>'
+        with intensity_right:
+            intensity_kpi(
+                "Moyenne",
+                f"{moyenne_contrats_esi:.2f}".replace(".", ","),
+                "Contrats distincts par ESI, zéro inclus.",
+                "#4F9B88",
             )
-
-            st.markdown(
-                carte_html,
-                unsafe_allow_html=True,
+            intensity_kpi(
+                "Médiane",
+                f"{mediane_contrats_esi:.0f}".replace(".", ","),
+                "La moitié des ESI en possède autant ou moins.",
+                "#67AFCF",
             )
-
-
-        colonne_graphique, colonne_indicateurs = st.columns(
-            [2.35, 1],
-            gap="large",
-            vertical_alignment="top",
-        )
-
-        # =================================================
-        # GRAPHIQUE À GAUCHE
-        # =================================================
-
-        with colonne_graphique:
-            st.markdown(
-                (
-                    '<div class="vg-mini-title">'
-                    "Répartition des contrats par ESI"
-                    "</div>"
-                ),
-                unsafe_allow_html=True,
+            intensity_kpi(
+                "Multi-contrats même métier",
+                fmt_nombre(nb_esi_multi_metier),
+                "Situations à contrôler dans l’onglet Alertes.",
+                "#7967C8",
             )
-
-            if go is None:
-                st.bar_chart(
-                    distribution_contrats.set_index(
-                        "Tranche"
-                    )["ESI"],
-                    width="stretch",
-                    height=420,
-                )
-
-            else:
-                fig_contrats = go.Figure(
-                    go.Bar(
-                        x=distribution_contrats[
-                            "Tranche"
-                        ].astype(str),
-                        y=distribution_contrats[
-                            "ESI"
-                        ],
-                        text=distribution_contrats[
-                            "Taux"
-                        ].map(
-                            lambda valeur: (
-                                fmt_pourcentage(valeur)
-                            )
-                        ),
-                        textposition="outside",
-                        textfont=dict(
-                            size=12,
-                        ),
-                        cliponaxis=False,
-                        customdata=(
-                            distribution_contrats[
-                                "Taux"
-                            ]
-                        ),
-                        marker=dict(
-                            color=[
-                                "#E89BC7",
-                                "#63B9DF",
-                                "#F4D84E",
-                                "#2F7C6D",
-                                "#432ABD",
-                            ],
-                            line=dict(
-                                color="#FFFFFF",
-                                width=1.5,
-                            ),
-                        ),
-                        hovertemplate=(
-                            "<b>%{x}</b><br>"
-                            "ESI : %{y:,}<br>"
-                            "Part : %{customdata:.1f} %"
-                            "<extra></extra>"
-                        ),
-                    )
-                )
-
-                _layout_plotly(
-                    fig_contrats,
-                    420,
-                )
-
-                fig_contrats.update_layout(
-                    xaxis=dict(
-                        title=None,
-                        tickangle=0,
-                        automargin=True,
-                        tickfont=dict(
-                            size=10,
-                        ),
-                    ),
-                    yaxis=dict(
-                        title="Nombre d’ESI",
-                        gridcolor=C_GRID,
-                        tickfont=dict(
-                            size=10,
-                        ),
-                    ),
-                    margin=dict(
-                        l=52,
-                        r=18,
-                        t=28,
-                        b=55,
-                    ),
-                    showlegend=False,
-                    bargap=0.30,
-                )
-
-                st.plotly_chart(
-                    fig_contrats,
-                    use_container_width=True,
-                    config=config_plotly(
-                        "distribution_contrats_par_esi"
-                    ),
-                )
-
-        # =================================================
-        # INDICATEURS À DROITE
-        # =================================================
-
-                # =================================================
-        # INDICATEURS À DROITE
-        # =================================================
-
-        with colonne_indicateurs:
-
-
-            afficher_carte_indicateur(
-                label="Moyenne",
-                valeur=moyenne_texte,
-                aide=(
-                    "Contrats distincts par ESI, "
-                    "zéro inclus."
-                ),
-                accent=C_TEAL,
-                hauteur=128,
-            )
-
-            afficher_carte_indicateur(
-                label="Médiane",
-                valeur=mediane_texte,
-                aide=(
-                    "50 % des ESI ont ce nombre "
-                    "de contrats ou moins."
-                ),
-                accent=C_NAVY,
-                hauteur=128,
-            )
-
-            afficher_carte_indicateur(
-                label=(
-                    "Multi-contrats sur un même métier"
-                ),
-                valeur=fmt_nombre(
-                    nb_esi_multi_metier
-                ),
-                pourcentage=fmt_pourcentage(
-                    taux_esi(
-                        nb_esi_multi_metier
-                    )
-                ),
-                aide=(
-                    "ESI avec plusieurs contrats "
-                    "sur un même métier."
-                ),
-                accent=C_RED,
-                hauteur=144,
-            )
-            
 
         st.caption(
-            "Calcul : les références de contrats sont "
-            "dédupliquées pour chaque ESI. Les ESI sans "
-            "contrat sont conservés avec la valeur zéro."
-        )
-        
-
-        presence_metiers = construire_presence_metiers(
-            df_contrats=df_contrats_kpi,
-            total_esi=total_esi_situation,
-            top_n=8,
+            "Les contrats sont dédupliqués par référence pour chaque ESI. "
+            "Les ESI sans contrat sont conservés avec la valeur zéro."
         )
 
-        repartition_types = construire_repartition_types_equipement(
-            df_equipements=df_equipements_couverture_kpi,
-            top_n=12,
-        )
-
-        couverture_equipements = construire_couverture_reelle_equipements(
-            df_equipements=df_equipements_couverture_kpi,
-            statut=statut_selectionne,
-        )
 
     # =====================================================
     # ÉQUIPEMENTS DU PATRIMOINE
