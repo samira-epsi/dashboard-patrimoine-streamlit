@@ -2134,6 +2134,299 @@ def inject_style():
             }
         }
 
+
+        /* ÉQUIPEMENTS — PRÉSENTATION PREMIUM */
+        .vg-equipment-hero {
+            position: relative;
+            overflow: hidden;
+            display: grid;
+            grid-template-columns: minmax(260px, .8fr) minmax(0, 1.5fr);
+            gap: 18px;
+            align-items: stretch;
+            margin: 8px 0 16px 0;
+            padding: 18px;
+            background: linear-gradient(145deg, #F3FBF9 0%, #FFFFFF 72%);
+            border: 1px solid #DCEBE7;
+            border-radius: 17px;
+            box-shadow: 0 13px 28px -25px rgba(47, 124, 109, .34);
+        }
+
+        .vg-equipment-hero-main {
+            display: flex;
+            align-items: center;
+            gap: 18px;
+            min-height: 190px;
+            padding: 18px;
+            background: #FFFFFF;
+            border: 1px solid #DDEBE7;
+            border-radius: 15px;
+            box-sizing: border-box;
+        }
+
+        .vg-equipment-ring {
+            --ring-rate: 0;
+            --ring-color: #4F9B88;
+            position: relative;
+            flex: 0 0 auto;
+            width: 128px;
+            height: 128px;
+            border-radius: 50%;
+            background:
+                conic-gradient(
+                    var(--ring-color) calc(var(--ring-rate) * 1%),
+                    #F3D9E4 0
+                );
+            box-shadow: inset 0 0 0 1px rgba(79,155,136,.1);
+        }
+
+        .vg-equipment-ring::before {
+            content: "";
+            position: absolute;
+            inset: 13px;
+            background: #FFFFFF;
+            border-radius: 50%;
+            box-shadow: 0 5px 14px -12px rgba(27,36,48,.35);
+        }
+
+        .vg-equipment-ring-center {
+            position: absolute;
+            inset: 0;
+            z-index: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-direction: column;
+        }
+
+        .vg-equipment-ring-value {
+            color: var(--text-main);
+            font-size: 25px;
+            line-height: 1;
+            font-weight: 900;
+            letter-spacing: -.7px;
+        }
+
+        .vg-equipment-ring-label {
+            margin-top: 4px;
+            color: var(--text-muted);
+            font-size: 9px;
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: .35px;
+        }
+
+        .vg-equipment-hero-copy {
+            min-width: 0;
+        }
+
+        .vg-equipment-hero-kicker {
+            display: inline-flex;
+            margin-bottom: 8px;
+            padding: 4px 8px;
+            color: #347564;
+            background: #EAF7F3;
+            border: 1px solid #CDE9E1;
+            border-radius: 999px;
+            font-size: 9px;
+            font-weight: 850;
+            text-transform: uppercase;
+            letter-spacing: .4px;
+        }
+
+        .vg-equipment-hero-title {
+            color: var(--text-main);
+            font-size: 18px;
+            line-height: 1.28;
+            font-weight: 900;
+            margin-bottom: 7px;
+        }
+
+        .vg-equipment-hero-help {
+            color: var(--text-soft);
+            font-size: 11.5px;
+            line-height: 1.5;
+        }
+
+        .vg-equipment-stats {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 10px;
+        }
+
+        .vg-equipment-stat {
+            min-height: 89px;
+            padding: 13px 14px;
+            background: #FFFFFF;
+            border: 1px solid var(--border);
+            border-left: 4px solid var(--equipment-color);
+            border-radius: 12px;
+            box-sizing: border-box;
+        }
+
+        .vg-equipment-stat-label {
+            margin-bottom: 5px;
+            color: var(--text-muted);
+            font-size: 9px;
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: .38px;
+        }
+
+        .vg-equipment-stat-line {
+            display: flex;
+            align-items: baseline;
+            gap: 7px;
+        }
+
+        .vg-equipment-stat-value {
+            color: var(--text-main);
+            font-size: 23px;
+            line-height: 1;
+            font-weight: 900;
+        }
+
+        .vg-equipment-stat-rate {
+            color: var(--equipment-color);
+            font-size: 11px;
+            font-weight: 850;
+        }
+
+        .vg-equipment-stat-help {
+            margin-top: 5px;
+            color: var(--text-soft);
+            font-size: 10px;
+            line-height: 1.35;
+        }
+
+        .vg-equipment-types-panel {
+            margin-top: 8px;
+            padding: 17px 18px;
+            background: #FFFFFF;
+            border: 1px solid var(--border);
+            border-radius: 15px;
+        }
+
+        .vg-equipment-types-head {
+            display: flex;
+            align-items: flex-start;
+            justify-content: space-between;
+            gap: 14px;
+            margin-bottom: 16px;
+        }
+
+        .vg-equipment-types-title {
+            color: var(--text-main);
+            font-size: 14px;
+            font-weight: 900;
+        }
+
+        .vg-equipment-types-subtitle {
+            margin-top: 3px;
+            color: var(--text-soft);
+            font-size: 10.5px;
+            line-height: 1.4;
+        }
+
+        .vg-equipment-types-total {
+            flex: 0 0 auto;
+            padding: 5px 9px;
+            color: #35566E;
+            background: #F2F7FB;
+            border: 1px solid #DDEAF2;
+            border-radius: 999px;
+            font-size: 10px;
+            font-weight: 800;
+        }
+
+        .vg-equipment-type-row {
+            display: grid;
+            grid-template-columns: minmax(145px, .8fr) minmax(0, 2fr) 150px;
+            align-items: center;
+            gap: 11px;
+            margin-bottom: 12px;
+        }
+
+        .vg-equipment-type-row:last-child {
+            margin-bottom: 0;
+        }
+
+        .vg-equipment-type-label {
+            overflow: hidden;
+            color: var(--text-soft);
+            font-size: 10.5px;
+            font-weight: 750;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .vg-equipment-type-track {
+            overflow: hidden;
+            height: 10px;
+            background: #EEF2F4;
+            border-radius: 999px;
+        }
+
+        .vg-equipment-type-fill {
+            height: 100%;
+            width: var(--equipment-width);
+            background: var(--equipment-bar-color);
+            border-radius: 999px;
+        }
+
+        .vg-equipment-type-value {
+            color: var(--text-main);
+            font-size: 10.5px;
+            font-weight: 850;
+            text-align: right;
+            white-space: nowrap;
+        }
+
+        .st-key-export_repartition_types_equipement,
+        .st-key-export_couverture_equipements {
+            display: flex !important;
+            justify-content: flex-end !important;
+        }
+
+        .st-key-export_repartition_types_equipement button,
+        .st-key-export_couverture_equipements button {
+            min-height: 36px !important;
+            width: auto !important;
+            padding: 7px 12px !important;
+            color: #A3184A !important;
+            background: #FFFFFF !important;
+            border: 1px solid #E5C4D2 !important;
+            border-radius: 10px !important;
+            box-shadow: none !important;
+            font-size: 11px !important;
+            font-weight: 750 !important;
+        }
+
+        .st-key-export_repartition_types_equipement button:hover,
+        .st-key-export_couverture_equipements button:hover {
+            color: #FFFFFF !important;
+            background: #D65A83 !important;
+            border-color: #D65A83 !important;
+        }
+
+        @media screen and (max-width: 900px) {
+            .vg-equipment-hero {
+                grid-template-columns: 1fr;
+            }
+
+            .vg-equipment-stats {
+                grid-template-columns: 1fr;
+            }
+
+            .vg-equipment-type-row {
+                grid-template-columns: 110px minmax(0, 1fr) 105px;
+            }
+
+            .vg-equipment-ring {
+                width: 108px;
+                height: 108px;
+            }
+        }
+
         /* RENVOI COUVERTURE VERS ALERTES */
         .vg-coverage-alert {
             display: flex;
@@ -5093,6 +5386,133 @@ def intensity_kpi(
     )
 
 
+
+def equipment_overview(
+    total: int,
+    covered: int,
+    uncovered: int,
+    rate: float,
+    definition: str,
+):
+    contenu = (
+        '<div class="vg-equipment-hero">'
+        '<div class="vg-equipment-hero-main">'
+        f'<div class="vg-equipment-ring" style="--ring-rate:{max(0.0, min(rate, 100.0)):.2f};">'
+        '<div class="vg-equipment-ring-center">'
+        f'<div class="vg-equipment-ring-value">{_safe(fmt_pourcentage(rate))}</div>'
+        '<div class="vg-equipment-ring-label">couverts</div>'
+        '</div>'
+        '</div>'
+        '<div class="vg-equipment-hero-copy">'
+        '<div class="vg-equipment-hero-kicker">Couverture des équipements</div>'
+        '<div class="vg-equipment-hero-title">'
+        f'{_safe(fmt_nombre(covered))} équipements sur {_safe(fmt_nombre(total))} '
+        'disposent d’un contrat'
+        '</div>'
+        '<div class="vg-equipment-hero-help">'
+        f'Un équipement est considéré comme couvert lorsqu’il possède {_safe(definition)} '
+        'directement rattaché dans Intent.'
+        '</div>'
+        '</div>'
+        '</div>'
+        '<div class="vg-equipment-stats">'
+        '<div class="vg-equipment-stat" style="--equipment-color:#4F9B88;">'
+        '<div class="vg-equipment-stat-label">Avec contrat</div>'
+        '<div class="vg-equipment-stat-line">'
+        f'<span class="vg-equipment-stat-value">{_safe(fmt_nombre(covered))}</span>'
+        f'<span class="vg-equipment-stat-rate">{_safe(fmt_pourcentage(rate))}</span>'
+        '</div>'
+        '<div class="vg-equipment-stat-help">Couverture directement exploitable.</div>'
+        '</div>'
+        '<div class="vg-equipment-stat" style="--equipment-color:#D65A83;">'
+        '<div class="vg-equipment-stat-label">Sans contrat</div>'
+        '<div class="vg-equipment-stat-line">'
+        f'<span class="vg-equipment-stat-value">{_safe(fmt_nombre(uncovered))}</span>'
+        f'<span class="vg-equipment-stat-rate">{_safe(fmt_pourcentage(100.0-rate))}</span>'
+        '</div>'
+        '<div class="vg-equipment-stat-help">Équipements à vérifier ou à rattacher.</div>'
+        '</div>'
+        '<div class="vg-equipment-stat" style="--equipment-color:#67AFCF;">'
+        '<div class="vg-equipment-stat-label">Parc analysé</div>'
+        '<div class="vg-equipment-stat-line">'
+        f'<span class="vg-equipment-stat-value">{_safe(fmt_nombre(total))}</span>'
+        '</div>'
+        '<div class="vg-equipment-stat-help">Équipements distincts du périmètre.</div>'
+        '</div>'
+        '<div class="vg-equipment-stat" style="--equipment-color:#7967C8;">'
+        '<div class="vg-equipment-stat-label">Écart à traiter</div>'
+        '<div class="vg-equipment-stat-line">'
+        f'<span class="vg-equipment-stat-value">{_safe(fmt_nombre(uncovered))}</span>'
+        '</div>'
+        '<div class="vg-equipment-stat-help">Volume restant avant couverture complète.</div>'
+        '</div>'
+        '</div>'
+        '</div>'
+    )
+    st.markdown(contenu, unsafe_allow_html=True)
+
+
+def equipment_types_panel(
+    dataframe: pd.DataFrame,
+    total: int,
+    maximum: int = 7,
+):
+    if dataframe.empty:
+        st.info("Aucune donnée de typologie équipement disponible.")
+        return
+
+    df = dataframe.sort_values("Équipements", ascending=False).head(maximum).copy()
+    max_value = float(df["Équipements"].max()) if not df.empty else 1.0
+    colors = [
+        "#D7A93C",
+        "#67AFCF",
+        "#E7A1C5",
+        "#9BCFC7",
+        "#F0CF6B",
+        "#B5D9EA",
+        "#B8AEEA",
+    ]
+
+    rows = []
+    for index, row in enumerate(df.itertuples(index=False)):
+        label = getattr(row, "_0", None)
+        if label is None:
+            label = row[0]
+        equipment_count = int(getattr(row, "Équipements"))
+        share = float(getattr(row, "_3", row[3]))
+        width = equipment_count / max_value * 100 if max_value else 0
+        color = colors[index % len(colors)]
+
+        rows.append(
+            '<div class="vg-equipment-type-row">'
+            f'<div class="vg-equipment-type-label" title="{_safe(label)}">{_safe(label)}</div>'
+            '<div class="vg-equipment-type-track">'
+            f'<div class="vg-equipment-type-fill" '
+            f'style="--equipment-width:{width:.2f}%;--equipment-bar-color:{color};"></div>'
+            '</div>'
+            f'<div class="vg-equipment-type-value">'
+            f'{_safe(fmt_nombre(equipment_count))} · {_safe(fmt_pourcentage(share))}'
+            '</div>'
+            '</div>'
+        )
+
+    contenu = (
+        '<div class="vg-equipment-types-panel">'
+        '<div class="vg-equipment-types-head">'
+        '<div>'
+        '<div class="vg-equipment-types-title">Principaux types d’équipements</div>'
+        '<div class="vg-equipment-types-subtitle">'
+        'Les catégories les plus présentes dans le parc analysé.'
+        '</div>'
+        '</div>'
+        f'<div class="vg-equipment-types-total">{_safe(fmt_nombre(total))} équipements</div>'
+        '</div>'
+        + "".join(rows)
+        + '</div>'
+    )
+    st.markdown(contenu, unsafe_allow_html=True)
+
+
 def status_banner(
     title: str,
     help_text: str,
@@ -7749,9 +8169,10 @@ elif vue_active == "Couverture":
         "Équipements du patrimoine",
         expanded=True,
     ):
+        st.markdown("<br>", unsafe_allow_html=True)
         section(
             "Équipements du patrimoine",
-            "Répartition du parc et part des équipements disposant réellement d’un contrat directement rattaché dans Intent.",
+            "Comprendre la composition du parc et les équipements encore sans rattachement contractuel.",
         )
 
         repartition_types = construire_repartition_types_equipement(
@@ -7763,400 +8184,83 @@ elif vue_active == "Couverture":
             statut=statut_selectionne,
         )
 
+        def valeur_couverture_equipement(
+            libelle: str,
+            colonne: str,
+            valeur_par_defaut: float = 0.0,
+        ) -> float:
+            if couverture_equipements.empty:
+                return valeur_par_defaut
+
+            valeurs = couverture_equipements.loc[
+                couverture_equipements["Couverture"] == libelle,
+                colonne,
+            ]
+            if valeurs.empty:
+                return valeur_par_defaut
+
+            valeur = pd.to_numeric(valeurs.iloc[0], errors="coerce")
+            return valeur_par_defaut if pd.isna(valeur) else float(valeur)
+
         total_equipements_couverture = int(
             couverture_equipements["Équipements"].sum()
         ) if not couverture_equipements.empty else 0
 
-        col_types, col_couverture = st.columns(
-            [1.25, 0.85],
-            gap="large",
+        nb_equipements_avec_contrat = int(
+            valeur_couverture_equipement(
+                "Équipements avec contrat",
+                "Équipements",
+            )
+        )
+        nb_equipements_sans_contrat = int(
+            valeur_couverture_equipement(
+                "Équipements sans contrat",
+                "Équipements",
+            )
+        )
+        taux_equipements_avec_contrat = (
+            nb_equipements_avec_contrat
+            / total_equipements_couverture
+            * 100
+            if total_equipements_couverture
+            else 0.0
         )
 
-        with col_types:
-            st.markdown(
-                f"""
-                <div class="vg-chart-intro">
-                    <div class="vg-chart-question">
-                        Quels types d’équipement trouve-t-on dans le patrimoine ?
-                    </div>
-                    <div class="vg-chart-base">
-                        {fmt_nombre(total_equipements_couverture)} équipements
-                    </div>
-                </div>
-                """,
-                unsafe_allow_html=True,
-            )
+        definition_couverture = (
+            "un contrat actif valide"
+            if statut_selectionne == "active"
+            else "un contrat inactif"
+            if statut_selectionne == "inactive"
+            else "au moins un contrat actif ou inactif"
+        )
 
-            if repartition_types.empty:
-                st.info(
-                    "Aucun type d’équipement disponible sur ce périmètre."
-                )
-            elif go is None:
-                st.bar_chart(
-                    repartition_types.set_index(
-                        "Type d’équipement"
-                    )["Équipements"],
-                    width="stretch",
-                )
-            else:
-                couleurs_types_3f = [
-                "#F8D8EA",  # rose très doux
-                "#CDEBFA",  # bleu ciel doux
-                "#FFF0A6",  # jaune doux
-                "#B8DDD6",  # vert doux
-                "#FFB7E3",  # rose 3F
-                "#80CDFF",  # bleu ciel 3F
-                "#FFDC55",  # jaune 3F
-                "#008080",  # vert 3F
-                "#0074FF",  # bleu vif 3F
-                "#432ABD",  # violet 3F
-                "#173B69",  # bleu marine 3F
-                "#E5114D",  # rouge 3F pour la catégorie principale
-                ]
+        equipment_overview(
+            total=total_equipements_couverture,
+            covered=nb_equipements_avec_contrat,
+            uncovered=nb_equipements_sans_contrat,
+            rate=taux_equipements_avec_contrat,
+            definition=definition_couverture,
+        )
 
-                fig_types = go.Figure(
-                    go.Bar(
-                        x=repartition_types["Équipements"],
-                        y=repartition_types["Type d’équipement"],
-                        orientation="h",
-                        text=[
-                            f"{fmt_nombre(nb)} · {fmt_pourcentage(part)}"
-                            for nb, part in zip(
-                                repartition_types["Équipements"],
-                                repartition_types["Part du parc"],
-                            )
-                        ],
-                        textposition="outside",
-                        cliponaxis=False,
-                        customdata=repartition_types[
-                            ["ESI", "Part du parc"]
-                        ].to_numpy(),
-                        marker=dict(
-                            color=[
-                                couleurs_types_3f[
-                                    index % len(couleurs_types_3f)
-                                ]
-                                for index in range(
-                                    len(repartition_types)
-                                )
-                            ],
-                            line=dict(
-                                color="#FFFFFF",
-                                width=1.5,
-                            ),
-                        ),
-                        hovertemplate=(
-                            "<b>%{y}</b><br>"
-                            "Équipements : %{x:,}<br>"
-                            "ESI concernés : %{customdata[0]:,}<br>"
-                            "Part du parc : %{customdata[1]:.1f} %"
-                            "<extra></extra>"
-                        ),
-                    )
-                )
-                hauteur_types = max(
-                    370,
-                    min(
-                        570,
-                        39 * len(repartition_types) + 100,
-                    ),
-                )
-                _layout_plotly(fig_types, hauteur_types)
-                fig_types.update_layout(
-                    xaxis=dict(
-                        title="Nombre d’équipements",
-                        gridcolor=C_GRID,
-                        rangemode="tozero",
-                    ),
-                    yaxis=dict(
-                        title=None,
-                        automargin=True,
-                    ),
-                    margin=dict(
-                        l=18,
-                        r=115,
-                        t=8,
-                        b=48,
-                    ),
-                    bargap=0.34,
-                    showlegend=False,
-                )
-                st.plotly_chart(
-                    fig_types,
-                    use_container_width=True,
-                    config=config_plotly(
-                        "repartition_types_equipement"
-                    ),
-                )
+        equipment_types_panel(
+            dataframe=repartition_types,
+            total=total_equipements_couverture,
+            maximum=7,
+        )
 
-        with col_couverture:
-            st.markdown(
-                f"""
-                <div class="vg-chart-intro">
-                    <div class="vg-chart-question">
-                        Quelle part des équipements possède un contrat ?
-                    </div>
-                    <div class="vg-chart-base">
-                        {fmt_nombre(total_equipements_couverture)} équipements
-                    </div>
-                </div>
-                """,
-                unsafe_allow_html=True,
-            )
+        export_col_1, export_col_2 = st.columns([1, 1])
 
-            if couverture_equipements.empty:
-                st.info(
-                    "Aucune donnée de couverture équipement disponible."
-                )
-            elif go is None:
-                st.bar_chart(
-                    couverture_equipements.set_index(
-                        "Couverture"
-                    )["Équipements"],
-                    width="stretch",
-                )
-            
-
-            else:
-                def lire_valeur_couverture(
-                    libelle: str,
-                    colonne: str,
-                    valeur_par_defaut: float = 0.0,
-                ) -> float:
-                    valeurs = couverture_equipements.loc[
-                        couverture_equipements["Couverture"] == libelle,
-                        colonne,
-                    ]
-
-                    if valeurs.empty:
-                        return valeur_par_defaut
-
-                    valeur = pd.to_numeric(
-                        valeurs.iloc[0],
-                        errors="coerce",
-                    )
-
-                    return (
-                        valeur_par_defaut
-                        if pd.isna(valeur)
-                        else float(valeur)
-                    )
-
-                avec_contrat = int(
-                    lire_valeur_couverture(
-                        "Équipements avec contrat",
-                        "Équipements",
-                    )
-                )
-
-                sans_contrat = int(
-                    lire_valeur_couverture(
-                        "Équipements sans contrat",
-                        "Équipements",
-                    )
-                )
-
-                part_avec = lire_valeur_couverture(
-                    "Équipements avec contrat",
-                    "Taux",
-                )
-
-                part_sans = lire_valeur_couverture(
-                    "Équipements sans contrat",
-                    "Taux",
-                )
-
-                fig_couverture = go.Figure()
-
-                fig_couverture.add_trace(
-                    go.Bar(
-                        y=["Parc équipements"],
-                        x=[part_avec],
-                        name="Équipements avec contrat",
-                        orientation="h",
-                        width=0.54,
-                        marker=dict(
-                            color="#A9DCD4",
-                            line=dict(
-                                color="#FFFFFF",
-                                width=2,
-                            ),
-                        ),
-                        text=[
-                            fmt_pourcentage(
-                                part_avec
-                            )
-                        ],
-                        textposition="inside",
-                        insidetextanchor="middle",
-                        textfont=dict(
-                            color=C_NAVY,
-                            size=16,
-                        ),
-                        customdata=[
-                            avec_contrat
-                        ],
-                        hovertemplate=(
-                            "<b>Équipements avec contrat</b><br>"
-                            "Équipements : %{customdata:,}<br>"
-                            "Part du parc : %{x:.1f} %"
-                            "<extra></extra>"
-                        ),
-                    )
-                )
-
-                fig_couverture.add_trace(
-                    go.Bar(
-                        y=["Parc équipements"],
-                        x=[part_sans],
-                        name="Équipements sans contrat",
-                        orientation="h",
-                        width=0.54,
-                        marker=dict(
-                            color="#F6CFE2",
-                            line=dict(
-                                color="#FFFFFF",
-                                width=2,
-                            ),
-                        ),
-                        customdata=[
-                            sans_contrat
-                        ],
-                        hovertemplate=(
-                            "<b>Équipements sans contrat</b><br>"
-                            "Équipements : %{customdata:,}<br>"
-                            "Part du parc : %{x:.1f} %"
-                            "<extra></extra>"
-                        ),
-                    )
-                )
-
-                _layout_plotly(
-                    fig_couverture,
-                    340,
-                )
-
-                fig_couverture.update_layout(
-                    barmode="stack",
-                    showlegend=True,
-                    legend=dict(
-                        orientation="h",
-                        yanchor="top",
-                        y=-0.12,
-                        xanchor="center",
-                        x=0.5,
-                        title=None,
-                        font=dict(
-                            size=11
-                        ),
-                        itemclick=False,
-                        itemdoubleclick=False,
-                    ),
-                    margin=dict(
-                        l=22,
-                        r=22,
-                        t=82,
-                        b=78,
-                    ),
-                    xaxis=dict(
-                        title=None,
-                        range=[0, 100],
-                        tickvals=[
-                            0,
-                            25,
-                            50,
-                            75,
-                            100,
-                        ],
-                        ticktext=[
-                            "0 %",
-                            "25 %",
-                            "50 %",
-                            "75 %",
-                            "100 %",
-                        ],
-                        showgrid=False,
-                        zeroline=False,
-                        fixedrange=True,
-                    ),
-                    yaxis=dict(
-                        title=None,
-                        showticklabels=False,
-                        showgrid=False,
-                        zeroline=False,
-                        fixedrange=True,
-                    ),
-                    hovermode="y unified",
-                )
-
-                # fig_couverture.add_annotation(
-                #     x=0,
-                #     y=1.24,
-                #     xref="paper",
-                #     yref="paper",
-                #     xanchor="left",
-                #     # text=(
-                #     #     f"<b>{fmt_pourcentage(part_avec)}</b> "
-                #     #     "avec contrat"
-                #     # ),
-                #     showarrow=False,
-                #     font=dict(
-                #         color=C_NAVY,
-                #         size=20,
-                #     ),
-                # )
-
-                # fig_couverture.add_annotation(
-                #     x=1,
-                #     y=1.24,
-                #     xref="paper",
-                #     yref="paper",
-                #     xanchor="right",
-                #     # text=(
-                #     #     f"<b>{fmt_nombre(sans_contrat)}</b> "
-                #     #     "sans contrat"
-                #     # ),
-                #     showarrow=False,
-                #     font=dict(
-                #         color="#A94F7A",
-                #         size=13,
-                #     ),
-                # )
-
-                st.plotly_chart(
-                    fig_couverture,
-                    use_container_width=True,
-                    config=config_plotly(
-                        "couverture_equipements"
-                    ),
-                )
-
-
-            definition_couverture = (
-                "un contrat actif valide"
-                if statut_selectionne == "active"
-                else "un contrat inactif"
-                if statut_selectionne == "inactive"
-                else "au moins un contrat actif ou inactif"
-            )
-            st.caption(
-                "Un équipement est compté comme couvert lorsqu’il possède "
-                f"{definition_couverture} directement rattaché dans Intent."
-            )
-
-        export_types, export_couverture = st.columns(2)
-
-        with export_types:
+        with export_col_1:
             dataframe_download(
-                "⇩ Répartition",
+                "⬆ Exporter la répartition",
                 repartition_types,
                 "repartition_types_equipement.xlsx",
                 cle="export_repartition_types_equipement",
             )
 
-        with export_couverture:
+        with export_col_2:
             dataframe_download(
-                "⇩ Couverture",
+                "⬆ Exporter la couverture",
                 couverture_equipements,
                 "couverture_equipements.xlsx",
                 cle="export_couverture_equipements",
@@ -8169,9 +8273,7 @@ elif vue_active == "Couverture":
         )
 
         if afficher_detail_equipements:
-            detail_equipements = (
-                df_equipements_couverture_kpi.copy()
-            )
+            detail_equipements = df_equipements_couverture_kpi.copy()
 
             colonne_type_detail = next(
                 (
@@ -8188,133 +8290,54 @@ elif vue_active == "Couverture":
             if colonne_type_detail is not None:
                 types_disponibles = (
                     detail_equipements[colonne_type_detail]
-                    .fillna("Non renseigné")
+                    .dropna()
                     .astype(str)
                     .str.strip()
-                    .replace("", "Non renseigné")
-                    .sort_values()
-                    .unique()
-                    .tolist()
                 )
-            else:
-                types_disponibles = []
+                types_disponibles = sorted(
+                    [
+                        value
+                        for value in types_disponibles.unique().tolist()
+                        if value
+                        and value not in {
+                            "nan",
+                            "None",
+                            "<NA>",
+                            "Non renseigné",
+                        }
+                    ]
+                )
 
-            filtre_type, filtre_couverture = st.columns(2)
-
-            with filtre_type:
                 type_selectionne = st.selectbox(
                     "Type d’équipement",
                     ["Tous les types"] + types_disponibles,
-                    key="detail_type_equipement",
+                    key="filtre_detail_type_equipement",
                 )
 
-            with filtre_couverture:
-                couverture_selectionnee = st.selectbox(
-                    "Couverture",
-                    [
-                        "Tous les équipements",
-                        "Avec contrat",
-                        "Sans contrat",
-                    ],
-                    key="detail_couverture_equipement",
-                )
+                if type_selectionne != "Tous les types":
+                    detail_equipements = detail_equipements[
+                        detail_equipements[colonne_type_detail]
+                        .astype(str)
+                        .str.strip()
+                        == type_selectionne
+                    ].copy()
 
-            if (
-                type_selectionne != "Tous les types"
-                and colonne_type_detail is not None
-            ):
-                detail_equipements = detail_equipements[
-                    detail_equipements[colonne_type_detail]
-                    .fillna("Non renseigné")
-                    .astype(str)
-                    .str.strip()
-                    == type_selectionne
-                ].copy()
-
-            if statut_selectionne == "active":
-                indicateur_detail = (
-                    serie_numerique(
-                        detail_equipements,
-                        "equipment_covered_valid",
-                    ) > 0
-                )
-            elif statut_selectionne == "inactive":
-                indicateur_detail = (
-                    serie_numerique(
-                        detail_equipements,
-                        "nb_contrats_inactifs",
-                    ) > 0
-                )
-            else:
-                indicateur_detail = (
-                    serie_numerique(
-                        detail_equipements,
-                        "equipment_has_contract_link",
-                    ) > 0
-                )
-
-            detail_equipements["_avec_contrat"] = (
-                indicateur_detail.astype(int)
+            recherche_equipement = st.text_input(
+                "Rechercher un équipement",
+                placeholder="Référence, type, ESI, société, agence...",
+                key="recherche_detail_equipement",
             )
 
-            if couverture_selectionnee == "Avec contrat":
-                detail_equipements = detail_equipements[
-                    detail_equipements["_avec_contrat"] > 0
-                ].copy()
-            elif couverture_selectionnee == "Sans contrat":
-                detail_equipements = detail_equipements[
-                    detail_equipements["_avec_contrat"] == 0
-                ].copy()
-
-            if "equipment_reference" in detail_equipements.columns:
-                detail_equipements = (
-                    detail_equipements.drop_duplicates(
-                        "equipment_reference"
-                    )
+            if recherche_equipement.strip():
+                detail_equipements = filtrer_table_recherche(
+                    detail_equipements,
+                    recherche_equipement,
                 )
 
-            detail_equipements["Couverture"] = (
-                detail_equipements["_avec_contrat"]
-                .map(
-                    {
-                        1: "Avec contrat",
-                        0: "Sans contrat",
-                    }
-                )
+            table_detail_equipements = preparer_equipements_table(
+                detail_equipements
             )
 
-            colonnes_detail = {
-                "societe": "Société",
-                "agence": "Agence",
-                "groupe": "Groupe",
-                "secteur": "Secteur",
-                "esi_reference": "Référence ESI",
-                "esi_label": "Libellé ESI",
-                "equipment_reference": "Référence équipement",
-                "equipment_label": "Libellé équipement",
-                "equipment_type": "Type d’équipement",
-                "equipment_asset_type": "Famille d’équipement",
-                "Couverture": "Couverture",
-                "nb_contrats_total": "Contrats rattachés",
-                "nb_contrats_actifs_valides": "Contrats actifs valides",
-                "nb_contrats_inactifs": "Contrats inactifs",
-            }
-
-            colonnes_disponibles = [
-                colonne
-                for colonne in colonnes_detail
-                if colonne in detail_equipements.columns
-            ]
-            table_detail_equipements = (
-                detail_equipements[colonnes_disponibles]
-                .rename(columns=colonnes_detail)
-                .copy()
-            )
-
-            st.caption(
-                f"{fmt_nombre(len(table_detail_equipements))} "
-                "équipement(s) affiché(s)."
-            )
             st.dataframe(
                 table_detail_equipements,
                 width="stretch",
@@ -8322,12 +8345,11 @@ elif vue_active == "Couverture":
                 height=430,
             )
             dataframe_download(
-                "Télécharger le détail en Excel",
+                "⬆ Exporter le détail",
                 table_detail_equipements,
                 "detail_equipements.xlsx",
                 cle="export_detail_equipements",
             )
-
 
 
     with st.expander(
@@ -8350,8 +8372,23 @@ elif vue_active == "Couverture":
             '<div class="vg-mini-title">ESI concernés par métier</div>',
             unsafe_allow_html=True,
         )
+        total_esi_metiers = int(
+            dedupliquer_esi(df_esi_context)["esi_reference"].nunique()
+            if (
+                not df_esi_context.empty
+                and "esi_reference" in df_esi_context.columns
+            )
+            else 0
+        )
+
+        presence_metiers = construire_presence_metiers(
+            df_contrats=df_contrats_kpi,
+            total_esi=total_esi_metiers,
+            top_n=8,
+        )
+
         st.caption(
-            f"Base analysée : {fmt_nombre(total_esi_situation)} ESI. "
+            f"Base analysée : {fmt_nombre(total_esi_metiers)} ESI. "
             "Un ESI peut être compté dans plusieurs métiers."
         )
 
