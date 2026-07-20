@@ -991,110 +991,124 @@ def inject_style():
         }
 
         
-        /* PAGE ALERTES — VERSION IMPACTANTE */
+        /* PAGE ALERTES — VERSION COMPACTE */
         .vg-alerts-hero {
             position: relative;
             overflow: hidden;
-            display: grid;
-            grid-template-columns: minmax(0, 1.7fr) minmax(260px, 0.8fr);
-            gap: 24px;
-            align-items: center;
-            margin: 4px 0 20px 0;
-            padding: 24px 26px;
+            margin: 4px 0 18px 0;
+            padding: 19px 22px;
             color: #FFFFFF;
             background:
-                radial-gradient(circle at 88% 12%, rgba(255,255,255,.18), transparent 25%),
-                linear-gradient(135deg, #C80E43 0%, #E5114D 56%, #F34A73 100%);
+                radial-gradient(circle at 92% 12%, rgba(255,255,255,.16), transparent 24%),
+                linear-gradient(135deg, #C80E43 0%, #E5114D 58%, #F34A73 100%);
             border: 1px solid #C80E43;
-            border-radius: 19px;
-            box-shadow: 0 18px 38px -24px rgba(156, 15, 58, .65);
+            border-radius: 16px;
+            box-shadow: 0 14px 30px -24px rgba(156, 15, 58, .62);
         }
 
         .vg-alerts-hero::after {
             content: "!";
             position: absolute;
-            right: 28px;
-            top: -36px;
-            color: rgba(255,255,255,.08);
-            font-size: 190px;
+            right: 24px;
+            top: -43px;
+            color: rgba(255,255,255,.07);
+            font-size: 150px;
             line-height: 1;
             font-weight: 900;
         }
 
-        .vg-alerts-hero-main,
-        .vg-alerts-hero-side {
+        .vg-alerts-hero-inner {
             position: relative;
             z-index: 1;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 24px;
+        }
+
+        .vg-alerts-hero-main {
+            min-width: 0;
         }
 
         .vg-alerts-hero-kicker {
             display: inline-flex;
             align-items: center;
-            gap: 8px;
-            margin-bottom: 8px;
-            padding: 5px 10px;
+            gap: 7px;
+            margin-bottom: 7px;
+            padding: 4px 9px;
             color: #FFFFFF;
-            background: rgba(255,255,255,.15);
+            background: rgba(255,255,255,.14);
             border: 1px solid rgba(255,255,255,.22);
             border-radius: 999px;
-            font-size: 10.5px;
+            font-size: 9.5px;
             font-weight: 800;
-            letter-spacing: .55px;
+            letter-spacing: .5px;
             text-transform: uppercase;
+        }
+
+        .vg-alerts-hero-line {
+            display: flex;
+            align-items: baseline;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-bottom: 5px;
         }
 
         .vg-alerts-hero-value {
             color: #FFFFFF;
-            font-size: 47px;
-            line-height: .95;
-            letter-spacing: -1.6px;
+            font-size: 36px;
+            line-height: 1;
+            letter-spacing: -1.1px;
             font-weight: 900;
-            margin-bottom: 10px;
         }
 
         .vg-alerts-hero-title {
             color: #FFFFFF;
-            font-size: 18px;
+            font-size: 16px;
             font-weight: 850;
-            margin-bottom: 7px;
         }
 
         .vg-alerts-hero-help {
-            max-width: 720px;
-            color: rgba(255,255,255,.83);
-            font-size: 12.5px;
-            line-height: 1.55;
+            max-width: 680px;
+            color: rgba(255,255,255,.84);
+            font-size: 11.5px;
+            line-height: 1.45;
             font-weight: 550;
         }
 
-        .vg-alerts-hero-side {
-            display: grid;
-            gap: 9px;
+        .vg-alerts-hero-stats {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: flex-end;
+            gap: 8px;
+            flex: 0 0 auto;
         }
 
         .vg-alerts-hero-stat {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            gap: 14px;
-            padding: 10px 12px;
-            background: rgba(255,255,255,.12);
-            border: 1px solid rgba(255,255,255,.19);
-            border-radius: 11px;
-            backdrop-filter: blur(5px);
+            min-width: 112px;
+            padding: 9px 11px;
+            background: rgba(255,255,255,.13);
+            border: 1px solid rgba(255,255,255,.2);
+            border-radius: 10px;
+            backdrop-filter: blur(4px);
         }
 
         .vg-alerts-hero-stat-label {
-            color: rgba(255,255,255,.82);
-            font-size: 11px;
-            font-weight: 700;
+            display: block;
+            margin-bottom: 2px;
+            color: rgba(255,255,255,.78);
+            font-size: 9.5px;
+            font-weight: 750;
+            text-transform: uppercase;
+            letter-spacing: .35px;
         }
 
         .vg-alerts-hero-stat-value {
+            display: block;
             color: #FFFFFF;
-            font-size: 16px;
+            font-size: 17px;
+            line-height: 1;
             font-weight: 900;
-            white-space: nowrap;
         }
 
         .vg-alert-zone-title {
@@ -1265,12 +1279,27 @@ def inject_style():
 
         @media screen and (max-width: 900px) {
             .vg-alerts-hero {
-                grid-template-columns: 1fr;
-                padding: 21px 20px;
+                padding: 17px 18px;
+            }
+
+            .vg-alerts-hero-inner {
+                align-items: flex-start;
+                flex-direction: column;
+                gap: 14px;
+            }
+
+            .vg-alerts-hero-stats {
+                width: 100%;
+                justify-content: flex-start;
+            }
+
+            .vg-alerts-hero-stat {
+                flex: 1 1 105px;
+                min-width: 0;
             }
 
             .vg-alerts-hero-value {
-                font-size: 39px;
+                font-size: 32px;
             }
 
             .vg-impact-alert-card {
@@ -3943,37 +3972,40 @@ def alerts_hero(
     a_traiter: int,
     a_controler: int,
 ):
-    st.markdown(
-        f"""
-        <div class="vg-alerts-hero">
-            <div class="vg-alerts-hero-main">
-                <div class="vg-alerts-hero-kicker">Centre de vigilance</div>
-                <div class="vg-alerts-hero-value">{_safe(fmt_nombre(total))}</div>
-                <div class="vg-alerts-hero-title">alertes détectées</div>
-                <div class="vg-alerts-hero-help">
-                    Des situations nécessitent une action, une régularisation
-                    ou un contrôle métier sur le périmètre sélectionné.
-                </div>
-            </div>
-
-            <div class="vg-alerts-hero-side">
-                <div class="vg-alerts-hero-stat">
-                    <span class="vg-alerts-hero-stat-label">Prioritaires</span>
-                    <span class="vg-alerts-hero-stat-value">{_safe(fmt_nombre(prioritaires))}</span>
-                </div>
-                <div class="vg-alerts-hero-stat">
-                    <span class="vg-alerts-hero-stat-label">À traiter</span>
-                    <span class="vg-alerts-hero-stat-value">{_safe(fmt_nombre(a_traiter))}</span>
-                </div>
-                <div class="vg-alerts-hero-stat">
-                    <span class="vg-alerts-hero-stat-label">À contrôler</span>
-                    <span class="vg-alerts-hero-stat-value">{_safe(fmt_nombre(a_controler))}</span>
-                </div>
-            </div>
-        </div>
-        """,
-        unsafe_allow_html=True,
+    # HTML volontairement construit sans indentation en début de ligne :
+    # cela évite que Markdown interprète une partie du bloc comme du code.
+    contenu = (
+        '<div class="vg-alerts-hero">'
+        '<div class="vg-alerts-hero-inner">'
+        '<div class="vg-alerts-hero-main">'
+        '<div class="vg-alerts-hero-kicker">Centre de vigilance</div>'
+        '<div class="vg-alerts-hero-line">'
+        f'<span class="vg-alerts-hero-value">{_safe(fmt_nombre(total))}</span>'
+        '<span class="vg-alerts-hero-title">alertes détectées</span>'
+        '</div>'
+        '<div class="vg-alerts-hero-help">'
+        'Des situations nécessitent une action, une régularisation '
+        'ou un contrôle métier sur le périmètre sélectionné.'
+        '</div>'
+        '</div>'
+        '<div class="vg-alerts-hero-stats">'
+        '<div class="vg-alerts-hero-stat">'
+        '<span class="vg-alerts-hero-stat-label">Prioritaires</span>'
+        f'<span class="vg-alerts-hero-stat-value">{_safe(fmt_nombre(prioritaires))}</span>'
+        '</div>'
+        '<div class="vg-alerts-hero-stat">'
+        '<span class="vg-alerts-hero-stat-label">À traiter</span>'
+        f'<span class="vg-alerts-hero-stat-value">{_safe(fmt_nombre(a_traiter))}</span>'
+        '</div>'
+        '<div class="vg-alerts-hero-stat">'
+        '<span class="vg-alerts-hero-stat-label">À contrôler</span>'
+        f'<span class="vg-alerts-hero-stat-value">{_safe(fmt_nombre(a_controler))}</span>'
+        '</div>'
+        '</div>'
+        '</div>'
+        '</div>'
     )
+    st.markdown(contenu, unsafe_allow_html=True)
 
 
 def alert_detail_intro(
