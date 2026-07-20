@@ -1400,7 +1400,7 @@ def render_filtres_patrimoine(
     st.sidebar.markdown(
         """
         <div class="filters-header">
-            <div class="filters-title">Filtres patrimoine</div>
+            <div class="filters-title">Filtres</div>
             <div class="filters-subtitle">Chaque sélection actualise toutes les autres listes disponibles.</div>
         </div>
         """,

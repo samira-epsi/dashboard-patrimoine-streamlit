@@ -5618,34 +5618,7 @@ if vue_active == "Vue globale":
 # =====================================================
 # VUE 2 — COUVERTURE
 # =====================================================
-
-elif vue_active == "Couverture":
-    if statut_selectionne == "active":
-        section(
-            "Couverture du patrimoine",
-            "Périmètre des contrats actifs et patrimoine associé.",
-        )
-    elif statut_selectionne == "inactive":
-        section(
-            "Couverture du patrimoine",
-            "Périmètre des contrats inactifs et patrimoine associé.",
-        )
-    else:
-        if perimetre_filtre_actif:
-            section(
-                "Couverture du patrimoine",
-                "Périmètre sélectionné et patrimoine associé.",
-            )
-        else:
-            section(
-                "Couverture du patrimoine",
-                (
-                    "La réalité présente dans Intent, puis la part "
-                    "réellement exploitable pour les analyses de couverture."
-                ),
-            )
-
-    # Renvoi vers l'onglet Alertes.
+# Renvoi vers l'onglet Alertes.
     if nb_situations_alertes > 0:
         alerte_col, bouton_alerte_col = st.columns(
             [5, 1.25],
@@ -5712,6 +5685,34 @@ elif vue_active == "Couverture":
             unsafe_allow_html=True,
         )
 
+
+elif vue_active == "Couverture":
+    if statut_selectionne == "active":
+        section(
+            "Couverture du patrimoine",
+            "Périmètre des contrats actifs et patrimoine associé.",
+        )
+    elif statut_selectionne == "inactive":
+        section(
+            "Couverture du patrimoine",
+            "Périmètre des contrats inactifs et patrimoine associé.",
+        )
+    else:
+        if perimetre_filtre_actif:
+            section(
+                "Couverture du patrimoine",
+                "Périmètre sélectionné et patrimoine associé.",
+            )
+        else:
+            section(
+                "Couverture du patrimoine",
+                (
+                    "La réalité présente dans Intent, puis la part "
+                    "réellement exploitable pour les analyses de couverture."
+                ),
+            )
+
+    
     # Même base de lecture que la Vue globale.
     if statut_selectionne is None and not perimetre_filtre_actif:
         contrats_value = global_value(df_global, "contrats_total")
