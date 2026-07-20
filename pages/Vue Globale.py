@@ -2427,6 +2427,522 @@ def inject_style():
             }
         }
 
+
+        /* COUVERTURE — STRUCTURE CLAIRE */
+        .vg-step-header {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin: 20px 0 12px 0;
+        }
+
+        .vg-step-number {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 26px;
+            height: 26px;
+            flex: 0 0 auto;
+            color: #FFFFFF;
+            background: #D65A83;
+            border-radius: 8px;
+            font-size: 11px;
+            font-weight: 900;
+        }
+
+        .vg-step-copy {
+            min-width: 0;
+        }
+
+        .vg-step-title {
+            color: var(--text-main);
+            font-size: 14px;
+            font-weight: 900;
+            line-height: 1.2;
+        }
+
+        .vg-step-help {
+            margin-top: 2px;
+            color: var(--text-soft);
+            font-size: 10.5px;
+            line-height: 1.4;
+        }
+
+        .vg-coverage-reading-card {
+            min-height: 238px;
+            padding: 18px 19px;
+            background: #FFFFFF;
+            border: 1px solid #E5E8EC;
+            border-radius: 15px;
+            box-shadow: 0 9px 22px -22px rgba(27,36,48,.28);
+            box-sizing: border-box;
+        }
+
+        .vg-coverage-reading-card.primary {
+            border-top: 5px solid #D65A83;
+        }
+
+        .vg-coverage-reading-card.secondary {
+            border-top: 5px solid #4F9B88;
+        }
+
+        .vg-coverage-reading-eyebrow {
+            margin-bottom: 8px;
+            color: var(--reading-color);
+            font-size: 9px;
+            font-weight: 850;
+            letter-spacing: .5px;
+            text-transform: uppercase;
+        }
+
+        .vg-coverage-reading-title {
+            color: var(--text-main);
+            font-size: 16px;
+            font-weight: 900;
+            margin-bottom: 5px;
+        }
+
+        .vg-coverage-reading-question {
+            min-height: 34px;
+            color: var(--text-soft);
+            font-size: 11px;
+            line-height: 1.45;
+            margin-bottom: 13px;
+        }
+
+        .vg-coverage-reading-main {
+            display: flex;
+            align-items: baseline;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-bottom: 12px;
+        }
+
+        .vg-coverage-reading-rate {
+            color: var(--text-main);
+            font-size: 34px;
+            line-height: 1;
+            letter-spacing: -1px;
+            font-weight: 900;
+        }
+
+        .vg-coverage-reading-count {
+            color: var(--text-soft);
+            font-size: 11px;
+            font-weight: 750;
+        }
+
+        .vg-coverage-progress {
+            display: flex;
+            overflow: hidden;
+            width: 100%;
+            height: 10px;
+            margin-bottom: 13px;
+            background: #EEF2F4;
+            border-radius: 999px;
+        }
+
+        .vg-coverage-progress-covered {
+            height: 100%;
+            background: var(--reading-color);
+        }
+
+        .vg-coverage-progress-gap {
+            height: 100%;
+            background: var(--gap-color);
+        }
+
+        .vg-coverage-reading-stats {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 9px;
+        }
+
+        .vg-coverage-reading-stat {
+            padding: 10px 11px;
+            background: #F8FAFB;
+            border: 1px solid #E9EDF0;
+            border-radius: 10px;
+        }
+
+        .vg-coverage-reading-stat-label {
+            color: var(--text-muted);
+            font-size: 8.7px;
+            font-weight: 800;
+            letter-spacing: .35px;
+            text-transform: uppercase;
+            margin-bottom: 4px;
+        }
+
+        .vg-coverage-reading-stat-value {
+            color: var(--text-main);
+            font-size: 18px;
+            font-weight: 900;
+        }
+
+        .vg-coverage-reading-base {
+            margin-top: 10px;
+            color: var(--text-muted);
+            font-size: 9.7px;
+            font-weight: 600;
+        }
+
+        .vg-park-grid {
+            display: grid;
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+            gap: 10px;
+        }
+
+        .vg-park-card {
+            padding: 14px 15px;
+            background: #FFFFFF;
+            border: 1px solid #E5E8EC;
+            border-radius: 12px;
+            box-shadow: 0 6px 16px -18px rgba(27,36,48,.22);
+        }
+
+        .vg-park-label {
+            margin-bottom: 5px;
+            color: var(--text-muted);
+            font-size: 9px;
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: .38px;
+        }
+
+        .vg-park-line {
+            display: flex;
+            align-items: baseline;
+            gap: 7px;
+        }
+
+        .vg-park-value {
+            color: var(--text-main);
+            font-size: 23px;
+            line-height: 1;
+            font-weight: 900;
+        }
+
+        .vg-park-rate {
+            color: var(--park-color);
+            font-size: 10.5px;
+            font-weight: 850;
+        }
+
+        .vg-contract-intensity {
+            display: grid;
+            grid-template-columns: minmax(0, 1.6fr) minmax(250px, .8fr);
+            gap: 12px;
+        }
+
+        .vg-intensity-distribution {
+            padding: 16px;
+            background: #FFFFFF;
+            border: 1px solid #E5E8EC;
+            border-radius: 13px;
+        }
+
+        .vg-intensity-row {
+            display: grid;
+            grid-template-columns: 125px minmax(0, 1fr) 78px;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 12px;
+        }
+
+        .vg-intensity-row:last-child {
+            margin-bottom: 0;
+        }
+
+        .vg-intensity-label {
+            color: var(--text-soft);
+            font-size: 10.5px;
+            font-weight: 750;
+        }
+
+        .vg-intensity-track {
+            overflow: hidden;
+            height: 9px;
+            background: #EEF1F4;
+            border-radius: 999px;
+        }
+
+        .vg-intensity-fill {
+            height: 100%;
+            width: var(--intensity-width);
+            background: var(--intensity-color);
+            border-radius: 999px;
+        }
+
+        .vg-intensity-value {
+            color: var(--text-main);
+            font-size: 10.5px;
+            font-weight: 850;
+            text-align: right;
+        }
+
+        .vg-intensity-kpis {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 8px;
+        }
+
+        .vg-intensity-kpi {
+            padding: 11px 13px;
+            background: #FFFFFF;
+            border: 1px solid #E5E8EC;
+            border-left: 4px solid var(--intensity-color);
+            border-radius: 11px;
+        }
+
+        .vg-intensity-kpi-label {
+            color: var(--text-muted);
+            font-size: 8.8px;
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: .35px;
+            margin-bottom: 3px;
+        }
+
+        .vg-intensity-kpi-value {
+            color: var(--text-main);
+            font-size: 19px;
+            font-weight: 900;
+        }
+
+        .vg-intensity-kpi-help {
+            margin-top: 3px;
+            color: var(--text-soft);
+            font-size: 9.3px;
+            line-height: 1.35;
+        }
+
+        /* ÉQUIPEMENTS — STRUCTURE SIMPLIFIÉE */
+        .vg-equipment-summary {
+            display: grid;
+            grid-template-columns: minmax(250px, .8fr) minmax(0, 1.4fr);
+            gap: 14px;
+            align-items: stretch;
+        }
+
+        .vg-equipment-main-card {
+            display: flex;
+            align-items: center;
+            gap: 18px;
+            min-height: 170px;
+            padding: 18px;
+            background: linear-gradient(145deg, #EFF8F5 0%, #FFFFFF 75%);
+            border: 1px solid #DCEAE6;
+            border-radius: 15px;
+        }
+
+        .vg-equipment-ring {
+            --ring-rate: 0;
+            position: relative;
+            flex: 0 0 auto;
+            width: 116px;
+            height: 116px;
+            border-radius: 50%;
+            background:
+                conic-gradient(
+                    #4F9B88 calc(var(--ring-rate) * 1%),
+                    #F1D7E1 0
+                );
+        }
+
+        .vg-equipment-ring::before {
+            content: "";
+            position: absolute;
+            inset: 13px;
+            background: #FFFFFF;
+            border-radius: 50%;
+        }
+
+        .vg-equipment-ring-center {
+            position: absolute;
+            inset: 0;
+            z-index: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-direction: column;
+        }
+
+        .vg-equipment-ring-value {
+            color: var(--text-main);
+            font-size: 24px;
+            line-height: 1;
+            font-weight: 900;
+        }
+
+        .vg-equipment-ring-label {
+            margin-top: 4px;
+            color: var(--text-muted);
+            font-size: 8.5px;
+            font-weight: 800;
+            text-transform: uppercase;
+        }
+
+        .vg-equipment-main-title {
+            color: var(--text-main);
+            font-size: 17px;
+            line-height: 1.3;
+            font-weight: 900;
+            margin-bottom: 7px;
+        }
+
+        .vg-equipment-main-help {
+            color: var(--text-soft);
+            font-size: 10.8px;
+            line-height: 1.45;
+        }
+
+        .vg-equipment-kpis {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 10px;
+        }
+
+        .vg-equipment-kpi {
+            padding: 14px 15px;
+            background: #FFFFFF;
+            border: 1px solid #E5E8EC;
+            border-left: 4px solid var(--equipment-color);
+            border-radius: 12px;
+        }
+
+        .vg-equipment-kpi-label {
+            margin-bottom: 5px;
+            color: var(--text-muted);
+            font-size: 9px;
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: .35px;
+        }
+
+        .vg-equipment-kpi-line {
+            display: flex;
+            align-items: baseline;
+            gap: 7px;
+        }
+
+        .vg-equipment-kpi-value {
+            color: var(--text-main);
+            font-size: 22px;
+            line-height: 1;
+            font-weight: 900;
+        }
+
+        .vg-equipment-kpi-rate {
+            color: var(--equipment-color);
+            font-size: 10.5px;
+            font-weight: 850;
+        }
+
+        .vg-equipment-kpi-help {
+            margin-top: 5px;
+            color: var(--text-soft);
+            font-size: 9.7px;
+            line-height: 1.35;
+        }
+
+        .vg-equipment-types-panel {
+            margin-top: 14px;
+            padding: 17px 18px;
+            background: #FFFFFF;
+            border: 1px solid #E5E8EC;
+            border-radius: 14px;
+        }
+
+        .vg-equipment-types-head {
+            display: flex;
+            align-items: flex-start;
+            justify-content: space-between;
+            gap: 14px;
+            margin-bottom: 15px;
+        }
+
+        .vg-equipment-types-title {
+            color: var(--text-main);
+            font-size: 14px;
+            font-weight: 900;
+        }
+
+        .vg-equipment-types-subtitle {
+            margin-top: 3px;
+            color: var(--text-soft);
+            font-size: 10.3px;
+        }
+
+        .vg-equipment-types-total {
+            padding: 5px 9px;
+            color: #35566E;
+            background: #F2F7FB;
+            border: 1px solid #DDEAF2;
+            border-radius: 999px;
+            font-size: 9.8px;
+            font-weight: 800;
+        }
+
+        .vg-equipment-type-row {
+            display: grid;
+            grid-template-columns: minmax(140px, .8fr) minmax(0, 2fr) 140px;
+            align-items: center;
+            gap: 11px;
+            margin-bottom: 11px;
+        }
+
+        .vg-equipment-type-row:last-child {
+            margin-bottom: 0;
+        }
+
+        .vg-equipment-type-label {
+            overflow: hidden;
+            color: var(--text-soft);
+            font-size: 10.2px;
+            font-weight: 750;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .vg-equipment-type-track {
+            overflow: hidden;
+            height: 9px;
+            background: #EEF2F4;
+            border-radius: 999px;
+        }
+
+        .vg-equipment-type-fill {
+            height: 100%;
+            width: var(--equipment-width);
+            background: var(--equipment-bar-color);
+            border-radius: 999px;
+        }
+
+        .vg-equipment-type-value {
+            color: var(--text-main);
+            font-size: 10.2px;
+            font-weight: 850;
+            text-align: right;
+            white-space: nowrap;
+        }
+
+        @media screen and (max-width: 900px) {
+            .vg-park-grid,
+            .vg-contract-intensity,
+            .vg-equipment-summary {
+                grid-template-columns: 1fr;
+            }
+
+            .vg-equipment-kpis {
+                grid-template-columns: 1fr;
+            }
+
+            .vg-equipment-type-row {
+                grid-template-columns: 105px minmax(0, 1fr) 100px;
+            }
+        }
+
         /* RENVOI COUVERTURE VERS ALERTES */
         .vg-coverage-alert {
             display: flex;
@@ -5290,7 +5806,7 @@ def coverage_reading_card(
     gap_width = max(0.0, 100.0 - covered_width)
 
     contenu = (
-        f'<div class="vg-coverage-reading-card" '
+        f'<div class="vg-coverage-reading-card {"primary" if "Niveau 1" in eyebrow else "secondary"}" '
         f'style="--reading-color:{_safe(color)};--gap-color:{_safe(gap_color)};">'
         f'<div class="vg-coverage-reading-eyebrow">{_safe(eyebrow)}</div>'
         f'<div class="vg-coverage-reading-title">{_safe(title)}</div>'
@@ -5395,56 +5911,55 @@ def equipment_overview(
     definition: str,
 ):
     contenu = (
-        '<div class="vg-equipment-hero">'
-        '<div class="vg-equipment-hero-main">'
+        '<div class="vg-equipment-summary">'
+        '<div class="vg-equipment-main-card">'
         f'<div class="vg-equipment-ring" style="--ring-rate:{max(0.0, min(rate, 100.0)):.2f};">'
         '<div class="vg-equipment-ring-center">'
         f'<div class="vg-equipment-ring-value">{_safe(fmt_pourcentage(rate))}</div>'
         '<div class="vg-equipment-ring-label">couverts</div>'
         '</div>'
         '</div>'
-        '<div class="vg-equipment-hero-copy">'
-        '<div class="vg-equipment-hero-kicker">Couverture des équipements</div>'
-        '<div class="vg-equipment-hero-title">'
-        f'{_safe(fmt_nombre(covered))} équipements sur {_safe(fmt_nombre(total))} '
-        'disposent d’un contrat'
+        '<div>'
+        '<div class="vg-equipment-main-title">'
+        f'{_safe(fmt_nombre(covered))} équipements couverts '
+        f'sur {_safe(fmt_nombre(total))}'
         '</div>'
-        '<div class="vg-equipment-hero-help">'
-        f'Un équipement est considéré comme couvert lorsqu’il possède {_safe(definition)} '
+        '<div class="vg-equipment-main-help">'
+        f'Un équipement est couvert lorsqu’il possède {_safe(definition)} '
         'directement rattaché dans Intent.'
         '</div>'
         '</div>'
         '</div>'
-        '<div class="vg-equipment-stats">'
-        '<div class="vg-equipment-stat" style="--equipment-color:#4F9B88;">'
-        '<div class="vg-equipment-stat-label">Avec contrat</div>'
-        '<div class="vg-equipment-stat-line">'
-        f'<span class="vg-equipment-stat-value">{_safe(fmt_nombre(covered))}</span>'
-        f'<span class="vg-equipment-stat-rate">{_safe(fmt_pourcentage(rate))}</span>'
+        '<div class="vg-equipment-kpis">'
+        '<div class="vg-equipment-kpi" style="--equipment-color:#4F9B88;">'
+        '<div class="vg-equipment-kpi-label">Avec contrat</div>'
+        '<div class="vg-equipment-kpi-line">'
+        f'<span class="vg-equipment-kpi-value">{_safe(fmt_nombre(covered))}</span>'
+        f'<span class="vg-equipment-kpi-rate">{_safe(fmt_pourcentage(rate))}</span>'
         '</div>'
-        '<div class="vg-equipment-stat-help">Couverture directement exploitable.</div>'
+        '<div class="vg-equipment-kpi-help">Couverture exploitable.</div>'
         '</div>'
-        '<div class="vg-equipment-stat" style="--equipment-color:#D65A83;">'
-        '<div class="vg-equipment-stat-label">Sans contrat</div>'
-        '<div class="vg-equipment-stat-line">'
-        f'<span class="vg-equipment-stat-value">{_safe(fmt_nombre(uncovered))}</span>'
-        f'<span class="vg-equipment-stat-rate">{_safe(fmt_pourcentage(100.0-rate))}</span>'
+        '<div class="vg-equipment-kpi" style="--equipment-color:#D65A83;">'
+        '<div class="vg-equipment-kpi-label">Sans contrat</div>'
+        '<div class="vg-equipment-kpi-line">'
+        f'<span class="vg-equipment-kpi-value">{_safe(fmt_nombre(uncovered))}</span>'
+        f'<span class="vg-equipment-kpi-rate">{_safe(fmt_pourcentage(100.0-rate))}</span>'
         '</div>'
-        '<div class="vg-equipment-stat-help">Équipements à vérifier ou à rattacher.</div>'
+        '<div class="vg-equipment-kpi-help">À vérifier ou rattacher.</div>'
         '</div>'
-        '<div class="vg-equipment-stat" style="--equipment-color:#67AFCF;">'
-        '<div class="vg-equipment-stat-label">Parc analysé</div>'
-        '<div class="vg-equipment-stat-line">'
-        f'<span class="vg-equipment-stat-value">{_safe(fmt_nombre(total))}</span>'
+        '<div class="vg-equipment-kpi" style="--equipment-color:#67AFCF;">'
+        '<div class="vg-equipment-kpi-label">Parc analysé</div>'
+        '<div class="vg-equipment-kpi-line">'
+        f'<span class="vg-equipment-kpi-value">{_safe(fmt_nombre(total))}</span>'
         '</div>'
-        '<div class="vg-equipment-stat-help">Équipements distincts du périmètre.</div>'
+        '<div class="vg-equipment-kpi-help">Équipements distincts.</div>'
         '</div>'
-        '<div class="vg-equipment-stat" style="--equipment-color:#7967C8;">'
-        '<div class="vg-equipment-stat-label">Écart à traiter</div>'
-        '<div class="vg-equipment-stat-line">'
-        f'<span class="vg-equipment-stat-value">{_safe(fmt_nombre(uncovered))}</span>'
+        '<div class="vg-equipment-kpi" style="--equipment-color:#7967C8;">'
+        '<div class="vg-equipment-kpi-label">Écart à traiter</div>'
+        '<div class="vg-equipment-kpi-line">'
+        f'<span class="vg-equipment-kpi-value">{_safe(fmt_nombre(uncovered))}</span>'
         '</div>'
-        '<div class="vg-equipment-stat-help">Volume restant avant couverture complète.</div>'
+        '<div class="vg-equipment-kpi-help">Reste avant couverture complète.</div>'
         '</div>'
         '</div>'
         '</div>'
@@ -5511,6 +6026,26 @@ def equipment_types_panel(
         + '</div>'
     )
     st.markdown(contenu, unsafe_allow_html=True)
+
+
+
+def step_header(
+    number: int,
+    title: str,
+    help_text: str,
+):
+    st.markdown(
+        (
+            '<div class="vg-step-header">'
+            f'<div class="vg-step-number">{_safe(number)}</div>'
+            '<div class="vg-step-copy">'
+            f'<div class="vg-step-title">{_safe(title)}</div>'
+            f'<div class="vg-step-help">{_safe(help_text)}</div>'
+            '</div>'
+            '</div>'
+        ),
+        unsafe_allow_html=True,
+    )
 
 
 def status_banner(
@@ -7975,6 +8510,12 @@ elif vue_active == "Couverture":
             base_esi_equipes,
         )
 
+        step_header(
+            1,
+            "Comparer les deux niveaux de couverture",
+            "Distinguer la présence d’un contrat de la couverture réelle des équipements.",
+        )
+
         col_contractuelle, col_reelle = st.columns(
             2,
             gap="medium",
@@ -8010,9 +8551,10 @@ elif vue_active == "Couverture":
                 uncovered_label="Équipés non couverts",
             )
 
-        st.markdown(
-            '<div class="vg-simple-section-title">Composition du patrimoine</div>',
-            unsafe_allow_html=True,
+        step_header(
+            2,
+            "Comprendre la composition du patrimoine",
+            "Identifier les ESI équipés et ceux qui ne portent aucun équipement.",
         )
 
         parc_cols = st.columns(3)
@@ -8101,9 +8643,10 @@ elif vue_active == "Couverture":
             colonne_multi_metier
         )
 
-        st.markdown(
-            '<div class="vg-simple-section-title">Intensité contractuelle</div>',
-            unsafe_allow_html=True,
+        step_header(
+            3,
+            "Mesurer l’intensité contractuelle",
+            "Observer combien de contrats sont rattachés à chaque ESI.",
         )
 
         intensity_left, intensity_right = st.columns(
@@ -8234,6 +8777,12 @@ elif vue_active == "Couverture":
             else "au moins un contrat actif ou inactif"
         )
 
+        step_header(
+            1,
+            "Mesurer la couverture du parc",
+            "Voir immédiatement les équipements couverts et ceux qui restent à traiter.",
+        )
+
         equipment_overview(
             total=total_equipements_couverture,
             covered=nb_equipements_avec_contrat,
@@ -8242,30 +8791,17 @@ elif vue_active == "Couverture":
             definition=definition_couverture,
         )
 
+        step_header(
+            2,
+            "Comprendre la composition du parc",
+            "Identifier les catégories d’équipements les plus présentes.",
+        )
+
         equipment_types_panel(
             dataframe=repartition_types,
             total=total_equipements_couverture,
             maximum=7,
         )
-
-        export_col_1, export_col_2 = st.columns([1, 1])
-
-        with export_col_1:
-            dataframe_download(
-                "⬆ Exporter la répartition",
-                repartition_types,
-                "repartition_types_equipement.xlsx",
-                cle="export_repartition_types_equipement",
-            )
-
-        with export_col_2:
-            dataframe_download(
-                "⬆ Exporter la couverture",
-                couverture_equipements,
-                "couverture_equipements.xlsx",
-                cle="export_couverture_equipements",
-            )
-
         afficher_detail_equipements = st.toggle(
             "Afficher le détail des équipements",
             value=False,
