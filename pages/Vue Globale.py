@@ -7064,683 +7064,424 @@ elif vue_active == "Couverture":
 elif vue_active == "Alertes":
     section(
         "Alertes opérationnelles",
-        (
-            "Les situations qui nécessitent une décision, "
-            "une correction métier ou une action de suivi."
-        ),
+        "Les situations concrètes qui nécessitent une vérification ou une action métier.",
     )
 
-    expired_detail = contrats_actifs_fin_depassee(df_contrats_kpi)
+    # -------------------------------------------------
+    # 1. CONTRATS ACTIFS DONT LA DATE DE FIN EST DÉPASSÉE
+    # -------------------------------------------------
+    alertes_contrats_expires = contrats_actifs_fin_depassee(
+        df_contrats_kpi
+    ).copy()
 
-    alertes_calculees = []
-
-    # 1. Contrats actifs expirés
-    for _, row in expired_detail.iterrows():
-        alertes_calculees.append(
-            {
-                "Alerte": "Contrat actif avec date de fin dépassée",
-                "Catégorie": "Contrats",
-                "Priorité": "Bloquante",
-                "Référence contrat": row.get("contract_reference", ""),
-                "Libellé contrat": row.get("contract_label", ""),
-                "Référence ESI": row.get("esi_reference", ""),
-                "Libellé ESI": row.get("esi_label", ""),
-                "Métier": row.get("contract_topic", ""),
-                "Prestataire": row.get("third_party_label", ""),
-                "Date de fin": fmt_date(row.get("contract_end_date")),
-                "Action attendue": (
-                    "Vérifier le statut du contrat et le désactiver "
-                    "ou corriger sa date de fin."
-                ),
-            }
-        )
-
-    # 2. ESI sans contrat actif
-    esi_sans_contrat = df_esi_context[
+    # -------------------------------------------------
+    # 2. ESI SANS CONTRAT ACTIF
+    # -------------------------------------------------
+    alertes_esi_sans_contrat = df_esi_context[
         serie_numerique(df_esi_context, "nb_contrats_actifs") == 0
     ].copy()
 
-    for _, row in esi_sans_contrat.iterrows():
-        alertes_calculees.append(
-            {
-                "Alerte": "ESI sans contrat actif",
-                "Catégorie": "Couverture",
-                "Priorité": "Importante",
-                "Référence ESI": row.get("esi_reference", ""),
-                "Libellé ESI": row.get("esi_label", ""),
-                "Société": row.get("societe", ""),
-                "Agence": row.get("agence", ""),
-                "Groupe": row.get("groupe", ""),
-                "Secteur": row.get("secteur", ""),
-                "Action attendue": (
-                    "Vérifier si l'ESI doit être couvert "
-                    "et rattacher un contrat si nécessaire."
-                ),
-            }
-        )
-
-    # 3. ESI équipés sans contrat couvrant les équipements
-    colonne_couverture_equipement = trouver_colonne(
+    # -------------------------------------------------
+    # 3. ESI ÉQUIPÉS SANS COUVERTURE DES ÉQUIPEMENTS
+    # -------------------------------------------------
+    colonne_esi_non_couvert = trouver_colonne(
         df_esi_context,
         [
-            "esi_equipe_couvert",
-            "equipements_couverts",
-            "nb_equipements_couverts",
+            "esi_avec_equipement_sans_couverture_valide",
+            "esi_avec_equipement_sans_contrat_equipement",
         ],
     )
 
-    if colonne_couverture_equipement:
-        esi_equipes_non_couverts = df_esi_context[
-            (serie_numerique(df_esi_context, "nb_equipements") > 0)
-            & (
-                serie_numerique(
-                    df_esi_context,
-                    colonne_couverture_equipement,
-                ) == 0
-            )
+    if colonne_esi_non_couvert:
+        alertes_esi_equipes_non_couverts = df_esi_context[
+            serie_numerique(df_esi_context, colonne_esi_non_couvert) > 0
         ].copy()
     else:
-        esi_equipes_non_couverts = pd.DataFrame()
+        alertes_esi_equipes_non_couverts = pd.DataFrame()
 
-    for _, row in esi_equipes_non_couverts.iterrows():
-        alertes_calculees.append(
-            {
-                "Alerte": "ESI équipé sans contrat couvrant les équipements",
-                "Catégorie": "Couverture équipements",
-                "Priorité": "Bloquante",
-                "Référence ESI": row.get("esi_reference", ""),
-                "Libellé ESI": row.get("esi_label", ""),
-                "Nombre d'équipements": row.get("nb_equipements", 0),
-                "Société": row.get("societe", ""),
-                "Agence": row.get("agence", ""),
-                "Action attendue": (
-                    "Identifier les équipements concernés "
-                    "et contrôler leurs rattachements contractuels."
-                ),
-            }
-        )
-
-    # 4. Surcouverture sur un même métier
-    esi_multi_metier = df_esi_context[
+    # -------------------------------------------------
+    # 4. PLUSIEURS CONTRATS SUR LE MÊME MÉTIER
+    # -------------------------------------------------
+    alertes_multi_metier = df_esi_context[
         serie_numerique(df_esi_context, "esi_multi_meme_metier") > 0
     ].copy()
 
-    for _, row in esi_multi_metier.iterrows():
-        alertes_calculees.append(
-            {
-                "Alerte": "Plusieurs contrats actifs sur un même métier",
-                "Catégorie": "Surcouverture",
-                "Priorité": "À surveiller",
-                "Référence ESI": row.get("esi_reference", ""),
-                "Libellé ESI": row.get("esi_label", ""),
-                "Société": row.get("societe", ""),
-                "Agence": row.get("agence", ""),
-                "Action attendue": (
-                    "Vérifier si les contrats se complètent "
-                    "ou s'ils se chevauchent inutilement."
-                ),
-            }
+    nb_contrats_expires = int(
+        alertes_contrats_expires["contract_reference"].nunique()
+        if "contract_reference" in alertes_contrats_expires.columns
+        else len(alertes_contrats_expires)
+    )
+    nb_esi_sans_contrat = int(
+        alertes_esi_sans_contrat["esi_reference"].nunique()
+        if "esi_reference" in alertes_esi_sans_contrat.columns
+        else len(alertes_esi_sans_contrat)
+    )
+    nb_esi_equipes_non_couverts = int(
+        alertes_esi_equipes_non_couverts["esi_reference"].nunique()
+        if "esi_reference" in alertes_esi_equipes_non_couverts.columns
+        else len(alertes_esi_equipes_non_couverts)
+    )
+    nb_esi_multi_metier = int(
+        alertes_multi_metier["esi_reference"].nunique()
+        if "esi_reference" in alertes_multi_metier.columns
+        else len(alertes_multi_metier)
+    )
+
+    total_alertes = (
+        nb_contrats_expires
+        + nb_esi_sans_contrat
+        + nb_esi_equipes_non_couverts
+        + nb_esi_multi_metier
+    )
+
+    if total_alertes == 0:
+        status_banner(
+            "Aucune alerte détectée",
+            "Aucune situation nécessitant une action n'est remontée sur le périmètre sélectionné.",
+            C_TEAL,
+            "#F1FBF8",
+            "#CFECE3",
         )
-
-    df_alertes_calculees = pd.DataFrame(alertes_calculees)
-    df_alertes_source = preparer_alertes_table(df_alertes)
-
-    if not df_alertes_source.empty:
-        table_alertes = df_alertes_source.copy()
     else:
-        table_alertes = df_alertes_calculees.copy()
+        status_banner(
+            f"{fmt_nombre(total_alertes)} situation(s) à vérifier",
+            "Les alertes sont comptées par contrat ou par ESI selon leur nature.",
+            C_RED,
+            "#FFF3F5",
+            "#F3CCD5",
+        )
 
-    if "Priorité" not in table_alertes.columns:
-        table_alertes["Priorité"] = "À surveiller"
+    colonnes_alertes = st.columns(4)
 
-    table_alertes["Priorité"] = (
-        table_alertes["Priorité"]
-        .fillna("À surveiller")
-        .apply(normaliser_gravite)
-    )
-
-    nb_bloquantes = int(
-        (table_alertes["Priorité"] == "Bloquante").sum()
-    )
-    nb_importantes = int(
-        (table_alertes["Priorité"] == "Importante").sum()
-    )
-    nb_surveillance = int(
-        (table_alertes["Priorité"] == "À surveiller").sum()
-    )
-
-    p1, p2, p3 = st.columns(3)
-
-    with p1:
-        priority_card(
-            "Bloquantes",
-            nb_bloquantes,
-            "Une action immédiate est nécessaire.",
+    with colonnes_alertes[0]:
+        family_card(
+            "Contrats actifs expirés",
+            nb_contrats_expires,
+            "Contrats encore actifs alors que leur date de fin est dépassée.",
             C_RED,
         )
 
-    with p2:
-        priority_card(
-            "Importantes",
-            nb_importantes,
-            "À traiter rapidement pour sécuriser la couverture.",
+    with colonnes_alertes[1]:
+        family_card(
+            "ESI sans contrat actif",
+            nb_esi_sans_contrat,
+            "Programmes ne disposant d'aucun contrat actif dans le périmètre.",
             "#E5A000",
         )
 
-    with p3:
-        priority_card(
-            "À surveiller",
-            nb_surveillance,
-            "À contrôler pour éviter une dégradation future.",
-            C_TEAL,
-        )
-
-    st.markdown("<br>", unsafe_allow_html=True)
-
-    section(
-        "Alertes par sujet",
-        "Les volumes sont regroupés selon l'action métier à entreprendre.",
-    )
-
-    categories_alertes = {
-        "Contrats": (
-            "Contrats",
-            "Statuts ou dates de contrats nécessitant une correction.",
-            C_RED,
-        ),
-        "Couverture": (
-            "Couverture ESI",
-            "Programmes ne disposant pas de contrat actif.",
-            "#E5A000",
-        ),
-        "Couverture équipements": (
-            "Couverture équipements",
-            "Équipements présents mais sans couverture contractuelle identifiée.",
+    with colonnes_alertes[2]:
+        family_card(
+            "ESI équipés non couverts",
+            nb_esi_equipes_non_couverts,
+            "ESI avec équipements mais sans couverture contractuelle exploitable.",
             C_VIOLET,
-        ),
-        "Surcouverture": (
-            "Surcouverture",
-            "Plusieurs contrats actifs potentiellement redondants.",
-            C_TEAL,
-        ),
-    }
-
-    colonnes_categories = st.columns(4)
-
-    for colonne, (categorie, contenu) in zip(
-        colonnes_categories,
-        categories_alertes.items(),
-    ):
-        titre, aide, couleur = contenu
-        nombre = (
-            int((table_alertes["Catégorie"] == categorie).sum())
-            if "Catégorie" in table_alertes.columns
-            else 0
         )
 
-        with colonne:
-            family_card(
-                titre,
-                nombre,
-                aide,
-                couleur,
-            )
+    with colonnes_alertes[3]:
+        family_card(
+            "Multi-contrats même métier",
+            nb_esi_multi_metier,
+            "ESI avec plusieurs contrats rattachés au même métier.",
+            C_NAVY,
+        )
 
     st.markdown("<br>", unsafe_allow_html=True)
 
     section(
         "Détail des alertes",
-        "Filtre les alertes selon leur priorité ou leur nature.",
+        "Sélectionne une alerte pour afficher les objets concernés et les exporter.",
     )
 
-    filtre_col1, filtre_col2 = st.columns([1, 1])
+    type_alerte = st.selectbox(
+        "Alerte à analyser",
+        [
+            "Contrats actifs expirés",
+            "ESI sans contrat actif",
+            "ESI équipés non couverts",
+            "Multi-contrats sur un même métier",
+        ],
+        key="type_alerte_detail",
+    )
 
-    with filtre_col1:
-        priorites_disponibles = [
-            valeur
-            for valeur in ["Bloquante", "Importante", "À surveiller"]
-            if valeur in table_alertes["Priorité"].unique()
-        ]
-
-        priorites_selectionnees = st.multiselect(
-            "Priorité",
-            priorites_disponibles,
-            default=priorites_disponibles,
-            key="alertes_priorites",
+    if type_alerte == "Contrats actifs expirés":
+        table_alerte = preparer_contrats_table(
+            alertes_contrats_expires
         )
+        nom_export = "contrats_actifs_expires.xlsx"
+        message_vide = "Aucun contrat actif avec une date de fin dépassée."
 
-    with filtre_col2:
-        categories_disponibles = (
-            sorted(table_alertes["Catégorie"].dropna().unique().tolist())
-            if "Catégorie" in table_alertes.columns
-            else []
+    elif type_alerte == "ESI sans contrat actif":
+        table_alerte = preparer_esi_table(
+            alertes_esi_sans_contrat
         )
+        nom_export = "esi_sans_contrat_actif.xlsx"
+        message_vide = "Aucun ESI sans contrat actif."
 
-        categories_selectionnees = st.multiselect(
-            "Catégorie",
-            categories_disponibles,
-            default=categories_disponibles,
-            key="alertes_categories",
+    elif type_alerte == "ESI équipés non couverts":
+        table_alerte = preparer_esi_table(
+            alertes_esi_equipes_non_couverts
         )
+        nom_export = "esi_equipes_non_couverts.xlsx"
+        message_vide = "Aucun ESI équipé sans couverture contractuelle."
 
-    table_alertes_filtree = table_alertes.copy()
-
-    if priorites_selectionnees:
-        table_alertes_filtree = table_alertes_filtree[
-            table_alertes_filtree["Priorité"].isin(
-                priorites_selectionnees
-            )
-        ]
-
-    if (
-        categories_selectionnees
-        and "Catégorie" in table_alertes_filtree.columns
-    ):
-        table_alertes_filtree = table_alertes_filtree[
-            table_alertes_filtree["Catégorie"].isin(
-                categories_selectionnees
-            )
-        ]
+    else:
+        table_alerte = preparer_esi_table(
+            alertes_multi_metier
+        )
+        nom_export = "esi_multi_contrats_meme_metier.xlsx"
+        message_vide = "Aucun ESI avec plusieurs contrats sur le même métier."
 
     recherche_alerte = st.text_input(
-        "Rechercher dans les alertes",
-        placeholder="Contrat, ESI, métier, prestataire ou description.",
-        key="alertes_recherche",
+        "Rechercher dans le détail",
+        placeholder="Référence, libellé, société, agence, métier ou prestataire.",
+        key="alertes_recherche_detail",
     )
 
-    table_alertes_filtree = filtrer_table_recherche(
-        table_alertes_filtree,
+    table_alerte = filtrer_table_recherche(
+        table_alerte,
         recherche_alerte,
     )
 
-    if table_alertes_filtree.empty:
-        st.success(
-            "Aucune alerte ne correspond aux critères sélectionnés."
-        )
+    if table_alerte.empty:
+        st.success(message_vide)
     else:
         st.dataframe(
-            table_alertes_filtree,
+            table_alerte,
             width="stretch",
             hide_index=True,
             height=520,
         )
-
         dataframe_download(
-            "Télécharger les alertes",
-            table_alertes_filtree,
-            "alertes_operationnelles.xlsx",
-            cle="export_alertes_operationnelles",
+            "Télécharger le détail des alertes",
+            table_alerte,
+            nom_export,
+            cle="export_detail_alertes",
         )
 
+
 # =====================================================
-# VUE 4 — ANOMALIES ET QUALITÉ DES DONNÉES
+# VUE 4 — ANOMALIES DE RATTACHEMENT
 # =====================================================
 
 else:
     section(
-        "Anomalies et qualité des données",
-        (
-            "Les incohérences, informations manquantes et problèmes "
-            "de rattachement qui empêchent une exploitation fiable."
+        "Anomalies de rattachement",
+        "Les objets patrimoniaux absents de leur niveau de rattachement attendu.",
+    )
+
+    # -------------------------------------------------
+    # 1. PROGRAMMES SANS LOGEMENT
+    # -------------------------------------------------
+    anomalies_programmes_sans_logement = df_esi_context[
+        serie_numerique(df_esi_context, "nb_logements") == 0
+    ].copy()
+
+    # -------------------------------------------------
+    # 2. LOGEMENTS SANS PROGRAMME
+    # -------------------------------------------------
+    if not df_qualite.empty and "anomalie_type" in df_qualite.columns:
+        types_qualite = (
+            df_qualite["anomalie_type"]
+            .fillna("")
+            .astype(str)
+            .str.upper()
+            .str.strip()
+        )
+
+        anomalies_logements_sans_programme = df_qualite[
+            types_qualite == "LOGEMENT_SANS_PROGRAMME"
+        ].copy()
+
+        anomalies_equipements_sans_programme = df_qualite[
+            types_qualite == "EQUIPEMENT_SANS_PROGRAMME"
+        ].copy()
+    else:
+        anomalies_logements_sans_programme = pd.DataFrame()
+        anomalies_equipements_sans_programme = pd.DataFrame()
+
+    nb_programmes_sans_logement = int(
+        anomalies_programmes_sans_logement["esi_reference"].nunique()
+        if "esi_reference" in anomalies_programmes_sans_logement.columns
+        else len(anomalies_programmes_sans_logement)
+    )
+
+    nb_logements_sans_programme_detail = compter_objets_distincts(
+        anomalies_logements_sans_programme,
+        trouver_colonne(
+            anomalies_logements_sans_programme,
+            ["objet_reference", "housing_reference", "logement_reference"],
         ),
     )
-
-    resume_qualite = preparer_resume_qualite(
-        df_qualite_resume,
-        df_qualite,
+    nb_logements_sans_programme = max(
+        nb_logements_sans_programme_detail,
+        int(global_value(df_global, "logements_sans_programme", 0)),
     )
 
-    if resume_qualite.empty:
+    nb_equipements_sans_programme_detail = compter_objets_distincts(
+        anomalies_equipements_sans_programme,
+        trouver_colonne(
+            anomalies_equipements_sans_programme,
+            ["objet_reference", "equipment_reference"],
+        ),
+    )
+    nb_equipements_sans_programme = max(
+        nb_equipements_sans_programme_detail,
+        int(global_value(df_global, "equipements_sans_programme", 0)),
+    )
+
+    total_anomalies_rattachement = (
+        nb_programmes_sans_logement
+        + nb_logements_sans_programme
+        + nb_equipements_sans_programme
+    )
+
+    if total_anomalies_rattachement == 0:
         status_banner(
-            "Aucune anomalie détectée",
-            "Les vues de qualité ne remontent actuellement aucun problème.",
+            "Aucune anomalie de rattachement détectée",
+            "Tous les programmes, logements et équipements sont rattachés comme attendu.",
             C_TEAL,
             "#F1FBF8",
             "#CFECE3",
         )
-
-        st.info(
-            "La table dashboard.qualite_donnees_resume est vide "
-            "ou ne contient aucune anomalie exploitable."
-        )
-
     else:
-        nb_bloquantes = int(
-            resume_qualite.loc[
-                resume_qualite["Niveau"] == "Bloquante",
-                "Nombre",
-            ].sum()
-        )
-        nb_importantes = int(
-            resume_qualite.loc[
-                resume_qualite["Niveau"] == "Importante",
-                "Nombre",
-            ].sum()
-        )
-        nb_surveillance = int(
-            resume_qualite.loc[
-                resume_qualite["Niveau"] == "À surveiller",
-                "Nombre",
-            ].sum()
+        status_banner(
+            f"{fmt_nombre(total_anomalies_rattachement)} objet(s) à contrôler",
+            "Ces objets ne disposent pas du rattachement patrimonial attendu.",
+            "#E5A000",
+            "#FFF9EA",
+            "#F1DEAD",
         )
 
-        if nb_bloquantes > 0:
-            status_banner(
-                f"{fmt_nombre(nb_bloquantes)} anomalies bloquantes",
-                (
-                    "Certaines données ne peuvent pas être exploitées "
-                    "fiablement avant correction."
-                ),
-                C_RED,
-                "#FFF3F5",
-                "#F3CCD5",
-            )
-        elif nb_importantes > 0:
-            status_banner(
-                f"{fmt_nombre(nb_importantes)} anomalies importantes",
-                (
-                    "Aucune anomalie bloquante, mais plusieurs corrections "
-                    "doivent être priorisées."
-                ),
-                "#D88A00",
-                "#FFF9EA",
-                "#F1DEAD",
-            )
-        else:
-            status_banner(
-                "Aucune anomalie critique",
-                (
-                    "Les anomalies restantes sont à surveiller "
-                    "mais ne bloquent pas l'exploitation."
-                ),
-                C_TEAL,
-                "#F1FBF8",
-                "#CFECE3",
-            )
+    colonnes_anomalies = st.columns(3)
 
-        p1, p2, p3 = st.columns(3)
-
-        with p1:
-            priority_card(
-                "Bloquantes",
-                nb_bloquantes,
-                "Empêchent ou faussent directement l'exploitation.",
-                C_RED,
-            )
-
-        with p2:
-            priority_card(
-                "Importantes",
-                nb_importantes,
-                "Dégradent la qualité et doivent être corrigées rapidement.",
-                "#E5A000",
-            )
-
-        with p3:
-            priority_card(
-                "À surveiller",
-                nb_surveillance,
-                "Problèmes mineurs ou incomplets à contrôler.",
-                C_TEAL,
-            )
-
-    st.markdown("<br>", unsafe_allow_html=True)
-
-    section(
-        "Familles d'anomalies",
-        "Une lecture par cause plutôt que par simple liste technique.",
-    )
-
-    def categorie_anomalie(value: str) -> str:
-        texte = str(value or "").lower()
-
-        if any(
-            mot in texte
-            for mot in [
-                "rattach",
-                "orphelin",
-                "programme",
-                "esi",
-                "prestation sans contrat",
-            ]
-        ):
-            return "Rattachements"
-
-        if any(
-            mot in texte
-            for mot in ["doublon", "duplicate", "dupliqué"]
-        ):
-            return "Doublons"
-
-        if any(
-            mot in texte
-            for mot in [
-                "date",
-                "statut",
-                "incoh",
-                "actif",
-                "inactif",
-                "contradic",
-            ]
-        ):
-            return "Cohérence métier"
-
-        return "Données manquantes"
-
-    if not resume_qualite.empty:
-        resume_qualite["Famille"] = (
-            resume_qualite.get(
-                "anomalie_type",
-                pd.Series("", index=resume_qualite.index),
-            )
-            .apply(categorie_anomalie)
+    with colonnes_anomalies[0]:
+        family_card(
+            "Programmes sans logement",
+            nb_programmes_sans_logement,
+            "Programmes présents dans le référentiel mais sans logement rattaché.",
+            C_NAVY,
         )
 
-        familles = [
-            (
-                "Rattachements",
-                "Contrats, prestations ou objets sans rattachement exploitable.",
-                C_RED,
-            ),
-            (
-                "Doublons",
-                "Objets présents plusieurs fois ou relations dupliquées.",
-                C_VIOLET,
-            ),
-            (
-                "Cohérence métier",
-                "Dates, statuts ou règles métier contradictoires.",
-                "#E5A000",
-            ),
-            (
-                "Données manquantes",
-                "Références et informations obligatoires absentes.",
-                C_NAVY,
-            ),
-        ]
+    with colonnes_anomalies[1]:
+        family_card(
+            "Logements sans programme",
+            nb_logements_sans_programme,
+            "Logements qui ne peuvent pas être replacés dans un programme.",
+            C_RED,
+        )
 
-        colonnes_familles = st.columns(4)
-
-        for colonne, (famille, aide, couleur) in zip(
-            colonnes_familles,
-            familles,
-        ):
-            nombre = int(
-                resume_qualite.loc[
-                    resume_qualite["Famille"] == famille,
-                    "Nombre",
-                ].sum()
-            )
-
-            with colonne:
-                family_card(
-                    famille,
-                    nombre,
-                    aide,
-                    couleur,
-                )
+    with colonnes_anomalies[2]:
+        family_card(
+            "Équipements sans programme",
+            nb_equipements_sans_programme,
+            "Équipements qui ne peuvent pas être rattachés à un programme.",
+            C_VIOLET,
+        )
 
     st.markdown("<br>", unsafe_allow_html=True)
 
     section(
         "Répartition des anomalies",
-        "Les anomalies les plus volumineuses sont affichées en priorité.",
+        "Nombre d'objets concernés pour chaque anomalie de rattachement.",
     )
 
-    col_quality_graph, col_quality_table = st.columns([1, 1.15])
+    repartition_anomalies = pd.DataFrame(
+        {
+            "Anomalie": [
+                "Programmes sans logement",
+                "Logements sans programme",
+                "Équipements sans programme",
+            ],
+            "Objets concernés": [
+                nb_programmes_sans_logement,
+                nb_logements_sans_programme,
+                nb_equipements_sans_programme,
+            ],
+        }
+    ).sort_values("Objets concernés", ascending=True)
 
-    with col_quality_graph:
-        df_q_graph = construire_graph_qualite(
-            df_qualite_resume,
-            df_qualite,
-        )
-
-        afficher_barres_horizontales(
-            df_q_graph,
-            "Anomalie",
-            "Objets distincts",
-            color=C_VIOLET,
-            height_base=360,
-        )
-
-    with col_quality_table:
-        if resume_qualite.empty:
-            st.info("Aucun résumé qualité disponible.")
-        else:
-            colonnes_resume = {
-                "anomalie_type": "Type d'anomalie",
-                "objet_type": "Type d'objet",
-                "Niveau": "Gravité",
-                "Famille": "Famille",
-                "Nombre": "Objets concernés",
-            }
-
-            colonnes_disponibles = [
-                colonne
-                for colonne in colonnes_resume
-                if colonne in resume_qualite.columns
-            ]
-
-            table_resume = (
-                resume_qualite[colonnes_disponibles]
-                .rename(columns=colonnes_resume)
-                .sort_values(
-                    "Objets concernés",
-                    ascending=False,
-                )
-            )
-
-            st.dataframe(
-                table_resume,
-                width="stretch",
-                hide_index=True,
-                height=360,
-            )
+    afficher_barres_horizontales(
+        repartition_anomalies,
+        "Anomalie",
+        "Objets concernés",
+        color=C_VIOLET,
+        height_base=300,
+    )
 
     st.markdown("<br>", unsafe_allow_html=True)
 
     section(
         "Détail des anomalies",
-        "Recherche et export de toutes les données à corriger.",
+        "Sélectionne une anomalie pour afficher et exporter les objets concernés.",
     )
 
-    if df_qualite.empty:
-        st.success("Aucune anomalie détaillée disponible.")
+    type_anomalie = st.selectbox(
+        "Anomalie à analyser",
+        [
+            "Programmes sans logement",
+            "Logements sans programme",
+            "Équipements sans programme",
+        ],
+        key="type_anomalie_rattachement",
+    )
+
+    if type_anomalie == "Programmes sans logement":
+        table_anomalie = preparer_esi_table(
+            anomalies_programmes_sans_logement
+        )
+        nom_export_anomalie = "programmes_sans_logement.xlsx"
+        message_anomalie_vide = "Aucun programme sans logement."
+
+    elif type_anomalie == "Logements sans programme":
+        table_anomalie = preparer_qualite_table(
+            anomalies_logements_sans_programme
+        )
+        nom_export_anomalie = "logements_sans_programme.xlsx"
+        message_anomalie_vide = (
+            "Aucun logement sans programme dans la table de qualité."
+        )
+
     else:
-        df_qualite_affichage = df_qualite.copy()
-
-        if "gravite" in df_qualite_affichage.columns:
-            df_qualite_affichage["Niveau"] = (
-                df_qualite_affichage["gravite"]
-                .apply(normaliser_gravite)
-            )
-
-        if "anomalie_type" in df_qualite_affichage.columns:
-            df_qualite_affichage["Famille"] = (
-                df_qualite_affichage["anomalie_type"]
-                .apply(categorie_anomalie)
-            )
-
-        filtre_q1, filtre_q2 = st.columns(2)
-
-        with filtre_q1:
-            niveaux_disponibles = (
-                sorted(
-                    df_qualite_affichage["Niveau"]
-                    .dropna()
-                    .unique()
-                    .tolist()
-                )
-                if "Niveau" in df_qualite_affichage.columns
-                else []
-            )
-
-            niveaux_selectionnes = st.multiselect(
-                "Gravité",
-                niveaux_disponibles,
-                default=niveaux_disponibles,
-                key="anomalies_gravite",
-            )
-
-        with filtre_q2:
-            familles_disponibles = (
-                sorted(
-                    df_qualite_affichage["Famille"]
-                    .dropna()
-                    .unique()
-                    .tolist()
-                )
-                if "Famille" in df_qualite_affichage.columns
-                else []
-            )
-
-            familles_selectionnees = st.multiselect(
-                "Famille",
-                familles_disponibles,
-                default=familles_disponibles,
-                key="anomalies_famille",
-            )
-
-        if niveaux_selectionnes and "Niveau" in df_qualite_affichage.columns:
-            df_qualite_affichage = df_qualite_affichage[
-                df_qualite_affichage["Niveau"].isin(
-                    niveaux_selectionnes
-                )
-            ]
-
-        if familles_selectionnees and "Famille" in df_qualite_affichage.columns:
-            df_qualite_affichage = df_qualite_affichage[
-                df_qualite_affichage["Famille"].isin(
-                    familles_selectionnees
-                )
-            ]
-
-        recherche_anomalie = st.text_input(
-            "Rechercher dans les anomalies",
-            placeholder=(
-                "Référence, anomalie, description, société, agence ou contrat."
-            ),
-            key="quality_search_all",
+        table_anomalie = preparer_qualite_table(
+            anomalies_equipements_sans_programme
+        )
+        nom_export_anomalie = "equipements_sans_programme.xlsx"
+        message_anomalie_vide = (
+            "Aucun équipement sans programme dans la table de qualité."
         )
 
-        table_qualite = filtrer_table_recherche(
-            preparer_qualite_table(df_qualite_affichage),
-            recherche_anomalie,
-        )
+    recherche_anomalie = st.text_input(
+        "Rechercher dans le détail",
+        placeholder="Référence, libellé, société, agence, groupe ou secteur.",
+        key="anomalies_recherche_detail",
+    )
 
+    table_anomalie = filtrer_table_recherche(
+        table_anomalie,
+        recherche_anomalie,
+    )
+
+    if table_anomalie.empty:
+        st.info(message_anomalie_vide)
+        if type_anomalie != "Programmes sans logement":
+            st.caption(
+                "Le compteur global peut rester supérieur à zéro si la vue résumé contient le volume, "
+                "mais que dashboard.qualite_donnees ne contient pas encore le détail correspondant."
+            )
+    else:
         st.dataframe(
-            table_qualite,
+            table_anomalie,
             width="stretch",
             hide_index=True,
             height=520,
         )
-
         dataframe_download(
-            "Télécharger les anomalies",
-            table_qualite,
-            "anomalies_qualite_donnees.xlsx",
-            cle="export_anomalies_qualite",
+            "Télécharger le détail des anomalies",
+            table_anomalie,
+            nom_export_anomalie,
+            cle="export_detail_anomalies",
         )
+
 # =====================================================
 # FOOTER TECHNIQUE
 # =====================================================
