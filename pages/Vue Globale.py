@@ -6722,7 +6722,7 @@ def preparer_esi_table(df: pd.DataFrame) -> pd.DataFrame:
 
 
 def preparer_equipements_table(df: pd.DataFrame) -> pd.DataFrame:
-    """Prépare un tableau lisible à partir des colonnes réellement disponibles."""
+    """Prépare un tableau lisible sans noms de colonnes dupliqués."""
     if df.empty:
         return pd.DataFrame()
 
@@ -6738,36 +6738,43 @@ def preparer_equipements_table(df: pd.DataFrame) -> pd.DataFrame:
         ("groupe", "Groupe"),
         ("secteur", "Secteur"),
         ("nb_contrats_actifs", "Contrats actifs"),
-        ("nb_contrats_inactifs", "Contrats inactifs"),
-        ("equipment_has_contract_link", "Avec contrat"),
         ("equipment_covered_valid", "Couvert par contrat actif"),
     ]
 
     colonnes_source = []
     renommage = {}
+    labels_utilises = set()
 
     for source_col, label in colonnes_candidates:
-        if source_col in df.columns and source_col not in colonnes_source:
+        if (
+            source_col in df.columns
+            and source_col not in colonnes_source
+            and label not in labels_utilises
+        ):
             colonnes_source.append(source_col)
             renommage[source_col] = label
+            labels_utilises.add(label)
 
     if not colonnes_source:
         return df.copy()
 
     table = df[colonnes_source].copy().rename(columns=renommage)
 
-    for colonne in ["Avec contrat", "Couvert par contrat actif"]:
-        if colonne in table.columns:
-            table[colonne] = (
-                pd.to_numeric(table[colonne], errors="coerce")
-                .fillna(0)
-                .gt(0)
-                .map({True: "Oui", False: "Non"})
+    if "Couvert par contrat actif" in table.columns:
+        table["Couvert par contrat actif"] = (
+            pd.to_numeric(
+                table["Couvert par contrat actif"],
+                errors="coerce",
             )
+            .fillna(0)
+            .gt(0)
+            .map({True: "Oui", False: "Non"})
+        )
 
-    colonne_ref = "Référence équipement"
-    if colonne_ref in table.columns:
-        table = table.drop_duplicates(colonne_ref)
+    if "Référence équipement" in table.columns:
+        table = table.drop_duplicates("Référence équipement")
+    else:
+        table = table.drop_duplicates()
 
     return table.reset_index(drop=True)
 
@@ -7203,11 +7210,17 @@ filtre_contrat_actif = filtre_contrat_est_actif(
     df_contrats_filtre=df_contrats_filtre,
 )
 
-df_esi_kpi = filtrer_esi_depuis_contrats(
-    df_esi_filtre,
-    df_contrats_kpi,
-    filtre_contrat_actif,
-)
+# La couverture conserve toujours l'ensemble du parc filtré comme dénominateur.
+# Les contrats actifs servent uniquement à déterminer quels ESI sont couverts.
+if vue_active == "Couverture":
+    df_esi_kpi = df_esi_filtre.copy()
+else:
+    df_esi_kpi = filtrer_esi_depuis_contrats(
+        df_esi_filtre,
+        df_contrats_kpi,
+        filtre_contrat_actif,
+    )
+
 df_esi_base = dedupliquer_esi(df_esi_filtre)
 df_esi_context = dedupliquer_esi(df_esi_kpi)
 
@@ -7242,7 +7255,7 @@ if vue_active == "Vue globale":
     if statut_selectionne == "active":
         section(
             "Vue globale",
-            "Périmètre des contrats actifs et patrimoine associé.",
+            "Couverture des contrats actifs rapportée à l’ensemble du patrimoine.",
         )
     elif statut_selectionne == "inactive":
         section(
