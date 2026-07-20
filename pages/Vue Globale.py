@@ -95,6 +95,8 @@ def format_nombre(value) -> str:
 def effacer_recherche_contrat():
     st.session_state["global_search_contract"] = ""
 
+def ouvrir_onglet_alertes():
+    st.session_state["dashboard_vue_active"] = "Alertes"
 
 def inject_style():
     st.markdown(
@@ -986,6 +988,78 @@ def inject_style():
             color: var(--text-soft);
             font-size: 12px;
             margin-top: 2px;
+        }
+
+                /* RENVOI COUVERTURE VERS ALERTES */
+        .vg-coverage-alert {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 22px;
+            margin: 4px 0 20px 0;
+            padding: 17px 19px;
+            background: #FFF7FA;
+            border: 1px solid #EBCFD9;
+            border-left: 5px solid var(--3f-red);
+            border-radius: 14px;
+            box-shadow: 0 8px 20px -18px rgba(27, 36, 48, 0.24);
+        }
+
+        .vg-coverage-alert-content {
+            display: flex;
+            align-items: flex-start;
+            gap: 13px;
+            min-width: 0;
+        }
+
+        .vg-coverage-alert-icon {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex: 0 0 auto;
+            width: 38px;
+            height: 38px;
+            color: var(--3f-red);
+            background: #FFFFFF;
+            border: 1px solid #EBCFD9;
+            border-radius: 11px;
+            font-size: 18px;
+            font-weight: 800;
+        }
+
+        .vg-coverage-alert-title {
+            color: var(--text-main);
+            font-size: 14px;
+            font-weight: 800;
+            margin-bottom: 4px;
+        }
+
+        .vg-coverage-alert-help {
+            color: var(--text-soft);
+            font-size: 12px;
+            line-height: 1.5;
+            font-weight: 500;
+        }
+
+        .st-key-ouvrir_alertes_depuis_couverture button {
+            min-height: 42px !important;
+            white-space: nowrap !important;
+            color: #FFFFFF !important;
+            background: var(--3f-red) !important;
+            border-color: var(--3f-red) !important;
+        }
+
+        .st-key-ouvrir_alertes_depuis_couverture button:hover {
+            color: #FFFFFF !important;
+            background: var(--3f-red-dark) !important;
+            border-color: var(--3f-red-dark) !important;
+        }
+
+        @media screen and (max-width: 900px) {
+            .vg-coverage-alert {
+                align-items: stretch;
+                flex-direction: column;
+            }
         }
 
         @media screen and (max-width: 900px) {
@@ -4408,7 +4482,6 @@ def filtrer_table_recherche(df: pd.DataFrame, recherche: str) -> pd.DataFrame:
 #                 "esi_sans_contrat_actif.xlsx",
 #             )
 
-
 # =====================================================
 # PAGE
 # =====================================================
@@ -4475,16 +4548,23 @@ df_esi_filtre, df_contrats_filtre, filtres_selectionnes = render_filtres_patrimo
     df_contrats=df_contrats,
 )
 
-with st.container(key="contract_status_filter"):
-    st.markdown(
-        '<div class="vg-mini-title">Statut des contrats</div>',
-        unsafe_allow_html=True,
-    )
-    statut_selectionne = afficher_filtre_statut_contrat()
-    st.caption(
-        "Les totaux source restent fixes dans la vue globale. "
-        "La couverture et les détails suivent les filtres sélectionnés."
-    )
+# Le statut des contrats ne concerne que la Vue globale et la Couverture.
+if vue_active in ["Vue globale", "Couverture"]:
+    with st.container(key="contract_status_filter"):
+        st.markdown(
+            '<div class="vg-mini-title">Statut des contrats</div>',
+            unsafe_allow_html=True,
+        )
+
+        statut_selectionne = afficher_filtre_statut_contrat()
+
+        st.caption(
+            "Les totaux source restent fixes dans la vue globale. "
+            "La couverture et les détails suivent les filtres sélectionnés."
+        )
+else:
+    # Alertes et Anomalies utilisent leurs propres règles métier.
+    statut_selectionne = None
 
 # Calculs communs.
 df_contrats_kpi = filtrer_contrats_par_statut(
@@ -4514,6 +4594,85 @@ df_esi_kpi = filtrer_esi_depuis_contrats(
 )
 df_esi_base = dedupliquer_esi(df_esi_filtre)
 df_esi_context = dedupliquer_esi(df_esi_kpi)
+
+# =====================================================
+# SYNTHÈSE DES ALERTES POUR LA PAGE COUVERTURE
+# =====================================================
+
+# Les alertes suivent le périmètre patrimoine sélectionné,
+# mais ne dépendent pas du filtre visuel de statut dans les onglets
+# Alertes et Anomalies.
+contrats_expires_alerte = contrats_actifs_fin_depassee(
+    df_contrats_filtre
+)
+
+nb_contrats_expires_alerte = int(
+    contrats_expires_alerte["contract_reference"].nunique()
+    if (
+        not contrats_expires_alerte.empty
+        and "contract_reference" in contrats_expires_alerte.columns
+    )
+    else len(contrats_expires_alerte)
+)
+
+df_esi_alertes = dedupliquer_esi(df_esi_filtre)
+
+nb_esi_sans_contrat_alerte = int(
+    (
+        serie_numerique(
+            df_esi_alertes,
+            "nb_contrats_actifs",
+        ) == 0
+    ).sum()
+)
+
+colonne_esi_non_couvert_alerte = trouver_colonne(
+    df_esi_alertes,
+    [
+        "esi_avec_equipement_sans_couverture_valide",
+        "esi_avec_equipement_sans_contrat_equipement",
+    ],
+)
+
+if colonne_esi_non_couvert_alerte:
+    nb_esi_equipes_non_couverts_alerte = int(
+        (
+            serie_numerique(
+                df_esi_alertes,
+                colonne_esi_non_couvert_alerte,
+            ) > 0
+        ).sum()
+    )
+else:
+    # Repli lorsque la colonne de couverture réelle n'existe pas encore.
+    nb_esi_equipes_non_couverts_alerte = int(
+        (
+            (serie_numerique(df_esi_alertes, "nb_equipements") > 0)
+            & (
+                serie_numerique(
+                    df_esi_alertes,
+                    "nb_contrats_actifs",
+                ) == 0
+            )
+        ).sum()
+    )
+
+nb_esi_multi_metier_alerte = int(
+    (
+        serie_numerique(
+            df_esi_alertes,
+            "esi_multi_meme_metier",
+        ) > 0
+    ).sum()
+)
+
+nb_situations_alertes = (
+    nb_contrats_expires_alerte
+    + nb_esi_sans_contrat_alerte
+    + nb_esi_equipes_non_couverts_alerte
+    + nb_esi_multi_metier_alerte
+)
+
 
 df_prestations_kpi = filtrer_prestations_depuis_contrats(
     df_prestations=df_prestations,
@@ -5485,6 +5644,73 @@ elif vue_active == "Couverture":
                     "réellement exploitable pour les analyses de couverture."
                 ),
             )
+
+    # Renvoi vers l'onglet Alertes.
+    if nb_situations_alertes > 0:
+        alerte_col, bouton_alerte_col = st.columns(
+            [5, 1.25],
+            gap="medium",
+            vertical_alignment="center",
+        )
+
+        with alerte_col:
+            st.markdown(
+                f"""
+                <div class="vg-coverage-alert">
+                    <div class="vg-coverage-alert-content">
+                        <div class="vg-coverage-alert-icon">!</div>
+                        <div>
+                            <div class="vg-coverage-alert-title">
+                                {fmt_nombre(nb_situations_alertes)}
+                                signal(s) nécessitent une vérification
+                            </div>
+                            <div class="vg-coverage-alert-help">
+                                Des contrats expirés, des ESI non couverts
+                                ou des chevauchements contractuels ont été
+                                détectés sur le périmètre sélectionné.
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                """,
+                unsafe_allow_html=True,
+            )
+
+        with bouton_alerte_col:
+            st.button(
+                "Voir les alertes",
+                key="ouvrir_alertes_depuis_couverture",
+                width="stretch",
+                on_click=ouvrir_onglet_alertes,
+            )
+    else:
+        st.markdown(
+            """
+            <div class="vg-coverage-alert"
+                 style="
+                    background:#F1FBF8;
+                    border-color:#CFECE3;
+                    border-left-color:#008080;
+                 ">
+                <div class="vg-coverage-alert-content">
+                    <div class="vg-coverage-alert-icon"
+                         style="color:#008080;border-color:#CFECE3;">
+                        ✓
+                    </div>
+                    <div>
+                        <div class="vg-coverage-alert-title">
+                            Aucun signal prioritaire détecté
+                        </div>
+                        <div class="vg-coverage-alert-help">
+                            La couverture du périmètre sélectionné ne présente
+                            pas d’alerte opérationnelle connue.
+                        </div>
+                    </div>
+                </div>
+            </div>
+            """,
+            unsafe_allow_html=True,
+        )
 
     # Même base de lecture que la Vue globale.
     if statut_selectionne is None and not perimetre_filtre_actif:
