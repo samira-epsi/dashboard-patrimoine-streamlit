@@ -3248,107 +3248,129 @@ def inject_style():
         }
 
         /* =====================================================
-           RESPONSIVITÉ GLOBALE — DESKTOP / LAPTOP / TABLETTE / MOBILE
-           Ce bloc est placé en dernier pour surcharger les anciennes règles.
+           RESPONSIVITÉ GLOBALE CORRIGÉE
+           Respecte la largeur disponible calculée par Streamlit.
         ===================================================== */
 
+        /* Ne jamais utiliser vw ici : la sidebar Streamlit occupe déjà
+           une partie de la fenêtre. */
         .block-container {
-            width: min(96vw, 1840px) !important;
-            max-width: 1840px !important;
-            padding-top: clamp(.75rem, 1.2vw, 1.4rem) !important;
-            padding-left: clamp(.75rem, 2vw, 2.4rem) !important;
-            padding-right: clamp(.75rem, 2vw, 2.4rem) !important;
+            width: 100% !important;
+            max-width: 1680px !important;
+            margin-left: auto !important;
+            margin-right: auto !important;
+            padding-top: clamp(.7rem, 1vw, 1.2rem) !important;
+            padding-left: clamp(.8rem, 1.6vw, 1.8rem) !important;
+            padding-right: clamp(.8rem, 1.6vw, 1.8rem) !important;
             padding-bottom: 2rem !important;
+            box-sizing: border-box !important;
         }
 
+        /* Typographie fluide, mais avec une amplitude limitée. */
         .vg-hero-title {
-            font-size: clamp(26px, 2.1vw, 38px) !important;
-        }
-
-        .vg-hero-subtitle {
-            font-size: clamp(12px, .9vw, 15px) !important;
+            font-size: clamp(27px, 1.8vw, 35px) !important;
         }
 
         .vg-section-title {
-            font-size: clamp(17px, 1.25vw, 22px) !important;
+            font-size: clamp(18px, 1.15vw, 21px) !important;
         }
 
         .vg-section-subtitle {
-            font-size: clamp(11px, .82vw, 13.5px) !important;
+            font-size: clamp(11.5px, .78vw, 13px) !important;
         }
 
-        .vg-card-value,
-        .vg-alert-value,
-        .vg-priority-value,
-        .vg-family-value {
-            font-size: clamp(24px, 2vw, 34px) !important;
-        }
-
-        .vg-card,
-        .vg-alert-card,
-        .vg-priority-card,
-        .vg-family-card,
-        .vg-impact-alert-card,
-        .vg-anomaly-secondary-card,
-        .vg-anomaly-main-card,
-        .vg-coverage-reading-card,
-        .vg-equipment-main-card,
-        .vg-equipment-kpi,
-        .vg-intensity-kpi {
+        /* Cartes Couverture plus compactes. */
+        .vg-coverage-reading-card {
+            min-height: 0 !important;
             height: auto !important;
-            min-height: unset !important;
+            padding: clamp(15px, 1.2vw, 19px) !important;
         }
 
-        .vg-priority-grid {
-            grid-template-columns: repeat(auto-fit, minmax(min(240px, 100%), 1fr)) !important;
+        .vg-coverage-reading-question {
+            min-height: 0 !important;
+            margin-bottom: 11px !important;
         }
 
+        .vg-coverage-reading-rate {
+            font-size: clamp(29px, 2.3vw, 38px) !important;
+        }
+
+        .vg-coverage-reading-stats {
+            gap: 8px !important;
+        }
+
+        .vg-coverage-reading-stat {
+            padding: 9px 10px !important;
+        }
+
+        .vg-coverage-reading-stat-value {
+            font-size: clamp(17px, 1.3vw, 21px) !important;
+        }
+
+        /* Composition du patrimoine compacte. */
+        .vg-park-card {
+            min-height: 76px !important;
+            height: auto !important;
+            padding: 11px 13px !important;
+        }
+
+        .vg-park-value {
+            font-size: clamp(21px, 1.55vw, 27px) !important;
+        }
+
+        /* Les constats restent flexibles. */
         .vg-coverage-insights {
-            grid-template-columns: repeat(auto-fit, minmax(min(220px, 100%), 1fr)) !important;
+            grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
         }
 
-        .vg-park-grid {
-            grid-template-columns: repeat(auto-fit, minmax(min(190px, 100%), 1fr)) !important;
+        .vg-coverage-insight {
+            min-height: 76px !important;
+            padding: 11px 12px !important;
         }
 
-        .vg-coverage-kpi-grid,
-        .vg-equipment-kpis {
-            grid-template-columns: repeat(auto-fit, minmax(min(190px, 100%), 1fr)) !important;
-        }
-
-        .vg-alerts-hero-stats {
-            flex-wrap: wrap !important;
-        }
-
-        .vg-alerts-hero-stat {
-            flex: 1 1 105px !important;
-        }
-
-        .vg-coverage-summary,
-        .vg-equipment-summary,
-        .vg-equipment-hero,
-        .vg-contract-intensity {
-            grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) !important;
+        /* Intensité contractuelle plus compacte. */
+        .vg-intensity-distribution {
+            padding: 14px 15px !important;
         }
 
         .vg-intensity-row {
-            grid-template-columns: minmax(120px, .7fr) minmax(120px, 2fr) minmax(78px, auto) !important;
+            grid-template-columns: minmax(145px, .8fr) minmax(150px, 2fr) minmax(88px, auto) !important;
+            gap: 9px !important;
+            margin-bottom: 12px !important;
         }
 
-        .vg-equipment-type-row {
-            grid-template-columns: minmax(130px, .8fr) minmax(130px, 2fr) minmax(105px, auto) !important;
+        .vg-intensity-track {
+            height: 10px !important;
         }
 
-        .vg-intensity-label,
-        .vg-equipment-type-label,
-        .vg-coverage-label {
-            white-space: normal !important;
-            overflow-wrap: anywhere !important;
+        .vg-intensity-kpi {
+            min-height: 82px !important;
+            height: auto !important;
+            padding: 10px 12px !important;
         }
 
+        /* Équipements plus compacts. */
+        .vg-equipment-main-card {
+            min-height: 0 !important;
+            height: auto !important;
+            padding: 15px !important;
+        }
+
+        .vg-equipment-ring {
+            width: 104px !important;
+            height: 104px !important;
+        }
+
+        .vg-equipment-kpi {
+            min-height: 76px !important;
+            height: auto !important;
+            padding: 11px 12px !important;
+        }
+
+        /* Les graphiques et tableaux restent dans leur conteneur. */
         div[data-testid="stPlotlyChart"],
-        div[data-testid="stDataFrame"],
-        div[data-testid="stTable"] {
+        div[data-testid="stDataFrame"] {
+            width: 100% !important;
             max-width: 100% !important;
             min-width: 0 !important;
         }
@@ -3359,85 +3381,160 @@ def inject_style():
             max-width: 100% !important;
         }
 
-        .stButton,
-        .stDownloadButton,
-        .stSelectbox,
-        .stMultiSelect,
-        .stTextInput,
-        .stNumberInput {
-            max-width: 100% !important;
+        /* Les libellés longs peuvent revenir à la ligne. */
+        .vg-intensity-label,
+        .vg-equipment-type-label,
+        .vg-coverage-reading-title,
+        .vg-coverage-reading-question {
+            overflow-wrap: anywhere !important;
         }
 
-        .stButton button,
-        .stDownloadButton button {
-            max-width: 100% !important;
-            white-space: normal !important;
-            line-height: 1.25 !important;
-        }
-
+        /* Navigation : reste compacte, sans déborder. */
         .st-key-dashboard_tabs div[role="radiogroup"] {
-            flex-wrap: wrap !important;
-            gap: clamp(10px, 1.8vw, 28px) !important;
+            gap: clamp(12px, 1.5vw, 26px) !important;
         }
 
-        .st-key-dashboard_tabs div[role="radiogroup"] label {
-            min-height: 42px !important;
-            padding: 10px 2px !important;
-            font-size: clamp(12px, .85vw, 14px) !important;
-        }
-
-        @media screen and (max-width: 1280px) {
+        /* =====================================================
+           LAPTOP : 1024 à 1366 px environ
+        ===================================================== */
+        @media screen and (max-width: 1366px) {
             .block-container {
-                width: 98vw !important;
-                padding-left: 1rem !important;
-                padding-right: 1rem !important;
+                max-width: 100% !important;
+                padding-left: .9rem !important;
+                padding-right: .9rem !important;
             }
 
             .vg-hero {
-                padding: 22px 24px !important;
+                padding: 21px 23px !important;
             }
 
-            .vg-coverage-summary,
-            .vg-equipment-summary,
-            .vg-equipment-hero,
-            .vg-contract-intensity {
+            .vg-coverage-reading-card {
+                padding: 15px !important;
+            }
+
+            .vg-coverage-reading-title {
+                font-size: 15px !important;
+            }
+
+            .vg-coverage-reading-question {
+                font-size: 10.5px !important;
+            }
+
+            .vg-coverage-insight {
+                min-height: 72px !important;
+            }
+
+            .vg-equipment-type-row {
+                grid-template-columns: minmax(120px, .7fr) minmax(130px, 1.8fr) minmax(95px, auto) !important;
+            }
+        }
+
+        /* =====================================================
+           PETIT LAPTOP / TABLETTE PAYSAGE
+        ===================================================== */
+        @media screen and (max-width: 1100px) {
+            /* Les deux grandes cartes passent l'une sous l'autre seulement ici. */
+            div[data-testid="stHorizontalBlock"]:has(.vg-coverage-reading-card) {
+                flex-wrap: wrap !important;
+            }
+
+            div[data-testid="stHorizontalBlock"]:has(.vg-coverage-reading-card) > div[data-testid="stColumn"] {
+                flex: 1 1 100% !important;
+                width: 100% !important;
+                min-width: 0 !important;
+            }
+
+            .vg-coverage-insights {
                 grid-template-columns: 1fr !important;
+            }
+
+            .vg-contract-intensity,
+            .vg-equipment-summary,
+            .vg-equipment-hero {
+                grid-template-columns: 1fr !important;
+            }
+
+            .vg-intensity-row {
+                grid-template-columns: minmax(130px, .75fr) minmax(120px, 1.6fr) minmax(82px, auto) !important;
             }
 
             .vg-alerts-hero-inner {
                 align-items: flex-start !important;
                 flex-direction: column !important;
+                gap: 13px !important;
             }
 
             .vg-alerts-hero-stats {
                 width: 100% !important;
                 justify-content: flex-start !important;
             }
-
-            .vg-anomaly-main-value {
-                font-size: clamp(34px, 4vw, 46px) !important;
-            }
-
-            .vg-equipment-main-card {
-                min-height: unset !important;
-            }
         }
 
-        @media screen and (max-width: 980px) {
+        /* =====================================================
+           TABLETTE / MOBILE
+        ===================================================== */
+        @media screen and (max-width: 760px) {
             .block-container {
-                width: 100% !important;
-                padding-left: .75rem !important;
-                padding-right: .75rem !important;
+                padding-top: .5rem !important;
+                padding-left: .5rem !important;
+                padding-right: .5rem !important;
             }
 
             .vg-hero {
-                padding: 20px 18px !important;
-                border-radius: 15px !important;
+                padding: 17px 15px !important;
+                border-radius: 14px !important;
             }
 
-            .vg-coverage-reading-stats,
-            .vg-equipment-stats {
-                grid-template-columns: 1fr 1fr !important;
+            .vg-hero-title {
+                font-size: 24px !important;
+            }
+
+            .vg-section-title {
+                font-size: 18px !important;
+            }
+
+            .vg-step-header {
+                align-items: flex-start !important;
+                gap: 8px !important;
+                margin-top: 16px !important;
+            }
+
+            .vg-step-number {
+                width: 24px !important;
+                height: 24px !important;
+            }
+
+            .vg-park-grid,
+            .vg-coverage-kpi-grid,
+            .vg-equipment-kpis,
+            .vg-priority-grid {
+                grid-template-columns: 1fr !important;
+            }
+
+            /* Les 3 cartes Streamlit de composition s'empilent sur mobile. */
+            div[data-testid="stHorizontalBlock"]:has(.vg-park-card) {
+                flex-wrap: wrap !important;
+            }
+
+            div[data-testid="stHorizontalBlock"]:has(.vg-park-card) > div[data-testid="stColumn"] {
+                flex: 1 1 100% !important;
+                width: 100% !important;
+                min-width: 0 !important;
+            }
+
+            /* Les 3 KPI d'intensité s'empilent. */
+            div[data-testid="stHorizontalBlock"]:has(.vg-intensity-kpi) {
+                flex-wrap: wrap !important;
+            }
+
+            div[data-testid="stHorizontalBlock"]:has(.vg-intensity-kpi) > div[data-testid="stColumn"] {
+                flex: 1 1 100% !important;
+                width: 100% !important;
+                min-width: 0 !important;
+            }
+
+            .vg-coverage-reading-stats {
+                grid-template-columns: 1fr !important;
             }
 
             .vg-intensity-row,
@@ -3451,78 +3548,6 @@ def inject_style():
                 text-align: left !important;
             }
 
-            .vg-intensity-track,
-            .vg-equipment-type-track {
-                width: 100% !important;
-            }
-
-            .vg-table-summary {
-                flex-wrap: wrap !important;
-            }
-
-            div[data-testid="stHorizontalBlock"] {
-                gap: .65rem !important;
-            }
-        }
-
-        @media screen and (max-width: 700px) {
-            .block-container {
-                padding-top: .5rem !important;
-                padding-left: .5rem !important;
-                padding-right: .5rem !important;
-            }
-
-            .vg-hero {
-                padding: 18px 15px !important;
-                margin-bottom: 10px !important;
-            }
-
-            .vg-hero-title {
-                font-size: 25px !important;
-            }
-
-            .vg-section-title {
-                font-size: 18px !important;
-            }
-
-            .vg-section-title::before {
-                height: 18px !important;
-            }
-
-            .vg-coverage-insights,
-            .vg-priority-grid,
-            .vg-park-grid,
-            .vg-coverage-kpi-grid,
-            .vg-equipment-kpis {
-                grid-template-columns: 1fr !important;
-            }
-
-            .vg-coverage-reading-stats,
-            .vg-equipment-stats {
-                grid-template-columns: 1fr !important;
-            }
-
-            .vg-coverage-reading-card,
-            .vg-anomaly-main-card,
-            .vg-anomaly-secondary-card,
-            .vg-impact-alert-card {
-                padding: 15px !important;
-                border-radius: 13px !important;
-            }
-
-            .vg-coverage-reading-rate {
-                font-size: 30px !important;
-            }
-
-            .vg-step-header {
-                align-items: flex-start !important;
-            }
-
-            .vg-step-number {
-                width: 24px !important;
-                height: 24px !important;
-            }
-
             .vg-equipment-main-card,
             .vg-equipment-hero-main {
                 flex-direction: column !important;
@@ -3530,20 +3555,7 @@ def inject_style():
             }
 
             .vg-equipment-ring {
-                width: 100px !important;
-                height: 100px !important;
                 align-self: center !important;
-            }
-
-            .vg-alerts-hero,
-            .vg-anomaly-hero {
-                padding: 16px !important;
-                border-radius: 14px !important;
-            }
-
-            .vg-alerts-hero-value,
-            .vg-anomaly-hero-value {
-                font-size: 31px !important;
             }
 
             .st-key-dashboard_tabs {
@@ -3553,7 +3565,7 @@ def inject_style():
             .st-key-dashboard_tabs div[role="radiogroup"] {
                 flex-wrap: nowrap !important;
                 min-width: max-content !important;
-                gap: 16px !important;
+                gap: 15px !important;
             }
 
             .st-key-dashboard_tabs div[role="radiogroup"] label {
@@ -3564,27 +3576,20 @@ def inject_style():
                 overflow-x: auto !important;
             }
 
-            div[data-testid="stExpander"] details summary {
-                padding-left: .75rem !important;
-                padding-right: .75rem !important;
+            .stButton button,
+            .stDownloadButton button {
+                max-width: 100% !important;
+                white-space: normal !important;
             }
         }
 
+        /* =====================================================
+           PETIT MOBILE
+        ===================================================== */
         @media screen and (max-width: 430px) {
             .block-container {
                 padding-left: .35rem !important;
                 padding-right: .35rem !important;
-            }
-
-            .vg-hero-title {
-                font-size: 22px !important;
-            }
-
-            .vg-card-value,
-            .vg-alert-value,
-            .vg-priority-value,
-            .vg-family-value {
-                font-size: 24px !important;
             }
 
             .vg-coverage-summary-title {
@@ -3593,8 +3598,8 @@ def inject_style():
 
             .vg-coverage-summary-title strong {
                 display: block !important;
-                margin-bottom: 4px !important;
-                font-size: 28px !important;
+                margin-bottom: 3px !important;
+                font-size: 27px !important;
             }
 
             .vg-coverage-reading-main {
@@ -3612,39 +3617,30 @@ def inject_style():
                 box-sizing: border-box !important;
             }
 
-            .stButton button,
-            .stDownloadButton button {
-                width: 100% !important;
+            .vg-alerts-hero,
+            .vg-anomaly-hero {
+                padding: 15px !important;
             }
         }
 
-        @media screen and (min-width: 1700px) {
+        /* =====================================================
+           GRAND ÉCRAN
+        ===================================================== */
+        @media screen and (min-width: 1800px) {
             .block-container {
-                width: min(94vw, 1900px) !important;
-                max-width: 1900px !important;
+                max-width: 1760px !important;
             }
 
-            .vg-section-title {
-                font-size: 22px !important;
-            }
-
-            .vg-section-subtitle {
-                font-size: 13.5px !important;
-            }
-
-            .vg-card-value,
-            .vg-priority-value,
-            .vg-family-value {
-                font-size: 34px !important;
+            .vg-coverage-reading-card {
+                padding: 19px 20px !important;
             }
 
             .vg-coverage-reading-title {
                 font-size: 17px !important;
             }
 
-            .vg-coverage-reading-question,
-            .vg-coverage-reading-count {
-                font-size: 12px !important;
+            .vg-park-card {
+                min-height: 82px !important;
             }
         }
 
