@@ -7824,10 +7824,28 @@ df_esi_filtre, df_contrats_filtre, filtres_selectionnes = render_filtres_patrimo
 # =====================================================
 
 # Les alertes opérationnelles suivent le périmètre patrimoine sélectionné,
-# mais sont volontairement indépendantes du filtre de statut affiché ensuite.
+# mais restent indépendantes du filtre de statut affiché ensuite.
 df_esi_alertes_entree = dedupliquer_esi(df_esi_filtre)
 
-contrats_expires_entree = contrats_actifs_fin_depassee(df_contrats_filtre)
+# IMPORTANT :
+# render_filtres_patrimoine peut retirer les contrats sans rattachement ESI
+# même lorsqu'aucun filtre utilisateur n'est réellement sélectionné.
+# Pour le total global, on doit donc repartir de df_contrats afin de conserver
+# tous les contrats Intent, y compris les contrats non rattachés.
+filtre_patrimoine_reel_actif = any(
+    valeur_filtre_active(valeur)
+    for valeur in (filtres_selectionnes or {}).values()
+)
+
+source_contrats_alertes = (
+    df_contrats_filtre.copy()
+    if filtre_patrimoine_reel_actif
+    else df_contrats.copy()
+)
+
+contrats_expires_entree = contrats_actifs_fin_depassee(
+    source_contrats_alertes
+)
 nb_contrats_expires_entree = int(
     contrats_expires_entree["contract_reference"].nunique()
     if (
