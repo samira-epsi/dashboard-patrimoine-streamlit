@@ -7857,7 +7857,13 @@ with nav_col:
 
 with refresh_col:
     if st.button("Actualiser", width="stretch", key="dashboard_refresh"):
+        try:
+            get_engine().dispose()
+        except Exception:
+            pass
+
         st.cache_data.clear()
+        st.cache_resource.clear()
         st.rerun()
 
 try:
