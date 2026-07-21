@@ -4587,6 +4587,76 @@ def calcul_nouveaux_ce_mois(df_creations, objet_type, object_refs=None, esi_refs
     ]["objet_reference"].nunique()
 
 
+
+def contrats_actifs_expires_depuis_intent(
+    df_prestations: pd.DataFrame,
+    references_contrats_autorisees: set[str] | None = None,
+) -> pd.DataFrame:
+    """
+    Construit la liste officielle des contrats actifs expirés depuis
+    dashboard.contrats_prestations.
+
+    La colonne contract_active_end_date_expired est calculée dans la source
+    Intent. Une seule ligne est conservée par référence contrat, même lorsque
+    le contrat possède plusieurs prestations.
+    """
+    if df_prestations is None or df_prestations.empty:
+        return pd.DataFrame()
+
+    if "contract_reference_3f" not in df_prestations.columns:
+        return pd.DataFrame()
+
+    if "contract_active_end_date_expired" not in df_prestations.columns:
+        return pd.DataFrame()
+
+    df = df_prestations.copy()
+
+    df["contract_reference_3f"] = (
+        df["contract_reference_3f"]
+        .astype("string")
+        .str.strip()
+    )
+
+    flag_expire = pd.to_numeric(
+        df["contract_active_end_date_expired"],
+        errors="coerce",
+    ).fillna(0)
+
+    df = df[
+        df["contract_reference_3f"].notna()
+        & df["contract_reference_3f"].ne("")
+        & flag_expire.eq(1)
+    ].copy()
+
+    if references_contrats_autorisees is not None:
+        df = df[
+            df["contract_reference_3f"].astype(str).isin(
+                references_contrats_autorisees
+            )
+        ].copy()
+
+    # Conserver la ligne la plus récente lorsque plusieurs prestations
+    # existent pour un même contrat.
+    colonnes_tri = ["contract_reference_3f"]
+
+    if "contract_last_update_date" in df.columns:
+        df["contract_last_update_date"] = pd.to_datetime(
+            df["contract_last_update_date"],
+            errors="coerce",
+        )
+        colonnes_tri.append("contract_last_update_date")
+
+    df = (
+        df.sort_values(colonnes_tri, na_position="first")
+        .drop_duplicates("contract_reference_3f", keep="last")
+        .copy()
+    )
+
+    # Harmoniser le nom de la référence avec les tableaux contrats existants.
+    df["contract_reference"] = df["contract_reference_3f"]
+
+    return df.reset_index(drop=True)
+
 def contrats_actifs_fin_depassee(df_contrats: pd.DataFrame) -> pd.DataFrame:
     if df_contrats.empty:
         return df_contrats.copy()
@@ -7837,15 +7907,39 @@ filtre_patrimoine_reel_actif = any(
     for valeur in (filtres_selectionnes or {}).values()
 )
 
-source_contrats_alertes = (
-    df_contrats_filtre.copy()
-    if filtre_patrimoine_reel_actif
-    else df_contrats.copy()
+# Sans filtre, tous les contrats présents dans la source Intent sont autorisés.
+# Avec un filtre patrimoine, on limite la liste aux références du périmètre.
+references_contrats_alertes = None
+
+if (
+    filtre_patrimoine_reel_actif
+    and not df_contrats_filtre.empty
+    and "contract_reference" in df_contrats_filtre.columns
+):
+    references_contrats_alertes = set(
+        df_contrats_filtre["contract_reference"]
+        .dropna()
+        .astype(str)
+        .str.strip()
+    )
+
+contrats_expires_entree = contrats_actifs_expires_depuis_intent(
+    df_prestations=df_prestations,
+    references_contrats_autorisees=references_contrats_alertes,
 )
 
-contrats_expires_entree = contrats_actifs_fin_depassee(
-    source_contrats_alertes
-)
+# Sécurité uniquement si la colonne officielle n'est pas disponible.
+if contrats_expires_entree.empty and (
+    "contract_active_end_date_expired" not in df_prestations.columns
+):
+    source_contrats_alertes = (
+        df_contrats_filtre.copy()
+        if filtre_patrimoine_reel_actif
+        else df_contrats.copy()
+    )
+    contrats_expires_entree = contrats_actifs_fin_depassee(
+        source_contrats_alertes
+    )
 nb_contrats_expires_entree = int(
     contrats_expires_entree["contract_reference"].nunique()
     if (
@@ -10241,9 +10335,14 @@ elif vue_active == "Alertes":
     type_alerte = libelles_alertes[choix_court]
 
     if type_alerte == "Contrats actifs expirés":
-        table_alerte = preparer_contrats_table(
-            alertes_contrats_expires
-        )
+        if "contract_reference_3f" in alertes_contrats_expires.columns:
+            table_alerte = preparer_prestations_table(
+                alertes_contrats_expires
+            )
+        else:
+            table_alerte = preparer_contrats_table(
+                alertes_contrats_expires
+            )
         nom_export = "contrats_actifs_expires.xlsx"
         message_vide = "Aucun contrat actif avec une date de fin dépassée."
         detail_title = (
