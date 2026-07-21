@@ -4729,8 +4729,6 @@ def construire_repartition_types_equipement(
         )
 
     # Un équipement ne doit compter qu'une seule fois, même s'il existe plusieurs liens.
-    # df = df.drop_duplicates("equipment_reference")
-
     agg = {
         "equipment_reference": "nunique",
     }
@@ -7156,6 +7154,146 @@ def preparer_alertes_table(df_alertes: pd.DataFrame) -> pd.DataFrame:
 
     return table
 
+
+
+def extraire_contrats_actifs_expires_depuis_vue(
+    df_alertes: pd.DataFrame,
+    df_esi_context: pd.DataFrame | None = None,
+    appliquer_perimetre: bool = False,
+) -> pd.DataFrame:
+    """
+    Retourne la liste officielle des contrats actifs expirés provenant
+    exclusivement de dashboard.alertes_couverture.
+
+    Le chiffre de la carte et le tableau de détail utilisent ensuite
+    exactement ce même DataFrame.
+    """
+    if df_alertes is None or df_alertes.empty:
+        return pd.DataFrame()
+
+    df = df_alertes.copy()
+
+    # Chercher la colonne qui identifie la nature de l'alerte.
+    colonne_type = trouver_colonne(
+        df,
+        [
+            "alerte_type",
+            "type_alerte",
+            "anomalie_type",
+            "alert_type",
+            "type",
+        ],
+    )
+
+    masque = pd.Series(False, index=df.index)
+
+    if colonne_type:
+        valeurs = (
+            df[colonne_type]
+            .fillna("")
+            .astype(str)
+            .str.upper()
+            .str.strip()
+            .str.replace("É", "E", regex=False)
+            .str.replace("È", "E", regex=False)
+            .str.replace("Ê", "E", regex=False)
+            .str.replace("À", "A", regex=False)
+            .str.replace("Ç", "C", regex=False)
+        )
+
+        libelles_acceptes = {
+            "CONTRAT_ACTIF_EXPIRE",
+            "CONTRAT_ACTIF_DATE_FIN_DEPASSEE",
+            "CONTRAT_ACTIF_AVEC_DATE_DE_FIN_DEPASSEE",
+            "CONTRATS_ACTIFS_EXPIRES",
+            "CONTRAT_EXPIRE_ACTIF",
+        }
+
+        masque = valeurs.isin(libelles_acceptes)
+
+        # Accepter aussi les formulations textuelles de la vue.
+        masque = masque | (
+            valeurs.str.contains("CONTRAT", regex=False, na=False)
+            & valeurs.str.contains("ACTIF", regex=False, na=False)
+            & (
+                valeurs.str.contains("EXPIR", regex=False, na=False)
+                | valeurs.str.contains("FIN_DEPAS", regex=False, na=False)
+                | valeurs.str.contains("DATE_DE_FIN_DEPAS", regex=False, na=False)
+            )
+        )
+
+    # Certaines vues exposent directement un booléen d'alerte.
+    colonne_flag = trouver_colonne(
+        df,
+        [
+            "contract_active_end_date_expired",
+            "contrat_actif_expire",
+            "date_fin_depassee",
+        ],
+    )
+
+    if colonne_flag:
+        flag = df[colonne_flag]
+
+        if pd.api.types.is_bool_dtype(flag):
+            masque = masque | flag.fillna(False)
+        else:
+            valeurs_flag = (
+                flag.fillna("")
+                .astype(str)
+                .str.lower()
+                .str.strip()
+            )
+            masque = masque | valeurs_flag.isin(
+                ["1", "true", "t", "oui", "yes", "y"]
+            )
+
+    resultat = df[masque].copy()
+
+    # Appliquer le périmètre sélectionné uniquement si la vue contient
+    # une référence ESI exploitable.
+    if (
+        appliquer_perimetre
+        and df_esi_context is not None
+        and not df_esi_context.empty
+        and "esi_reference" in resultat.columns
+        and "esi_reference" in df_esi_context.columns
+    ):
+        references_esi = set(
+            df_esi_context["esi_reference"]
+            .dropna()
+            .astype(str)
+            .str.strip()
+        )
+        resultat = resultat[
+            resultat["esi_reference"]
+            .fillna("")
+            .astype(str)
+            .str.strip()
+            .isin(references_esi)
+        ].copy()
+
+    # Une ligne par contrat dans la carte et dans le détail.
+    if "contract_reference" in resultat.columns:
+        resultat["contract_reference"] = (
+            resultat["contract_reference"]
+            .fillna("")
+            .astype(str)
+            .str.strip()
+        )
+        resultat = resultat[
+            ~resultat["contract_reference"].isin(
+                ["", "nan", "None", "<NA>"]
+            )
+        ].copy()
+        resultat = resultat.drop_duplicates(
+            subset=["contract_reference"],
+            keep="first",
+        )
+    else:
+        resultat = resultat.drop_duplicates()
+
+    return resultat.reset_index(drop=True)
 
 def preparer_resume_qualite(
     df_qualite_resume: pd.DataFrame,
@@ -10007,9 +10145,11 @@ elif vue_active == "Alertes":
     # -------------------------------------------------
     # 1. CONTRATS ACTIFS DONT LA DATE DE FIN EST DÉPASSÉE
     # -------------------------------------------------
-    alertes_contrats_expires = contrats_actifs_fin_depassee(
-        df_contrats_kpi
-    ).copy()
+    alertes_contrats_expires = extraire_contrats_actifs_expires_depuis_vue(
+        df_alertes=df_alertes,
+        df_esi_context=df_esi_context,
+        appliquer_perimetre=perimetre_filtre_actif,
+    )
 
     # -------------------------------------------------
     # 2. ESI SANS CONTRAT ACTIF
@@ -10070,6 +10210,8 @@ elif vue_active == "Alertes":
         if "contract_reference" in alertes_contrats_expires.columns
         else len(alertes_contrats_expires)
     )
+
+    vue_alertes_disponible = not df_alertes.empty
 
     nb_esi_sans_contrat = int(
         alertes_esi_sans_contrat["esi_reference"].nunique()
@@ -10217,9 +10359,17 @@ elif vue_active == "Alertes":
     type_alerte = libelles_alertes[choix_court]
 
     if type_alerte == "Contrats actifs expirés":
-        table_alerte = preparer_contrats_table(
+        # Même source que la carte : dashboard.alertes_couverture.
+        table_alerte = preparer_alertes_table(
             alertes_contrats_expires
         )
+
+        # Si la vue utilise directement les colonnes contrats standards,
+        # conserver la présentation détaillée habituelle.
+        if table_alerte.empty and not alertes_contrats_expires.empty:
+            table_alerte = preparer_contrats_table(
+                alertes_contrats_expires
+            )
         nom_export = "contrats_actifs_expires.xlsx"
         message_vide = "Aucun contrat actif avec une date de fin dépassée."
         detail_title = (
