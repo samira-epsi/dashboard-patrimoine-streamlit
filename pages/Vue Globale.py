@@ -9043,8 +9043,8 @@ elif vue_active == "Couverture":
     ):
         st.markdown("<br>", unsafe_allow_html=True)
         section(
-            "La couverture en un regard",
-            "Comprendre le patrimoine, distinguer la couverture contractuelle de la couverture réelle, puis mesurer l’intensité des contrats actifs.",
+            "Comprendre la couverture des ESI",
+            "Lire le patrimoine en trois étapes : composition, couverture et intensité contractuelle.",
         )
 
         st.markdown(
@@ -9143,12 +9143,6 @@ elif vue_active == "Couverture":
         taux_reel_equipements = taux_sur(
             nb_esi_avec_contrat_equipement,
             base_esi_equipes,
-        )
-
-        coverage_insights(
-            nb_esi_couverts=nb_esi_avec_contrat_programme,
-            nb_esi_sans_contrat=nb_esi_sans_contrat_programme,
-            nb_esi_equipes_non_couverts=nb_esi_sans_contrat_equipement,
         )
 
         step_header(
@@ -9280,9 +9274,58 @@ elif vue_active == "Couverture":
         nb_4_plus = int(
             (repartition_contrats_esi["nb_contrats"] >= 4).sum()
         )
-        nb_esi_multi_metier = compter_indicateur(
-            colonne_multi_metier
-        )
+        # Multi-contrats même métier :
+        # un ESI est compté lorsqu'au moins un métier possède
+        # 2 contrats ACTIFS DISTINCTS ou plus sur cet ESI.
+        colonnes_multi_requises = {
+            "esi_reference",
+            "contract_reference",
+            "contract_topic",
+        }
+
+        if (
+            not df_contrats_kpi.empty
+            and colonnes_multi_requises.issubset(df_contrats_kpi.columns)
+        ):
+            contrats_multi_source = df_contrats_kpi[
+                df_contrats_kpi["esi_reference"].notna()
+                & df_contrats_kpi["contract_reference"].notna()
+                & df_contrats_kpi["contract_topic"].notna()
+            ].copy()
+
+            contrats_multi_source["contract_topic"] = (
+                contrats_multi_source["contract_topic"]
+                .astype(str)
+                .str.strip()
+            )
+
+            contrats_multi_source = contrats_multi_source[
+                ~contrats_multi_source["contract_topic"].isin(
+                    ["", "nan", "None", "<NA>", "Non renseigné"]
+                )
+            ].copy()
+
+            multi_par_esi_metier = (
+                contrats_multi_source
+                .groupby(
+                    ["esi_reference", "contract_topic"],
+                    as_index=False,
+                )
+                .agg(
+                    nb_contrats_distincts=(
+                        "contract_reference",
+                        "nunique",
+                    )
+                )
+            )
+
+            esi_multi_meme_metier = multi_par_esi_metier[
+                multi_par_esi_metier["nb_contrats_distincts"] >= 2
+            ]["esi_reference"].dropna().unique()
+
+            nb_esi_multi_metier = int(len(esi_multi_meme_metier))
+        else:
+            nb_esi_multi_metier = 0
 
         step_header(
             3,
@@ -9332,15 +9375,17 @@ elif vue_active == "Couverture":
             )
         with intensite_kpi_cols[2]:
             intensity_kpi(
-                "Multi-contrats même métier",
+                "ESI avec plusieurs contrats actifs sur un même métier",
                 fmt_nombre(nb_esi_multi_metier),
-                "Situations à contrôler dans l’onglet Alertes.",
+                "Au moins 2 contrats actifs distincts pour un même métier.",
                 "#D65A83",
             )
 
         st.caption(
             "Les contrats sont dédupliqués par référence pour chaque ESI. "
-            "Les ESI sans contrat sont conservés avec la valeur zéro."
+            "Les ESI sans contrat sont conservés avec la valeur zéro. "
+            "Le multi-contrats même métier correspond aux ESI ayant au moins "
+            "2 contrats actifs distincts sur un même métier."
         )
 
 
