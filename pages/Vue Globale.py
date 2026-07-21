@@ -7248,7 +7248,17 @@ def extraire_contrats_actifs_expires_depuis_vue(
                 ["1", "true", "t", "oui", "yes", "y"]
             )
 
-    resultat = df[masque].copy()
+    # Si aucun champ de type d'alerte n'existe, on considère que la vue
+# dashboard.alertes_couverture contient déjà la liste officielle.
+    if colonne_type is None and colonne_flag is None:
+        resultat = df.copy()
+    else:
+        resultat = df[masque].copy()
+
+        # Sécurité : si le filtre ne reconnaît aucune ligne alors que la vue
+        # contient des données, on conserve la vue complète au lieu d'afficher 0.
+        if resultat.empty and not df.empty:
+            resultat = df.copy()
 
     # Appliquer le périmètre sélectionné uniquement si la vue contient
     # une référence ESI exploitable.
