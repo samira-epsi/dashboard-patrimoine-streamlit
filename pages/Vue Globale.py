@@ -1,4 +1,6 @@
 import html
+import re
+import unicodedata
 from io import BytesIO
 from datetime import datetime
 from zoneinfo import ZoneInfo
@@ -3930,6 +3932,172 @@ def nettoyer_df(df: pd.DataFrame) -> pd.DataFrame:
     return df
 
 
+# =====================================================
+# NORMALISATION DES TYPES D'ÉQUIPEMENT
+# =====================================================
+
+# Ce dictionnaire contient uniquement les regroupements métier validés.
+# La clé est une version technique sans accent et en minuscules.
+# La valeur est le libellé final affiché dans le dashboard.
+EQUIPMENT_TYPE_ALIASES = {
+    # Ascenseurs
+    "lift": "Ascenseur",
+    "lifts": "Ascenseur",
+    "ascenseur": "Ascenseur",
+    "ascenseurs": "Ascenseur",
+
+    # Fermetures automatiques
+    "fermeture automatique": "Fermeture automatique",
+    "fermetures automatiques": "Fermeture automatique",
+
+    # Chauffage collectif
+    "installation de chauffage collectif": "Installation de chauffage collectif",
+    "installations de chauffage collectif": "Installation de chauffage collectif",
+    "chauffage collectif": "Installation de chauffage collectif",
+
+    # Ventilation
+    "ventilation": "Ventilation",
+
+    # VMC
+    "vmc sanitaire": "VMC sanitaire",
+    "vmc sanitaires": "VMC sanitaire",
+
+    # Aires de jeux
+    "aire de jeux": "Aire de jeux",
+    "aires de jeux": "Aire de jeux",
+}
+
+
+def cle_normalisation_texte(value) -> str:
+    """
+    Produit une clé stable pour comparer des libellés :
+    - espaces nettoyés ;
+    - casse ignorée ;
+    - accents retirés ;
+    - séparateurs harmonisés.
+    """
+    if value is None or pd.isna(value):
+        return ""
+
+    texte = str(value).strip()
+    if not texte:
+        return ""
+
+    texte = unicodedata.normalize("NFKD", texte)
+    texte = "".join(
+        caractere
+        for caractere in texte
+        if not unicodedata.combining(caractere)
+    )
+    texte = texte.lower()
+
+    # Harmonise les séparateurs et les espaces multiples.
+    texte = re.sub(r"[_/\\|-]+", " ", texte)
+    texte = re.sub(r"\s+", " ", texte).strip()
+
+    return texte
+
+
+def formater_type_equipement_inconnu(value) -> str:
+    """
+    Formate proprement une valeur non présente dans le dictionnaire,
+    sans inventer de regroupement métier.
+    """
+    if value is None or pd.isna(value):
+        return "Non renseigné"
+
+    texte = re.sub(r"\s+", " ", str(value).strip())
+    if not texte:
+        return "Non renseigné"
+
+    # Préserve les acronymes fréquents.
+    acronymes = {
+        "vmc": "VMC",
+        "cta": "CTA",
+        "ecs": "ECS",
+        "ssi": "SSI",
+        "vri": "VRI",
+        "erp": "ERP",
+    }
+
+    mots = []
+    for index, mot in enumerate(texte.lower().split()):
+        mot_cle = cle_normalisation_texte(mot)
+
+        if mot_cle in acronymes:
+            mots.append(acronymes[mot_cle])
+        elif index == 0:
+            mots.append(mot.capitalize())
+        else:
+            mots.append(mot)
+
+    return " ".join(mots)
+
+
+def normaliser_type_equipement(value) -> str:
+    """
+    Retourne le libellé normalisé d'un type d'équipement.
+
+    Les alias connus sont regroupés explicitement.
+    Les autres valeurs sont seulement nettoyées et formatées :
+    aucun regroupement métier n'est inventé.
+    """
+    cle = cle_normalisation_texte(value)
+
+    if not cle or cle in {
+        "nan",
+        "none",
+        "null",
+        "undefined",
+        "non renseigne",
+    }:
+        return "Non renseigné"
+
+    if cle in EQUIPMENT_TYPE_ALIASES:
+        return EQUIPMENT_TYPE_ALIASES[cle]
+
+    return formater_type_equipement_inconnu(value)
+
+
+def normaliser_equipements(df: pd.DataFrame) -> pd.DataFrame:
+    """
+    Ajoute une colonne unique `equipment_type_normalise`.
+
+    Priorité :
+    1. equipment_type, car c'est le type métier ;
+    2. equipment_asset_type seulement en repli.
+
+    Les colonnes sources sont conservées intactes.
+    """
+    if df.empty:
+        return df.copy()
+
+    df = nettoyer_df(df)
+
+    if "equipment_type" in df.columns:
+        source_type = df["equipment_type"].copy()
+    else:
+        source_type = pd.Series(pd.NA, index=df.index, dtype="object")
+
+    if "equipment_asset_type" in df.columns:
+        asset_type = df["equipment_asset_type"].copy()
+
+        source_vide = (
+            source_type.isna()
+            | source_type.astype(str).str.strip().isin(
+                ["", "nan", "None", "<NA>", "Non renseigné"]
+            )
+        )
+        source_type = source_type.where(~source_vide, asset_type)
+
+    df["equipment_type_normalise"] = source_type.map(
+        normaliser_type_equipement
+    )
+
+    return df
+
+
+
 def normaliser_contrats(df: pd.DataFrame) -> pd.DataFrame:
     df = nettoyer_df(df)
 
@@ -4166,8 +4334,12 @@ def charger_donnees():
     df_esi = nettoyer_df(df_esi)
     df_contrats = normaliser_contrats(df_contrats)
     df_prestations = normaliser_prestations(df_prestations)
-    df_equipements_couverture = nettoyer_df(df_equipements_couverture)
-    df_equipements_contrats = nettoyer_df(df_equipements_contrats)
+    df_equipements_couverture = normaliser_equipements(
+        df_equipements_couverture
+    )
+    df_equipements_contrats = normaliser_equipements(
+        df_equipements_contrats
+    )
     df_creations = normaliser_creations(df_creations)
     df_alertes = (
         nettoyer_df(df_alertes)
@@ -4529,7 +4701,11 @@ def construire_repartition_types_equipement(
         return pd.DataFrame(columns=colonnes)
 
     colonne_type = None
-    for candidate in ["equipment_type", "equipment_asset_type"]:
+    for candidate in [
+        "equipment_type_normalise",
+        "equipment_type",
+        "equipment_asset_type",
+    ]:
         if candidate in df_equipements.columns:
             colonne_type = candidate
             break
@@ -4538,16 +4714,22 @@ def construire_repartition_types_equipement(
         return pd.DataFrame(columns=colonnes)
 
     df = df_equipements.copy()
-    df["Type d’équipement"] = (
-        df[colonne_type]
-        .fillna("Non renseigné")
-        .astype(str)
-        .str.strip()
-        .replace("", "Non renseigné")
-    )
+
+    if colonne_type == "equipment_type_normalise":
+        df["Type d’équipement"] = (
+            df[colonne_type]
+            .fillna("Non renseigné")
+            .astype(str)
+            .str.strip()
+            .replace("", "Non renseigné")
+        )
+    else:
+        df["Type d’équipement"] = df[colonne_type].map(
+            normaliser_type_equipement
+        )
 
     # Un équipement ne doit compter qu'une seule fois, même s'il existe plusieurs liens.
-    df = df.drop_duplicates("equipment_reference")
+    # df = df.drop_duplicates("equipment_reference")
 
     agg = {
         "equipment_reference": "nunique",
@@ -7330,8 +7512,8 @@ def preparer_equipements_table(df: pd.DataFrame) -> pd.DataFrame:
     colonnes_candidates = [
         ("equipment_reference", "Référence équipement"),
         ("equipment_label", "Libellé équipement"),
-        ("equipment_type", "Type d’équipement"),
-        ("equipment_asset_type", "Type d’équipement"),
+        ("equipment_type_normalise", "Type d’équipement"),
+        ("equipment_type", "Type d’équipement source"),
         ("esi_reference", "Référence ESI"),
         ("esi_label", "Libellé ESI"),
         ("societe", "Société"),
@@ -9500,6 +9682,7 @@ elif vue_active == "Couverture":
                 (
                     candidate
                     for candidate in [
+                        "equipment_type_normalise",
                         "equipment_type",
                         "equipment_asset_type",
                     ]
@@ -9509,12 +9692,21 @@ elif vue_active == "Couverture":
             )
 
             if colonne_type_detail is not None:
-                types_disponibles = (
-                    detail_equipements[colonne_type_detail]
-                    .dropna()
-                    .astype(str)
-                    .str.strip()
-                )
+                if colonne_type_detail == "equipment_type_normalise":
+                    types_disponibles = (
+                        detail_equipements[colonne_type_detail]
+                        .dropna()
+                        .astype(str)
+                        .str.strip()
+                    )
+                else:
+                    types_disponibles = (
+                        detail_equipements[colonne_type_detail]
+                        .map(normaliser_type_equipement)
+                        .dropna()
+                        .astype(str)
+                        .str.strip()
+                    )
                 types_disponibles = sorted(
                     [
                         value
@@ -9536,11 +9728,22 @@ elif vue_active == "Couverture":
                 )
 
                 if type_selectionne != "Tous les types":
+                    if colonne_type_detail == "equipment_type_normalise":
+                        masque_type = (
+                            detail_equipements[colonne_type_detail]
+                            .astype(str)
+                            .str.strip()
+                            == type_selectionne
+                        )
+                    else:
+                        masque_type = (
+                            detail_equipements[colonne_type_detail]
+                            .map(normaliser_type_equipement)
+                            == type_selectionne
+                        )
+
                     detail_equipements = detail_equipements[
-                        detail_equipements[colonne_type_detail]
-                        .astype(str)
-                        .str.strip()
-                        == type_selectionne
+                        masque_type
                     ].copy()
 
             recherche_equipement = st.text_input(
