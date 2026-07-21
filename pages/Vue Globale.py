@@ -4729,7 +4729,7 @@ def construire_repartition_types_equipement(
         )
 
     # Un équipement ne doit compter qu'une seule fois, même s'il existe plusieurs liens.
-    df = df.drop_duplicates("equipment_reference")
+    # df = df.drop_duplicates("equipment_reference")
 
     agg = {
         "equipment_reference": "nunique",
