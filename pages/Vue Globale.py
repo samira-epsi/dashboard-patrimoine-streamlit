@@ -3246,6 +3246,408 @@ def inject_style():
                 margin-left: 0;
             }
         }
+
+        /* =====================================================
+           RESPONSIVITÉ GLOBALE — DESKTOP / LAPTOP / TABLETTE / MOBILE
+           Ce bloc est placé en dernier pour surcharger les anciennes règles.
+        ===================================================== */
+
+        .block-container {
+            width: min(96vw, 1840px) !important;
+            max-width: 1840px !important;
+            padding-top: clamp(.75rem, 1.2vw, 1.4rem) !important;
+            padding-left: clamp(.75rem, 2vw, 2.4rem) !important;
+            padding-right: clamp(.75rem, 2vw, 2.4rem) !important;
+            padding-bottom: 2rem !important;
+        }
+
+        .vg-hero-title {
+            font-size: clamp(26px, 2.1vw, 38px) !important;
+        }
+
+        .vg-hero-subtitle {
+            font-size: clamp(12px, .9vw, 15px) !important;
+        }
+
+        .vg-section-title {
+            font-size: clamp(17px, 1.25vw, 22px) !important;
+        }
+
+        .vg-section-subtitle {
+            font-size: clamp(11px, .82vw, 13.5px) !important;
+        }
+
+        .vg-card-value,
+        .vg-alert-value,
+        .vg-priority-value,
+        .vg-family-value {
+            font-size: clamp(24px, 2vw, 34px) !important;
+        }
+
+        .vg-card,
+        .vg-alert-card,
+        .vg-priority-card,
+        .vg-family-card,
+        .vg-impact-alert-card,
+        .vg-anomaly-secondary-card,
+        .vg-anomaly-main-card,
+        .vg-coverage-reading-card,
+        .vg-equipment-main-card,
+        .vg-equipment-kpi,
+        .vg-intensity-kpi {
+            height: auto !important;
+            min-height: unset !important;
+        }
+
+        .vg-priority-grid {
+            grid-template-columns: repeat(auto-fit, minmax(min(240px, 100%), 1fr)) !important;
+        }
+
+        .vg-coverage-insights {
+            grid-template-columns: repeat(auto-fit, minmax(min(220px, 100%), 1fr)) !important;
+        }
+
+        .vg-park-grid {
+            grid-template-columns: repeat(auto-fit, minmax(min(190px, 100%), 1fr)) !important;
+        }
+
+        .vg-coverage-kpi-grid,
+        .vg-equipment-kpis {
+            grid-template-columns: repeat(auto-fit, minmax(min(190px, 100%), 1fr)) !important;
+        }
+
+        .vg-alerts-hero-stats {
+            flex-wrap: wrap !important;
+        }
+
+        .vg-alerts-hero-stat {
+            flex: 1 1 105px !important;
+        }
+
+        .vg-coverage-summary,
+        .vg-equipment-summary,
+        .vg-equipment-hero,
+        .vg-contract-intensity {
+            grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) !important;
+        }
+
+        .vg-intensity-row {
+            grid-template-columns: minmax(120px, .7fr) minmax(120px, 2fr) minmax(78px, auto) !important;
+        }
+
+        .vg-equipment-type-row {
+            grid-template-columns: minmax(130px, .8fr) minmax(130px, 2fr) minmax(105px, auto) !important;
+        }
+
+        .vg-intensity-label,
+        .vg-equipment-type-label,
+        .vg-coverage-label {
+            white-space: normal !important;
+            overflow-wrap: anywhere !important;
+        }
+
+        div[data-testid="stPlotlyChart"],
+        div[data-testid="stDataFrame"],
+        div[data-testid="stTable"] {
+            max-width: 100% !important;
+            min-width: 0 !important;
+        }
+
+        div[data-testid="stPlotlyChart"] .js-plotly-plot,
+        div[data-testid="stPlotlyChart"] .plot-container,
+        div[data-testid="stPlotlyChart"] .svg-container {
+            max-width: 100% !important;
+        }
+
+        .stButton,
+        .stDownloadButton,
+        .stSelectbox,
+        .stMultiSelect,
+        .stTextInput,
+        .stNumberInput {
+            max-width: 100% !important;
+        }
+
+        .stButton button,
+        .stDownloadButton button {
+            max-width: 100% !important;
+            white-space: normal !important;
+            line-height: 1.25 !important;
+        }
+
+        .st-key-dashboard_tabs div[role="radiogroup"] {
+            flex-wrap: wrap !important;
+            gap: clamp(10px, 1.8vw, 28px) !important;
+        }
+
+        .st-key-dashboard_tabs div[role="radiogroup"] label {
+            min-height: 42px !important;
+            padding: 10px 2px !important;
+            font-size: clamp(12px, .85vw, 14px) !important;
+        }
+
+        @media screen and (max-width: 1280px) {
+            .block-container {
+                width: 98vw !important;
+                padding-left: 1rem !important;
+                padding-right: 1rem !important;
+            }
+
+            .vg-hero {
+                padding: 22px 24px !important;
+            }
+
+            .vg-coverage-summary,
+            .vg-equipment-summary,
+            .vg-equipment-hero,
+            .vg-contract-intensity {
+                grid-template-columns: 1fr !important;
+            }
+
+            .vg-alerts-hero-inner {
+                align-items: flex-start !important;
+                flex-direction: column !important;
+            }
+
+            .vg-alerts-hero-stats {
+                width: 100% !important;
+                justify-content: flex-start !important;
+            }
+
+            .vg-anomaly-main-value {
+                font-size: clamp(34px, 4vw, 46px) !important;
+            }
+
+            .vg-equipment-main-card {
+                min-height: unset !important;
+            }
+        }
+
+        @media screen and (max-width: 980px) {
+            .block-container {
+                width: 100% !important;
+                padding-left: .75rem !important;
+                padding-right: .75rem !important;
+            }
+
+            .vg-hero {
+                padding: 20px 18px !important;
+                border-radius: 15px !important;
+            }
+
+            .vg-coverage-reading-stats,
+            .vg-equipment-stats {
+                grid-template-columns: 1fr 1fr !important;
+            }
+
+            .vg-intensity-row,
+            .vg-equipment-type-row {
+                grid-template-columns: 1fr !important;
+                gap: 5px !important;
+            }
+
+            .vg-intensity-value,
+            .vg-equipment-type-value {
+                text-align: left !important;
+            }
+
+            .vg-intensity-track,
+            .vg-equipment-type-track {
+                width: 100% !important;
+            }
+
+            .vg-table-summary {
+                flex-wrap: wrap !important;
+            }
+
+            div[data-testid="stHorizontalBlock"] {
+                gap: .65rem !important;
+            }
+        }
+
+        @media screen and (max-width: 700px) {
+            .block-container {
+                padding-top: .5rem !important;
+                padding-left: .5rem !important;
+                padding-right: .5rem !important;
+            }
+
+            .vg-hero {
+                padding: 18px 15px !important;
+                margin-bottom: 10px !important;
+            }
+
+            .vg-hero-title {
+                font-size: 25px !important;
+            }
+
+            .vg-section-title {
+                font-size: 18px !important;
+            }
+
+            .vg-section-title::before {
+                height: 18px !important;
+            }
+
+            .vg-coverage-insights,
+            .vg-priority-grid,
+            .vg-park-grid,
+            .vg-coverage-kpi-grid,
+            .vg-equipment-kpis {
+                grid-template-columns: 1fr !important;
+            }
+
+            .vg-coverage-reading-stats,
+            .vg-equipment-stats {
+                grid-template-columns: 1fr !important;
+            }
+
+            .vg-coverage-reading-card,
+            .vg-anomaly-main-card,
+            .vg-anomaly-secondary-card,
+            .vg-impact-alert-card {
+                padding: 15px !important;
+                border-radius: 13px !important;
+            }
+
+            .vg-coverage-reading-rate {
+                font-size: 30px !important;
+            }
+
+            .vg-step-header {
+                align-items: flex-start !important;
+            }
+
+            .vg-step-number {
+                width: 24px !important;
+                height: 24px !important;
+            }
+
+            .vg-equipment-main-card,
+            .vg-equipment-hero-main {
+                flex-direction: column !important;
+                align-items: flex-start !important;
+            }
+
+            .vg-equipment-ring {
+                width: 100px !important;
+                height: 100px !important;
+                align-self: center !important;
+            }
+
+            .vg-alerts-hero,
+            .vg-anomaly-hero {
+                padding: 16px !important;
+                border-radius: 14px !important;
+            }
+
+            .vg-alerts-hero-value,
+            .vg-anomaly-hero-value {
+                font-size: 31px !important;
+            }
+
+            .st-key-dashboard_tabs {
+                overflow-x: auto !important;
+            }
+
+            .st-key-dashboard_tabs div[role="radiogroup"] {
+                flex-wrap: nowrap !important;
+                min-width: max-content !important;
+                gap: 16px !important;
+            }
+
+            .st-key-dashboard_tabs div[role="radiogroup"] label {
+                flex: 0 0 auto !important;
+            }
+
+            div[data-testid="stDataFrame"] {
+                overflow-x: auto !important;
+            }
+
+            div[data-testid="stExpander"] details summary {
+                padding-left: .75rem !important;
+                padding-right: .75rem !important;
+            }
+        }
+
+        @media screen and (max-width: 430px) {
+            .block-container {
+                padding-left: .35rem !important;
+                padding-right: .35rem !important;
+            }
+
+            .vg-hero-title {
+                font-size: 22px !important;
+            }
+
+            .vg-card-value,
+            .vg-alert-value,
+            .vg-priority-value,
+            .vg-family-value {
+                font-size: 24px !important;
+            }
+
+            .vg-coverage-summary-title {
+                font-size: 18px !important;
+            }
+
+            .vg-coverage-summary-title strong {
+                display: block !important;
+                margin-bottom: 4px !important;
+                font-size: 28px !important;
+            }
+
+            .vg-coverage-reading-main {
+                align-items: flex-start !important;
+                flex-direction: column !important;
+            }
+
+            .vg-coverage-context {
+                align-items: flex-start !important;
+                flex-direction: column !important;
+            }
+
+            .vg-coverage-context-pill {
+                width: 100% !important;
+                box-sizing: border-box !important;
+            }
+
+            .stButton button,
+            .stDownloadButton button {
+                width: 100% !important;
+            }
+        }
+
+        @media screen and (min-width: 1700px) {
+            .block-container {
+                width: min(94vw, 1900px) !important;
+                max-width: 1900px !important;
+            }
+
+            .vg-section-title {
+                font-size: 22px !important;
+            }
+
+            .vg-section-subtitle {
+                font-size: 13.5px !important;
+            }
+
+            .vg-card-value,
+            .vg-priority-value,
+            .vg-family-value {
+                font-size: 34px !important;
+            }
+
+            .vg-coverage-reading-title {
+                font-size: 17px !important;
+            }
+
+            .vg-coverage-reading-question,
+            .vg-coverage-reading-count {
+                font-size: 12px !important;
+            }
+        }
+
         </style>
         """,
         unsafe_allow_html=True,
