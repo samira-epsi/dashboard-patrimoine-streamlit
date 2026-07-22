@@ -9799,7 +9799,7 @@ elif vue_active == "Couverture":
         )
 
         step_header(
-            2,
+            1,
             "Comprendre la composition du parc",
             # "Identifier les catégories d’équipements les plus présentes.",
         )
