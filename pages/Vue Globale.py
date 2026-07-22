@@ -9685,12 +9685,12 @@ elif vue_active == "Couverture":
                 "#D65A83",
             )
 
-        st.caption(
-            "Les contrats sont dédupliqués par référence pour chaque ESI. "
-            "Les ESI sans contrat sont conservés avec la valeur zéro. "
-            "Le multi-contrats même métier correspond aux ESI ayant au moins "
-            "2 contrats actifs distincts sur un même métier."
-        )
+        # st.caption(
+        #     "Les contrats sont dédupliqués par référence pour chaque ESI. "
+        #     "Les ESI sans contrat sont conservés avec la valeur zéro. "
+        #     "Le multi-contrats même métier correspond aux ESI ayant au moins "
+        #     "2 contrats actifs distincts sur un même métier."
+        # )
 
 
     # =====================================================
