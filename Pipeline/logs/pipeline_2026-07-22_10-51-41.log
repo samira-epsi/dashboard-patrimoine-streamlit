@@ -1,0 +1,54 @@
+2026-07-22 10:51:41 | INFO | Fichier de logs : C:\Users\gueye-sb\Downloads\CODE TDB 2\Pipeline\logs\pipeline_2026-07-22_10-51-41.log
+2026-07-22 10:51:41 | INFO | ########################################################################
+2026-07-22 10:51:41 | INFO | DÉMARRAGE DU PIPELINE PATRIMOINE
+2026-07-22 10:51:41 | INFO | Run ID : 53d2a5f9-e866-44b2-9d90-39e73a273104
+2026-07-22 10:51:41 | INFO | Dossier du projet : C:\Users\gueye-sb\Downloads\CODE TDB 2
+2026-07-22 10:51:41 | INFO | Interpréteur Python : C:\Users\gueye-sb\AppData\Local\Programs\Python\Python314\python.exe
+2026-07-22 10:51:41 | INFO | ########################################################################
+2026-07-22 10:51:41 | INFO | 
+2026-07-22 10:51:41 | INFO | ========================================================================
+2026-07-22 10:51:41 | INFO | DÉBUT DE L'ÉTAPE : Extraction et mise à jour Intent
+2026-07-22 10:51:41 | INFO | Script : C:\Users\gueye-sb\Downloads\CODE TDB 2\Pipeline\les_different_code_main.py
+2026-07-22 10:51:41 | INFO | ========================================================================
+2026-07-22 10:51:47 | INFO | [Extraction et mise à jour Intent] Traceback (most recent call last):
+2026-07-22 10:51:47 | INFO | [Extraction et mise à jour Intent]   File "C:\Users\gueye-sb\Downloads\CODE TDB 2\Pipeline\les_different_code_main.py", line 14, in <module>
+2026-07-22 10:51:47 | INFO | [Extraction et mise à jour Intent]     from config import DB_URL
+2026-07-22 10:51:47 | INFO | [Extraction et mise à jour Intent]   File "C:\Users\gueye-sb\Downloads\CODE TDB 2\config.py", line 14, in <module>
+2026-07-22 10:51:47 | INFO | [Extraction et mise à jour Intent]     DB_URL_2 = st.secrets["postgres"]["url"]
+2026-07-22 10:51:47 | INFO | [Extraction et mise à jour Intent]                ~~~~~~~~~~^^^^^^^^^^^^
+2026-07-22 10:51:47 | INFO | [Extraction et mise à jour Intent]   File "C:\Users\gueye-sb\AppData\Local\Programs\Python\Python314\Lib\site-packages\streamlit\runtime\secrets.py", line 581, in __getitem__
+2026-07-22 10:51:47 | INFO | [Extraction et mise à jour Intent]     value = self._parse()[key]
+2026-07-22 10:51:47 | INFO | [Extraction et mise à jour Intent]             ~~~~~~~~~~~^^
+2026-07-22 10:51:47 | INFO | [Extraction et mise à jour Intent]   File "C:\Users\gueye-sb\AppData\Local\Programs\Python\Python314\Lib\site-packages\streamlit\runtime\secrets.py", line 414, in _parse
+2026-07-22 10:51:47 | INFO | [Extraction et mise à jour Intent]     raise StreamlitSecretNotFoundError(error_msg)
+2026-07-22 10:51:47 | INFO | [Extraction et mise à jour Intent] streamlit.errors.StreamlitSecretNotFoundError: No secrets found. Valid paths for a secrets.toml file or secret directories are: C:\Users\gueye-sb\.streamlit\secrets.toml, C:\Users\gueye-sb\Downloads\CODE TDB 2\.streamlit\secrets.toml
+2026-07-22 10:51:48 | ERROR | 
+Traceback (most recent call last):
+  File "c:\Users\gueye-sb\Downloads\CODE TDB 2\Pipeline\run_pipeline.py", line 431, in main
+    executer_pipeline(
+    ~~~~~~~~~~~~~~~~~^
+        logger
+        ^^^^^^
+    )
+    ^
+  File "c:\Users\gueye-sb\Downloads\CODE TDB 2\Pipeline\run_pipeline.py", line 383, in executer_pipeline
+    executer_etape(
+    ~~~~~~~~~~~~~~^
+        etape=etape,
+        ^^^^^^^^^^^^
+        logger=logger,
+        ^^^^^^^^^^^^^^
+        environnement=environnement,
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "c:\Users\gueye-sb\Downloads\CODE TDB 2\Pipeline\run_pipeline.py", line 318, in executer_etape
+    raise RuntimeError(
+    ...<4 lines>...
+    )
+RuntimeError: L'étape « Extraction et mise à jour Intent » a échoué avec le code 1. Durée : 6 s.
+2026-07-22 10:51:48 | ERROR | ########################################################################
+2026-07-22 10:51:48 | ERROR | ÉCHEC DU PIPELINE
+2026-07-22 10:51:48 | ERROR | Run ID : 53d2a5f9-e866-44b2-9d90-39e73a273104
+2026-07-22 10:51:48 | ERROR | Les étapes suivantes n'ont pas été exécutées.
+2026-07-22 10:51:48 | ERROR | ########################################################################

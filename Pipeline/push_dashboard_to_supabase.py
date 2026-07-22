@@ -3,6 +3,13 @@ from __future__ import annotations
 import os
 import sys
 from getpass import getpass
+from pathlib import Path
+
+
+PROJECT_ROOT = Path(__file__).resolve().parent.parent
+
+if str(PROJECT_ROOT) not in sys.path:
+    sys.path.insert(0, str(PROJECT_ROOT))
 
 import pandas as pd
 from sqlalchemy import (
@@ -548,68 +555,68 @@ def recuperer_types_source(
 # RAFRAÎCHISSEMENT LOCAL
 # =====================================================
 
-# def rafraichir_tables_locales(
-#     local_engine: Engine,
-# ) -> None:
-#     if not REFRESH_LOCAL_TABLES:
-#         print(
-#             "\nRafraîchissement local désactivé."
-#         )
-#         return
+def rafraichir_tables_locales(
+    local_engine: Engine,
+) -> None:
+    if not REFRESH_LOCAL_TABLES:
+        print(
+            "\nRafraîchissement local désactivé."
+        )
+        return
 
-#     schema_procedure, nom_procedure = (
-#         LOCAL_REFRESH_PROCEDURE.split(".", 1)
-#     )
+    schema_procedure, nom_procedure = (
+        LOCAL_REFRESH_PROCEDURE.split(".", 1)
+    )
 
-#     if not procedure_exists(
-#         local_engine,
-#         schema_procedure,
-#         nom_procedure,
-#     ):
-#         raise RuntimeError(
-#             "La procédure locale "
-#             f"{LOCAL_REFRESH_PROCEDURE}() "
-#             "n'existe pas.\n"
-#             "Crée-la d'abord ou mets "
-#             "REFRESH_LOCAL_TABLES = False."
-#         )
+    if not procedure_exists(
+        local_engine,
+        schema_procedure,
+        nom_procedure,
+    ):
+        raise RuntimeError(
+            "La procédure locale "
+            f"{LOCAL_REFRESH_PROCEDURE}() "
+            "n'existe pas.\n"
+            "Crée-la d'abord ou mets "
+            "REFRESH_LOCAL_TABLES = False."
+        )
 
-#     print(
-#         "\nRafraîchissement des tables légères locales..."
-#     )
+    print(
+        "\nRafraîchissement des tables légères locales..."
+    )
 
-#     with local_engine.begin() as connection:
-#         connection.execute(
-#             text(
-#                 f"CALL {LOCAL_REFRESH_PROCEDURE}()"
-#             )
-#         )
+    with local_engine.begin() as connection:
+        connection.execute(
+            text(
+                f"CALL {LOCAL_REFRESH_PROCEDURE}()"
+            )
+        )
 
-#     print(
-#         "Tables légères locales rafraîchies."
-#     )
+    print(
+        "Tables légères locales rafraîchies."
+    )
 
-#     print(
-#         "Mise à jour des statistiques locales..."
-#     )
+    print(
+        "Mise à jour des statistiques locales..."
+    )
 
-#     with local_engine.begin() as connection:
-#         for item in TABLES:
-#             source_schema = item["source_schema"]
-#             source_name = item["source_name"]
+    with local_engine.begin() as connection:
+        for item in TABLES:
+            source_schema = item["source_schema"]
+            source_name = item["source_name"]
 
-#             connection.execute(
-#                 text(
-#                     f"""
-#                     ANALYZE
-#                     "{source_schema}"."{source_name}"
-#                     """
-#                 )
-#             )
+            connection.execute(
+                text(
+                    f"""
+                    ANALYZE
+                    "{source_schema}"."{source_name}"
+                    """
+                )
+            )
 
-#     print(
-#         "Statistiques locales actualisées."
-#     )
+    print(
+        "Statistiques locales actualisées."
+    )
 
 
 # =====================================================
@@ -1072,9 +1079,9 @@ def main() -> None:
         )
 
         # 1. Actualise les tables légères depuis les vues _next.
-        # rafraichir_tables_locales(
-        #     local_engine
-        # )
+        rafraichir_tables_locales(
+            local_engine
+        )
 
         # 2. Vérifie que les 9 tables existent.
         verifier_sources_locales(

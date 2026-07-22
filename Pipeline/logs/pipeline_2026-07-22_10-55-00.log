@@ -1,0 +1,111 @@
+2026-07-22 10:55:00 | INFO | Fichier de logs : C:\Users\gueye-sb\Downloads\CODE TDB 2\Pipeline\logs\pipeline_2026-07-22_10-55-00.log
+2026-07-22 10:55:00 | INFO | ########################################################################
+2026-07-22 10:55:00 | INFO | DÉMARRAGE DU PIPELINE PATRIMOINE
+2026-07-22 10:55:00 | INFO | Run ID : 15008246-97b3-4003-9a07-5a8434e09759
+2026-07-22 10:55:00 | INFO | Dossier du projet : C:\Users\gueye-sb\Downloads\CODE TDB 2
+2026-07-22 10:55:00 | INFO | Interpréteur Python : C:\Users\gueye-sb\AppData\Local\Programs\Python\Python314\python.exe
+2026-07-22 10:55:00 | INFO | ########################################################################
+2026-07-22 10:55:00 | INFO | 
+2026-07-22 10:55:00 | INFO | ========================================================================
+2026-07-22 10:55:00 | INFO | DÉBUT DE L'ÉTAPE : Extraction et mise à jour Intent
+2026-07-22 10:55:00 | INFO | Script : C:\Users\gueye-sb\Downloads\CODE TDB 2\Pipeline\les_different_code_main.py
+2026-07-22 10:55:00 | INFO | ========================================================================
+2026-07-22 10:55:02 | INFO | [Extraction et mise à jour Intent] Nouveau token OAuth r�cup�r�
+2026-07-22 10:55:03 | INFO | [Extraction et mise à jour Intent] Page 1 r�cup�r�e - 50 contrats
+2026-07-22 10:55:03 | INFO | [Extraction et mise à jour Intent] Page 2 r�cup�r�e - 50 contrats
+2026-07-22 10:55:04 | INFO | [Extraction et mise à jour Intent] Page 3 r�cup�r�e - 50 contrats
+2026-07-22 10:55:04 | INFO | [Extraction et mise à jour Intent] Page 4 r�cup�r�e - 50 contrats
+2026-07-22 10:55:05 | INFO | [Extraction et mise à jour Intent] Page 5 r�cup�r�e - 50 contrats
+2026-07-22 10:55:05 | INFO | [Extraction et mise à jour Intent] Page 6 r�cup�r�e - 50 contrats
+2026-07-22 10:55:06 | INFO | [Extraction et mise à jour Intent] Page 7 r�cup�r�e - 50 contrats
+2026-07-22 10:55:06 | INFO | [Extraction et mise à jour Intent] Page 8 r�cup�r�e - 50 contrats
+2026-07-22 10:55:06 | INFO | [Extraction et mise à jour Intent] Page 9 r�cup�r�e - 50 contrats
+2026-07-22 10:55:07 | INFO | [Extraction et mise à jour Intent] Page 10 r�cup�r�e - 50 contrats
+2026-07-22 10:55:07 | INFO | [Extraction et mise à jour Intent] Page 11 r�cup�r�e - 50 contrats
+2026-07-22 10:55:08 | INFO | [Extraction et mise à jour Intent] Page 12 r�cup�r�e - 35 contrats
+2026-07-22 10:55:08 | INFO | [Extraction et mise à jour Intent] Total r�cup�r� : 585 contrats
+2026-07-22 10:55:08 | INFO | [Extraction et mise à jour Intent] Traceback (most recent call last):
+2026-07-22 10:55:08 | INFO | [Extraction et mise à jour Intent]   File "C:\Users\gueye-sb\Downloads\CODE TDB 2\Pipeline\les_different_code_main.py", line 21, in <module>
+2026-07-22 10:55:08 | INFO | [Extraction et mise à jour Intent]     with engine.begin() as conn:
+2026-07-22 10:55:08 | INFO | [Extraction et mise à jour Intent]          ~~~~~~~~~~~~^^
+2026-07-22 10:55:08 | INFO | [Extraction et mise à jour Intent]   File "C:\Users\gueye-sb\AppData\Local\Programs\Python\Python314\Lib\contextlib.py", line 141, in __enter__
+2026-07-22 10:55:08 | INFO | [Extraction et mise à jour Intent]     return next(self.gen)
+2026-07-22 10:55:08 | INFO | [Extraction et mise à jour Intent]   File "C:\Users\gueye-sb\AppData\Local\Programs\Python\Python314\Lib\site-packages\sqlalchemy\engine\base.py", line 3259, in begin
+2026-07-22 10:55:08 | INFO | [Extraction et mise à jour Intent]     with self.connect() as conn:
+2026-07-22 10:55:08 | INFO | [Extraction et mise à jour Intent]          ~~~~~~~~~~~~^^
+2026-07-22 10:55:08 | INFO | [Extraction et mise à jour Intent]   File "C:\Users\gueye-sb\AppData\Local\Programs\Python\Python314\Lib\site-packages\sqlalchemy\engine\base.py", line 3295, in connect
+2026-07-22 10:55:08 | INFO | [Extraction et mise à jour Intent]     return self._connection_cls(self)
+2026-07-22 10:55:08 | INFO | [Extraction et mise à jour Intent]            ~~~~~~~~~~~~~~~~~~~~^^^^^^
+2026-07-22 10:55:08 | INFO | [Extraction et mise à jour Intent]   File "C:\Users\gueye-sb\AppData\Local\Programs\Python\Python314\Lib\site-packages\sqlalchemy\engine\base.py", line 144, in __init__
+2026-07-22 10:55:08 | INFO | [Extraction et mise à jour Intent]     self._dbapi_connection = engine.raw_connection()
+2026-07-22 10:55:08 | INFO | [Extraction et mise à jour Intent]                              ~~~~~~~~~~~~~~~~~~~~~^^
+2026-07-22 10:55:08 | INFO | [Extraction et mise à jour Intent]   File "C:\Users\gueye-sb\AppData\Local\Programs\Python\Python314\Lib\site-packages\sqlalchemy\engine\base.py", line 3319, in raw_connection
+2026-07-22 10:55:08 | INFO | [Extraction et mise à jour Intent]     return self.pool.connect()
+2026-07-22 10:55:08 | INFO | [Extraction et mise à jour Intent]            ~~~~~~~~~~~~~~~~~^^
+2026-07-22 10:55:08 | INFO | [Extraction et mise à jour Intent]   File "C:\Users\gueye-sb\AppData\Local\Programs\Python\Python314\Lib\site-packages\sqlalchemy\pool\base.py", line 448, in connect
+2026-07-22 10:55:08 | INFO | [Extraction et mise à jour Intent]     return _ConnectionFairy._checkout(self)
+2026-07-22 10:55:08 | INFO | [Extraction et mise à jour Intent]            ~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^
+2026-07-22 10:55:08 | INFO | [Extraction et mise à jour Intent]   File "C:\Users\gueye-sb\AppData\Local\Programs\Python\Python314\Lib\site-packages\sqlalchemy\pool\base.py", line 1272, in _checkout
+2026-07-22 10:55:08 | INFO | [Extraction et mise à jour Intent]     fairy = _ConnectionRecord.checkout(pool)
+2026-07-22 10:55:08 | INFO | [Extraction et mise à jour Intent]   File "C:\Users\gueye-sb\AppData\Local\Programs\Python\Python314\Lib\site-packages\sqlalchemy\pool\base.py", line 712, in checkout
+2026-07-22 10:55:08 | INFO | [Extraction et mise à jour Intent]     rec = pool._do_get()
+2026-07-22 10:55:08 | INFO | [Extraction et mise à jour Intent]   File "C:\Users\gueye-sb\AppData\Local\Programs\Python\Python314\Lib\site-packages\sqlalchemy\pool\impl.py", line 178, in _do_get
+2026-07-22 10:55:08 | INFO | [Extraction et mise à jour Intent]     with util.safe_reraise():
+2026-07-22 10:55:08 | INFO | [Extraction et mise à jour Intent]          ~~~~~~~~~~~~~~~~~^^
+2026-07-22 10:55:08 | INFO | [Extraction et mise à jour Intent]   File "C:\Users\gueye-sb\AppData\Local\Programs\Python\Python314\Lib\site-packages\sqlalchemy\util\langhelpers.py", line 122, in __exit__
+2026-07-22 10:55:08 | INFO | [Extraction et mise à jour Intent]     raise exc_value.with_traceback(exc_tb)
+2026-07-22 10:55:08 | INFO | [Extraction et mise à jour Intent]   File "C:\Users\gueye-sb\AppData\Local\Programs\Python\Python314\Lib\site-packages\sqlalchemy\pool\impl.py", line 176, in _do_get
+2026-07-22 10:55:08 | INFO | [Extraction et mise à jour Intent]     return self._create_connection()
+2026-07-22 10:55:08 | INFO | [Extraction et mise à jour Intent]            ~~~~~~~~~~~~~~~~~~~~~~~^^
+2026-07-22 10:55:08 | INFO | [Extraction et mise à jour Intent]   File "C:\Users\gueye-sb\AppData\Local\Programs\Python\Python314\Lib\site-packages\sqlalchemy\pool\base.py", line 389, in _create_connection
+2026-07-22 10:55:08 | INFO | [Extraction et mise à jour Intent]     return _ConnectionRecord(self)
+2026-07-22 10:55:08 | INFO | [Extraction et mise à jour Intent]   File "C:\Users\gueye-sb\AppData\Local\Programs\Python\Python314\Lib\site-packages\sqlalchemy\pool\base.py", line 674, in __init__
+2026-07-22 10:55:08 | INFO | [Extraction et mise à jour Intent]     self.__connect()
+2026-07-22 10:55:08 | INFO | [Extraction et mise à jour Intent]     ~~~~~~~~~~~~~~^^
+2026-07-22 10:55:08 | INFO | [Extraction et mise à jour Intent]   File "C:\Users\gueye-sb\AppData\Local\Programs\Python\Python314\Lib\site-packages\sqlalchemy\pool\base.py", line 900, in __connect
+2026-07-22 10:55:08 | INFO | [Extraction et mise à jour Intent]     with util.safe_reraise():
+2026-07-22 10:55:08 | INFO | [Extraction et mise à jour Intent]          ~~~~~~~~~~~~~~~~~^^
+2026-07-22 10:55:08 | INFO | [Extraction et mise à jour Intent]   File "C:\Users\gueye-sb\AppData\Local\Programs\Python\Python314\Lib\site-packages\sqlalchemy\util\langhelpers.py", line 122, in __exit__
+2026-07-22 10:55:08 | INFO | [Extraction et mise à jour Intent]     raise exc_value.with_traceback(exc_tb)
+2026-07-22 10:55:08 | INFO | [Extraction et mise à jour Intent]   File "C:\Users\gueye-sb\AppData\Local\Programs\Python\Python314\Lib\site-packages\sqlalchemy\pool\base.py", line 896, in __connect
+2026-07-22 10:55:08 | INFO | [Extraction et mise à jour Intent]     self.dbapi_connection = connection = pool._invoke_creator(self)
+2026-07-22 10:55:08 | INFO | [Extraction et mise à jour Intent]                                          ~~~~~~~~~~~~~~~~~~~~^^^^^^
+2026-07-22 10:55:08 | INFO | [Extraction et mise à jour Intent]   File "C:\Users\gueye-sb\AppData\Local\Programs\Python\Python314\Lib\site-packages\sqlalchemy\engine\create.py", line 667, in connect
+2026-07-22 10:55:08 | INFO | [Extraction et mise à jour Intent]     return dialect.connect(*cargs_tup, **cparams)
+2026-07-22 10:55:08 | INFO | [Extraction et mise à jour Intent]            ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^
+2026-07-22 10:55:08 | INFO | [Extraction et mise à jour Intent]   File "C:\Users\gueye-sb\AppData\Local\Programs\Python\Python314\Lib\site-packages\sqlalchemy\engine\default.py", line 630, in connect
+2026-07-22 10:55:08 | INFO | [Extraction et mise à jour Intent]     return self.loaded_dbapi.connect(*cargs, **cparams)  # type: ignore[no-any-return]  # NOQA: E501
+2026-07-22 10:55:08 | INFO | [Extraction et mise à jour Intent]            ~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^
+2026-07-22 10:55:08 | INFO | [Extraction et mise à jour Intent]   File "C:\Users\gueye-sb\AppData\Local\Programs\Python\Python314\Lib\site-packages\psycopg2\__init__.py", line 135, in connect
+2026-07-22 10:55:08 | INFO | [Extraction et mise à jour Intent]     conn = _connect(dsn, connection_factory=connection_factory, **kwasync)
+2026-07-22 10:55:08 | INFO | [Extraction et mise à jour Intent] UnicodeDecodeError: 'utf-8' codec can't decode byte 0xe9 in position 109: invalid continuation byte
+2026-07-22 10:55:09 | ERROR | 
+Traceback (most recent call last):
+  File "c:\Users\gueye-sb\Downloads\CODE TDB 2\Pipeline\run_pipeline.py", line 431, in main
+    executer_pipeline(
+    ~~~~~~~~~~~~~~~~~^
+        logger
+        ^^^^^^
+    )
+    ^
+  File "c:\Users\gueye-sb\Downloads\CODE TDB 2\Pipeline\run_pipeline.py", line 383, in executer_pipeline
+    executer_etape(
+    ~~~~~~~~~~~~~~^
+        etape=etape,
+        ^^^^^^^^^^^^
+        logger=logger,
+        ^^^^^^^^^^^^^^
+        environnement=environnement,
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "c:\Users\gueye-sb\Downloads\CODE TDB 2\Pipeline\run_pipeline.py", line 318, in executer_etape
+    raise RuntimeError(
+    ...<4 lines>...
+    )
+RuntimeError: L'étape « Extraction et mise à jour Intent » a échoué avec le code 1. Durée : 8 s.
+2026-07-22 10:55:09 | ERROR | ########################################################################
+2026-07-22 10:55:09 | ERROR | ÉCHEC DU PIPELINE
+2026-07-22 10:55:09 | ERROR | Run ID : 15008246-97b3-4003-9a07-5a8434e09759
+2026-07-22 10:55:09 | ERROR | Les étapes suivantes n'ont pas été exécutées.
+2026-07-22 10:55:09 | ERROR | ########################################################################
