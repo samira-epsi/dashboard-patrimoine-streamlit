@@ -10336,7 +10336,7 @@ elif vue_active == "Alertes":
         impact_alert_card(
             "Contrats actifs expirés",
             nb_contrats_expires,
-            # "Prolonger, désactiver ou corriger le statut.",
+            " ",
             C_RED,
             "Prioritaire",
             "!",
