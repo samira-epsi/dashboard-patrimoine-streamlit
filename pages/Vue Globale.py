@@ -9365,7 +9365,7 @@ elif vue_active == "Couverture":
         st.markdown("<br>", unsafe_allow_html=True)
         section(
             "Comprendre la couverture des ESI",
-            "Lire le patrimoine en trois étapes : composition, couverture et intensité contractuelle.",
+            # "Lire le patrimoine en trois étapes : composition, couverture et intensité contractuelle.",
         )
 
         st.markdown(
