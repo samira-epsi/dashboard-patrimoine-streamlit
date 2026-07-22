@@ -9354,7 +9354,7 @@ elif vue_active == "Couverture":
             """
             <div class="vg-reading-note">
                 <strong>Lecture :</strong> la couverture contractuelle mesure la présence
-                d’au moins un contrat sur l’ESI. La couverture par contrat équipement vérifie,
+                d’au moins un contrat actif sur l’ESI. La couverture par contrat équipement vérifie,
                 pour les ESI équipés, que chaque équipement possède au moins un contrat rattaché.
             </div>
             """,
