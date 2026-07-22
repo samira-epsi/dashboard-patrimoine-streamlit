@@ -9787,7 +9787,7 @@ elif vue_active == "Couverture":
         step_header(
             1,
             "Mesurer la couverture du parc",
-            "Voir immédiatement les équipements couverts et ceux qui restent à traiter.",
+            # "Voir immédiatement les équipements couverts et ceux qui restent à traiter.",
         )
 
         equipment_overview(
@@ -9801,7 +9801,7 @@ elif vue_active == "Couverture":
         step_header(
             2,
             "Comprendre la composition du parc",
-            "Identifier les catégories d’équipements les plus présentes.",
+            # "Identifier les catégories d’équipements les plus présentes.",
         )
 
         equipment_types_panel(
