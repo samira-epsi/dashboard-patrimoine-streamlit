@@ -10576,17 +10576,33 @@ elif vue_active == "Alertes":
         table_alerte = preparer_esi_table(
             alertes_multi_metier
         )
+
+        # Colonnes inutiles uniquement dans le détail Multi-contrats
+        table_alerte = table_alerte.drop(
+            columns=[
+                "ESI couvert",
+                "Multi même métier",
+            ],
+            errors="ignore",
+        )
+
         nom_export = "esi_multi_contrats_meme_metier.xlsx"
-        message_vide = "Aucun ESI avec plusieurs contrats sur le même métier."
+
+        message_vide = (
+            "Aucun ESI avec plusieurs contrats sur le même métier."
+        )
+
         detail_title = (
             f"{fmt_nombre(nb_esi_multi_metier)} ESI présentent "
             "plusieurs contrats sur un même métier"
         )
+
         detail_message = (
             "Ces situations ne sont pas automatiquement anormales. "
             "Elles doivent être contrôlées pour identifier les chevauchements "
             "réels et les cas métier légitimes."
         )
+
         detail_color = C_NAVY
 
     alert_detail_intro(
