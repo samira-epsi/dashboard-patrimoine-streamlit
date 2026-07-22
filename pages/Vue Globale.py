@@ -9086,7 +9086,7 @@ elif vue_active == "Couverture":
     if statut_selectionne == "active":
         section(
             "Couverture du patrimoine",
-            "Périmètre des contrats actifs et patrimoine associé.",
+            # "Périmètre des contrats actifs et patrimoine associé.",
         )
     elif statut_selectionne == "inactive":
         section(
