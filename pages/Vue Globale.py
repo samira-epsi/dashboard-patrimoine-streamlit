@@ -3646,383 +3646,6 @@ def inject_style():
             }
         }
 
-        
-        /* =====================================================
-           RESPONSIVITÉ FINALE — ANOMALIES, SIDEBAR ET MOBILE
-        ===================================================== */
-
-        /* Grille unique : les trois cartes partagent la même ligne
-           et la même hauteur sur ordinateur. */
-        .vg-anomaly-cards-grid {
-            display: grid !important;
-            grid-template-columns:
-                minmax(0, 1.65fr)
-                minmax(210px, .55fr)
-                minmax(210px, .55fr) !important;
-            gap: clamp(12px, 1.25vw, 20px) !important;
-            align-items: stretch !important;
-            width: 100% !important;
-            margin: 6px 0 20px 0 !important;
-        }
-
-        .vg-anomaly-cards-grid > .vg-anomaly-main-card,
-        .vg-anomaly-cards-grid > .vg-anomaly-secondary-card {
-            width: 100% !important;
-            height: 100% !important;
-            min-height: 230px !important;
-            margin: 0 !important;
-            box-sizing: border-box !important;
-        }
-
-        .vg-anomaly-main-card {
-            display: flex !important;
-            flex-direction: column !important;
-            justify-content: center !important;
-            padding: clamp(22px, 2vw, 34px) !important;
-        }
-
-        .vg-anomaly-main-badge {
-            width: fit-content !important;
-            margin-bottom: clamp(16px, 1.4vw, 24px) !important;
-        }
-
-        .vg-anomaly-main-value {
-            font-size: clamp(40px, 3.3vw, 58px) !important;
-            line-height: .95 !important;
-            margin-bottom: 14px !important;
-        }
-
-        .vg-anomaly-main-title {
-            max-width: calc(100% - 150px) !important;
-            font-size: clamp(18px, 1.4vw, 24px) !important;
-            line-height: 1.22 !important;
-            margin-bottom: 12px !important;
-        }
-
-        .vg-anomaly-main-help {
-            max-width: 760px !important;
-            font-size: clamp(12px, .82vw, 14px) !important;
-            line-height: 1.5 !important;
-        }
-
-        .vg-anomaly-main-share {
-            right: clamp(18px, 1.8vw, 30px) !important;
-            top: clamp(18px, 1.8vw, 30px) !important;
-            font-size: clamp(11px, .8vw, 13px) !important;
-        }
-
-        .vg-anomaly-secondary-card {
-            display: flex !important;
-            flex-direction: column !important;
-            padding: clamp(18px, 1.5vw, 25px) !important;
-        }
-
-        .vg-anomaly-secondary-icon {
-            flex: 0 0 auto !important;
-            margin-bottom: clamp(16px, 1.4vw, 23px) !important;
-        }
-
-        .vg-anomaly-secondary-value {
-            font-size: clamp(34px, 2.6vw, 48px) !important;
-            margin-bottom: 13px !important;
-        }
-
-        .vg-anomaly-secondary-title {
-            font-size: clamp(16px, 1.05vw, 20px) !important;
-            line-height: 1.35 !important;
-            margin-bottom: 12px !important;
-            overflow-wrap: anywhere !important;
-        }
-
-        .vg-anomaly-secondary-help {
-            margin-top: auto !important;
-            font-size: clamp(11.5px, .78vw, 13px) !important;
-            line-height: 1.5 !important;
-            overflow-wrap: anywhere !important;
-        }
-
-        /* Les blocs principaux gauche/droite commencent à la même hauteur. */
-        [data-testid="stSidebar"] > div:first-child,
-        [data-testid="stMain"] .block-container {
-            padding-top: 1rem !important;
-        }
-
-        [data-testid="stSidebar"] {
-            border-right: 1px solid #E8E3E7 !important;
-            background: #FCFAFB !important;
-        }
-
-        [data-testid="stSidebar"] * {
-            box-sizing: border-box !important;
-        }
-
-        [data-testid="stSidebar"] p,
-        [data-testid="stSidebar"] span,
-        [data-testid="stSidebar"] label,
-        [data-testid="stSidebar"] h1,
-        [data-testid="stSidebar"] h2,
-        [data-testid="stSidebar"] h3 {
-            color: #17243A !important;
-        }
-
-        /* Empêche le texte blanc invisible sur téléphone.
-           Les zones volontairement colorées sont rétablies ensuite. */
-        .stApp,
-        .stApp p,
-        .stApp span,
-        .stApp label,
-        .stApp h1,
-        .stApp h2,
-        .stApp h3,
-        .stApp h4,
-        .stApp h5,
-        .stApp h6 {
-            text-rendering: optimizeLegibility !important;
-        }
-
-        .vg-anomaly-main-card,
-        .vg-anomaly-secondary-card,
-        .vg-card,
-        .vg-alert-card,
-        .vg-coverage-reading-card,
-        .vg-park-card,
-        .vg-equipment-stat,
-        .vg-equipment-kpi,
-        .vg-alert-detail-intro,
-        .vg-anomaly-detail-intro {
-            color: #17243A !important;
-        }
-
-        .vg-anomaly-main-card *,
-        .vg-anomaly-secondary-card *,
-        .vg-card *,
-        .vg-alert-card *,
-        .vg-coverage-reading-card *,
-        .vg-park-card *,
-        .vg-equipment-stat *,
-        .vg-equipment-kpi *,
-        .vg-alert-detail-intro *,
-        .vg-anomaly-detail-intro * {
-            opacity: 1 !important;
-        }
-
-        /* Les textes des héros restent blancs sur leurs fonds colorés. */
-        .vg-alerts-hero,
-        .vg-alerts-hero *,
-        .vg-anomaly-hero,
-        .vg-anomaly-hero * {
-            color: #FFFFFF !important;
-        }
-
-        .vg-hero-title {
-            color: #17243A !important;
-        }
-
-        .vg-hero-subtitle {
-            color: #667085 !important;
-        }
-
-        /* Les onglets doivent rester lisibles sur toutes les largeurs. */
-        .st-key-dashboard_tabs div[role="radiogroup"] label {
-            color: #667085 !important;
-        }
-
-        .st-key-dashboard_tabs div[role="radiogroup"]
-        label:has(input:checked),
-        .st-key-dashboard_tabs div[role="radiogroup"]
-        label:has(input:checked) * {
-            color: #E5114D !important;
-        }
-
-        /* TABLETTE */
-        @media screen and (max-width: 1100px) {
-            .vg-anomaly-cards-grid {
-                grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
-            }
-
-            .vg-anomaly-main-card {
-                grid-column: 1 / -1 !important;
-                min-height: 210px !important;
-            }
-
-            .vg-anomaly-secondary-card {
-                min-height: 190px !important;
-            }
-
-            .vg-anomaly-main-title {
-                max-width: calc(100% - 130px) !important;
-            }
-        }
-
-        /* MOBILE */
-        @media screen and (max-width: 760px) {
-            html,
-            body,
-            .stApp {
-                overflow-x: hidden !important;
-            }
-
-            [data-testid="stMain"] {
-                width: 100% !important;
-                max-width: 100% !important;
-            }
-
-            [data-testid="stMain"] .block-container {
-                width: 100% !important;
-                max-width: 100% !important;
-                padding: .55rem !important;
-            }
-
-            .vg-anomaly-cards-grid {
-                grid-template-columns: 1fr !important;
-                gap: 12px !important;
-            }
-
-            .vg-anomaly-main-card,
-            .vg-anomaly-secondary-card {
-                grid-column: auto !important;
-                min-height: 0 !important;
-                height: auto !important;
-                padding: 18px !important;
-                border-radius: 14px !important;
-            }
-
-            .vg-anomaly-main-card {
-                justify-content: flex-start !important;
-            }
-
-            .vg-anomaly-main-share {
-                position: static !important;
-                order: -1 !important;
-                align-self: flex-end !important;
-                margin: 0 0 12px 0 !important;
-                width: fit-content !important;
-            }
-
-            .vg-anomaly-main-badge {
-                margin-bottom: 14px !important;
-            }
-
-            .vg-anomaly-main-value {
-                font-size: 40px !important;
-                margin-bottom: 10px !important;
-            }
-
-            .vg-anomaly-main-title {
-                max-width: 100% !important;
-                font-size: 19px !important;
-            }
-
-            .vg-anomaly-main-help,
-            .vg-anomaly-secondary-help {
-                color: #667085 !important;
-                font-size: 12px !important;
-            }
-
-            .vg-anomaly-secondary-value {
-                font-size: 34px !important;
-            }
-
-            .vg-anomaly-secondary-title {
-                font-size: 17px !important;
-            }
-
-            /* Sidebar en panneau mobile plutôt qu'en colonne permanente. */
-            [data-testid="stSidebar"] {
-                width: min(88vw, 320px) !important;
-                min-width: min(88vw, 320px) !important;
-                max-width: min(88vw, 320px) !important;
-            }
-
-            [data-testid="stSidebar"] > div:first-child {
-                width: 100% !important;
-                padding: .75rem !important;
-                background: #FCFAFB !important;
-            }
-
-            /* Navigation horizontale scrollable et lisible. */
-            .st-key-dashboard_tabs {
-                width: 100% !important;
-                overflow-x: auto !important;
-                scrollbar-width: thin !important;
-            }
-
-            .st-key-dashboard_tabs div[role="radiogroup"] {
-                width: max-content !important;
-                min-width: 100% !important;
-                padding: 0 4px !important;
-            }
-
-            .st-key-dashboard_tabs div[role="radiogroup"] label {
-                min-height: 42px !important;
-                padding: 10px 3px !important;
-                font-size: 12px !important;
-            }
-
-            .vg-hero {
-                margin-top: 0 !important;
-                padding: 16px !important;
-            }
-
-            .vg-hero-title {
-                font-size: 24px !important;
-            }
-
-            .vg-hero-subtitle {
-                font-size: 12px !important;
-            }
-
-            .vg-anomaly-hero {
-                padding: 16px !important;
-            }
-
-            .vg-anomaly-hero-value {
-                font-size: 31px !important;
-            }
-
-            .vg-anomaly-hero-title {
-                font-size: 14px !important;
-            }
-
-            .vg-anomaly-hero-help {
-                font-size: 11.5px !important;
-            }
-
-            .vg-section-title {
-                font-size: 18px !important;
-            }
-
-            .vg-section-subtitle {
-                font-size: 12px !important;
-            }
-
-            div[data-testid="stDataFrame"] {
-                max-width: 100% !important;
-                overflow-x: auto !important;
-            }
-        }
-
-        @media screen and (max-width: 430px) {
-            .vg-anomaly-main-card,
-            .vg-anomaly-secondary-card {
-                padding: 15px !important;
-            }
-
-            .vg-anomaly-main-value {
-                font-size: 36px !important;
-            }
-
-            .vg-anomaly-secondary-value {
-                font-size: 31px !important;
-            }
-
-            .vg-anomaly-secondary-icon {
-                width: 32px !important;
-                height: 32px !important;
-                margin-bottom: 13px !important;
-            }
-        }
-
         </style>
         """,
         unsafe_allow_html=True,
@@ -6911,84 +6534,6 @@ def anomaly_secondary_card(
             <div class="vg-anomaly-secondary-value">{_safe(fmt_nombre(value))}</div>
             <div class="vg-anomaly-secondary-title">{_safe(title)}</div>
             <div class="vg-anomaly-secondary-help">{_safe(help_text)}</div>
-        </div>
-        """,
-        unsafe_allow_html=True,
-    )
-
-
-
-def anomaly_cards_grid(
-    nb_logements: int,
-    part_logements: float,
-    nb_programmes: int,
-    nb_equipements: int,
-):
-    st.markdown(
-        f"""
-        <div class="vg-anomaly-cards-grid">
-
-            <div class="vg-anomaly-main-card">
-                <div class="vg-anomaly-main-badge">
-                    Anomalie principale
-                </div>
-
-                <div class="vg-anomaly-main-share">
-                    {_safe(fmt_pourcentage(part_logements))} du total
-                </div>
-
-                <div class="vg-anomaly-main-value">
-                    {_safe(fmt_nombre(nb_logements))}
-                </div>
-
-                <div class="vg-anomaly-main-title">
-                    Logements sans programme
-                </div>
-
-                <div class="vg-anomaly-main-help">
-                    Ces logements ne sont rattachés à aucun programme.
-                </div>
-            </div>
-
-            <div
-                class="vg-anomaly-secondary-card"
-                style="--anomaly-color:{_safe(C_NAVY)};"
-            >
-                <div class="vg-anomaly-secondary-icon">P</div>
-
-                <div class="vg-anomaly-secondary-value">
-                    {_safe(fmt_nombre(nb_programmes))}
-                </div>
-
-                <div class="vg-anomaly-secondary-title">
-                    Programmes sans logement
-                </div>
-
-                <div class="vg-anomaly-secondary-help">
-                    Programmes présents dans le référentiel mais sans aucun
-                    logement rattaché.
-                </div>
-            </div>
-
-            <div
-                class="vg-anomaly-secondary-card"
-                style="--anomaly-color:{_safe(C_VIOLET)};"
-            >
-                <div class="vg-anomaly-secondary-icon">E</div>
-
-                <div class="vg-anomaly-secondary-value">
-                    {_safe(fmt_nombre(nb_equipements))}
-                </div>
-
-                <div class="vg-anomaly-secondary-title">
-                    Équipements sans programme
-                </div>
-
-                <div class="vg-anomaly-secondary-help">
-                    Équipements sans programme ou ESI identifiable.
-                </div>
-            </div>
-
         </div>
         """,
         unsafe_allow_html=True,
@@ -11198,14 +10743,39 @@ else:
         )
 
     # -------------------------------------------------
-    # SYNTHÈSE VISUELLE RESPONSIVE
+    # SYNTHÈSE VISUELLE
     # -------------------------------------------------
-    anomaly_cards_grid(
-        nb_logements=nb_logements_sans_programme,
-        part_logements=part_logements_sans_programme,
-        nb_programmes=nb_programmes_sans_logement,
-        nb_equipements=nb_equipements_sans_programme,
+    colonne_principale, colonne_secondaire = st.columns(
+        [1.55, 1],
+        gap="medium",
     )
+
+    with colonne_principale:
+        anomaly_main_card(
+            nb_logements_sans_programme,
+            part_logements_sans_programme,
+        )
+
+    with colonne_secondaire:
+        secondaires = st.columns(2)
+
+        with secondaires[0]:
+            anomaly_secondary_card(
+                "Programmes sans logement",
+                nb_programmes_sans_logement,
+                "Programmes présents dans le référentiel mais sans aucun logement rattaché.",
+                C_NAVY,
+                "P",
+            )
+
+        with secondaires[1]:
+            anomaly_secondary_card(
+                "Équipements sans programme",
+                nb_equipements_sans_programme,
+                "Équipements sans programme ou ESI identifiable.",
+                C_VIOLET,
+                "E",
+            )
 
     st.markdown("<br>", unsafe_allow_html=True)
 
