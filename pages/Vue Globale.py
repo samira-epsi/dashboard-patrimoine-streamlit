@@ -9926,7 +9926,7 @@ elif vue_active == "Couverture":
 
         section(
             "Couverture par métier",
-            "Tous les métiers présents sur les ESI du périmètre actif.",
+            # "Tous les métiers présents sur les ESI du périmètre actif.",
         )
 
         # -----------------------------------------------------
