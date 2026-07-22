@@ -10535,7 +10535,14 @@ elif vue_active == "Alertes":
                 "Cette vue présente les ESI concernés. "
                 "Un même ESI peut contenir plusieurs équipements sans contrat."
             )
-        else:
+            table_alerte = table_alerte.drop(
+                columns=[
+                    "ESI couvert",
+                    "Multi même métier",
+                ],
+                errors="ignore",
+            )
+        else:                                                                                               
             table_alerte = preparer_equipements_table(
                 alertes_equipements_sans_contrat
             )
