@@ -10846,6 +10846,13 @@ else:
         table_anomalie = preparer_esi_table(
             anomalies_programmes_sans_logement
         )
+        table_anomalie = table_anomalie.drop(
+            columns=[
+                "ESI couvert",
+                "Multi même métier",
+            ],
+            errors="ignore",
+        )
         nom_export_anomalie = "programmes_sans_logement.xlsx"
         message_anomalie_vide = "Aucun programme sans logement."
         titre_detail_anomalie = (
@@ -10861,6 +10868,29 @@ else:
     else:
         table_anomalie = preparer_qualite_table(
             anomalies_equipements_sans_programme
+        )
+
+        colonnes_equipements = [
+            "Référence objet",
+            "Libellé objet",
+            "Description",
+        ]
+
+        colonnes_disponibles = [
+            colonne
+            for colonne in colonnes_equipements
+            if colonne in table_anomalie.columns
+        ]
+
+        table_anomalie = table_anomalie[
+            colonnes_disponibles
+        ].copy()
+
+        table_anomalie = table_anomalie.rename(
+            columns={
+                "Référence objet": "Référence équipement",
+                "Libellé objet": "Libellé équipement",
+            }
         )
         nom_export_anomalie = "equipements_sans_programme.xlsx"
         message_anomalie_vide = (
