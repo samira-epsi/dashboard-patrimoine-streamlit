@@ -10421,21 +10421,56 @@ elif vue_active == "Alertes":
             table_alerte = preparer_prestations_table(
                 alertes_contrats_expires
             )
+
+            # Colonnes affichées uniquement dans le détail des alertes
+            colonnes_alertes_contrats_expires = [
+                "Référence contrat 3F",
+                "Référence contrat prestataire",
+                "Libellé contrat",
+                "Description contrat",
+                "Prestataire",
+                "Métier",
+                "Statut",
+                "Date de début",
+                "Date de fin",
+            ]
+
+            colonnes_disponibles = [
+                colonne
+                for colonne in colonnes_alertes_contrats_expires
+                if colonne in table_alerte.columns
+            ]
+
+            table_alerte = table_alerte[
+                colonnes_disponibles
+            ].copy()
+
         else:
             table_alerte = preparer_contrats_table(
                 alertes_contrats_expires
             )
-        nom_export = "contrats_actifs_expires.xlsx"
-        message_vide = "Aucun contrat actif avec une date de fin dépassée."
-        detail_title = (
-            f"{fmt_nombre(nb_contrats_expires)} contrat(s) "
-            "encore actif(s) malgré une date de fin dépassée"
-        )
-        detail_message = (
-            "Ces contrats doivent être prolongés, désactivés ou corrigés "
-            "afin que leur statut corresponde à leur période de validité."
-        )
-        detail_color = C_RED
+
+            colonnes_alertes_contrats_expires = [
+                "Référence contrat",
+                "Libellé contrat",
+                "Description contrat",
+                "Prestataire",
+                "Métier",
+                "Statut",
+                "Date de début",
+                "Date de fin",
+            ]
+
+            colonnes_disponibles = [
+                colonne
+                for colonne in colonnes_alertes_contrats_expires
+                if colonne in table_alerte.columns
+            ]
+
+            table_alerte = table_alerte[
+                
+                colonnes_disponibles
+            ].copy()
 
     elif type_alerte == "ESI sans contrat actif":
         table_alerte = preparer_esi_table(
