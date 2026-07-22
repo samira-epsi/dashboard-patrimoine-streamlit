@@ -1,0 +1,46 @@
+2026-07-22 10:31:08 | INFO | Fichier de logs : C:\Users\gueye-sb\Downloads\CODE TDB 2\Pipeline\logs\pipeline_2026-07-22_10-31-08.log
+2026-07-22 10:31:08 | INFO | ########################################################################
+2026-07-22 10:31:08 | INFO | DÉMARRAGE DU PIPELINE PATRIMOINE
+2026-07-22 10:31:08 | INFO | Run ID : 8d13ba4c-a621-4e2f-bae6-cb19b25f113a
+2026-07-22 10:31:08 | INFO | Dossier du projet : C:\Users\gueye-sb\Downloads\CODE TDB 2
+2026-07-22 10:31:08 | INFO | Interpréteur Python : C:\Users\gueye-sb\AppData\Local\Programs\Python\Python314\python.exe
+2026-07-22 10:31:08 | INFO | ########################################################################
+2026-07-22 10:31:08 | INFO | 
+2026-07-22 10:31:08 | INFO | ========================================================================
+2026-07-22 10:31:08 | INFO | DÉBUT DE L'ÉTAPE : Extraction et mise à jour Intent
+2026-07-22 10:31:08 | INFO | Script : C:\Users\gueye-sb\Downloads\CODE TDB 2\Pipeline\les_different_code_main.py
+2026-07-22 10:31:08 | INFO | ========================================================================
+2026-07-22 10:31:09 | INFO | [Extraction et mise à jour Intent] Traceback (most recent call last):
+2026-07-22 10:31:09 | INFO | [Extraction et mise à jour Intent]   File "C:\Users\gueye-sb\Downloads\CODE TDB 2\Pipeline\les_different_code_main.py", line 4, in <module>
+2026-07-22 10:31:09 | INFO | [Extraction et mise à jour Intent]     from config import DB_URL
+2026-07-22 10:31:09 | INFO | [Extraction et mise à jour Intent] ModuleNotFoundError: No module named 'config'
+2026-07-22 10:31:09 | ERROR | 
+Traceback (most recent call last):
+  File "c:\Users\gueye-sb\Downloads\CODE TDB 2\Pipeline\run_pipeline.py", line 429, in main
+    executer_pipeline(
+    ~~~~~~~~~~~~~~~~~^
+        logger
+        ^^^^^^
+    )
+    ^
+  File "c:\Users\gueye-sb\Downloads\CODE TDB 2\Pipeline\run_pipeline.py", line 381, in executer_pipeline
+    executer_etape(
+    ~~~~~~~~~~~~~~^
+        etape=etape,
+        ^^^^^^^^^^^^
+        logger=logger,
+        ^^^^^^^^^^^^^^
+        environnement=environnement,
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "c:\Users\gueye-sb\Downloads\CODE TDB 2\Pipeline\run_pipeline.py", line 316, in executer_etape
+    raise RuntimeError(
+    ...<4 lines>...
+    )
+RuntimeError: L'étape « Extraction et mise à jour Intent » a échoué avec le code 1. Durée : 0 s.
+2026-07-22 10:31:09 | ERROR | ########################################################################
+2026-07-22 10:31:09 | ERROR | ÉCHEC DU PIPELINE
+2026-07-22 10:31:09 | ERROR | Run ID : 8d13ba4c-a621-4e2f-bae6-cb19b25f113a
+2026-07-22 10:31:09 | ERROR | Les étapes suivantes n'ont pas été exécutées.
+2026-07-22 10:31:09 | ERROR | ########################################################################

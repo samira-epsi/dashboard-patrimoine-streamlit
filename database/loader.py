@@ -73,7 +73,7 @@ def load_snapshot(
     )
 
     print(
-        f"✅ {len(df_to_load):,} lignes ajoutées dans "
+        f"[OK] {len(df_to_load):,} lignes ajoutées dans "
         f"{table_name}"
     )
 

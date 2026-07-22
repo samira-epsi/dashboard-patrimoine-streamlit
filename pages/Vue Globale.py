@@ -6560,9 +6560,9 @@ def coverage_summary(
     )
     complement = (
         f" Toutefois, {fmt_nombre(nb_esi_equipes_non_couverts)} ESI équipés "
-        "ne disposent pas encore d’une couverture exploitable."
+        "ont au moins un équipement sans contrat rattaché."
         if nb_esi_equipes_non_couverts > 0
-        else " Aucun ESI équipé sans couverture exploitable n’est détecté."
+        else " Aucun ESI équipé avec un équipement sans contrat n’est détecté."
     )
     contenu = (
         '<div class="vg-coverage-summary">'
@@ -6856,7 +6856,7 @@ def coverage_insights(
         '<div>'
         f'<div class="vg-coverage-insight-value">{_safe(fmt_nombre(nb_esi_equipes_non_couverts))}</div>'
         '<div class="vg-coverage-insight-text">'
-        'ESI équipés ne disposent pas encore d’une couverture exploitable.'
+        'ESI équipés ont au moins un équipement sans contrat rattaché.'
         '</div>'
         '</div>'
         '</div>'
@@ -7959,24 +7959,20 @@ nb_esi_sans_contrat_entree = int(
     (serie_numerique(df_esi_alertes_entree, "nb_contrats_actifs") == 0).sum()
 )
 
-colonne_non_couverte_entree = trouver_colonne(
-    df_esi_alertes_entree,
-    [
-        "esi_avec_equipement_sans_couverture_valide",
-        "esi_avec_equipement_sans_contrat_equipement",
-    ],
+# Définition métier officielle :
+# un ESI équipé est non couvert par contrat équipement dès qu'au moins
+# un de ses équipements ne possède aucun contrat rattaché.
+nb_esi_equipes_non_couverts_entree = int(
+    (
+        (serie_numerique(df_esi_alertes_entree, "nb_equipements") > 0)
+        & (
+            serie_numerique(
+                df_esi_alertes_entree,
+                "nb_equipements_sans_contrat",
+            ) > 0
+        )
+    ).sum()
 )
-if colonne_non_couverte_entree:
-    nb_esi_equipes_non_couverts_entree = int(
-        (serie_numerique(df_esi_alertes_entree, colonne_non_couverte_entree) > 0).sum()
-    )
-else:
-    nb_esi_equipes_non_couverts_entree = int(
-        (
-            (serie_numerique(df_esi_alertes_entree, "nb_equipements") > 0)
-            & (serie_numerique(df_esi_alertes_entree, "nb_contrats_actifs") == 0)
-        ).sum()
-    )
 
 nb_esi_multi_metier_entree = int(
     (serie_numerique(df_esi_alertes_entree, "esi_multi_meme_metier") > 0).sum()
@@ -9260,24 +9256,23 @@ elif vue_active == "Couverture":
         else 0.0
     )
 
-    colonne_non_couvert_synthese = trouver_colonne(
-        df_esi_synthese_couverture,
-        [
-            "esi_avec_equipement_sans_couverture_valide",
-            "esi_avec_equipement_sans_contrat_equipement",
-        ],
-    )
-    nb_esi_equipes_non_couverts_synthese = (
-        int(
+    # Un ESI est « équipé non couvert par contrat équipement » lorsqu'il
+    # possède au moins un équipement sans aucun contrat rattaché.
+    nb_esi_equipes_non_couverts_synthese = int(
+        (
             (
                 serie_numerique(
                     df_esi_synthese_couverture,
-                    colonne_non_couvert_synthese,
+                    "nb_equipements",
                 ) > 0
-            ).sum()
-        )
-        if colonne_non_couvert_synthese
-        else 0
+            )
+            & (
+                serie_numerique(
+                    df_esi_synthese_couverture,
+                    "nb_equipements_sans_contrat",
+                ) > 0
+            )
+        ).sum()
     )
 
     couverture_equipements_synthese = (
@@ -9349,8 +9344,8 @@ elif vue_active == "Couverture":
             """
             <div class="vg-reading-note">
                 <strong>Lecture :</strong> la couverture contractuelle mesure la présence
-                d’au moins un contrat sur l’ESI. La couverture réelle vérifie, uniquement
-                pour les ESI équipés, qu’un contrat est bien rattaché aux équipements.
+                d’au moins un contrat sur l’ESI. La couverture par contrat équipement vérifie,
+                pour les ESI équipés, que chaque équipement possède au moins un contrat rattaché.
             </div>
             """,
             unsafe_allow_html=True,
@@ -9384,38 +9379,39 @@ elif vue_active == "Couverture":
             0,
         )
 
-        if statut_selectionne == "active":
-            colonne_avec_contrat_equipement = (
-                "esi_avec_equipement_couvert_valide"
-            )
-            colonne_sans_contrat_equipement = (
-                "esi_avec_equipement_sans_couverture_valide"
-            )
-            colonne_multi_metier = "esi_multi_meme_metier_valide"
-        else:
-            colonne_avec_contrat_equipement = (
-                "esi_avec_equipement_et_contrat"
-            )
-            colonne_sans_contrat_equipement = (
-                "esi_avec_equipement_sans_contrat_equipement"
-            )
-            colonne_multi_metier = "esi_multi_meme_metier"
-
-        nb_esi_avec_contrat_equipement = compter_indicateur(
-            colonne_avec_contrat_equipement
+        # La couverture par contrat équipement ne dépend pas du statut Intent :
+        # - couvert : ESI équipé dont aucun équipement n'est sans contrat ;
+        # - non couvert : ESI équipé ayant au moins un équipement sans contrat.
+        masque_esi_equipes = (
+            serie_numerique(df_esi_situation, "nb_equipements") > 0
         )
-        nb_esi_sans_contrat_equipement = compter_indicateur(
-            colonne_sans_contrat_equipement
+        masque_esi_equipes_non_couverts = (
+            masque_esi_equipes
+            & (
+                serie_numerique(
+                    df_esi_situation,
+                    "nb_equipements_sans_contrat",
+                ) > 0
+            )
+        )
+        masque_esi_equipes_couverts = (
+            masque_esi_equipes
+            & ~masque_esi_equipes_non_couverts
         )
 
-        # Lorsque les indicateurs détaillés ne couvrent pas toute la base,
-        # on conserve une lecture cohérente sur les ESI équipés.
-        base_esi_equipes = (
-            nb_esi_avec_contrat_equipement
-            + nb_esi_sans_contrat_equipement
+        nb_esi_avec_contrat_equipement = int(
+            masque_esi_equipes_couverts.sum()
         )
-        if base_esi_equipes == 0:
-            base_esi_equipes = nb_esi_avec_equipement
+        nb_esi_sans_contrat_equipement = int(
+            masque_esi_equipes_non_couverts.sum()
+        )
+        base_esi_equipes = nb_esi_avec_equipement
+
+        colonne_multi_metier = (
+            "esi_multi_meme_metier_valide"
+            if statut_selectionne == "active"
+            else "esi_multi_meme_metier"
+        )
 
         refs_esi_avec_contrat_programme = set(
             liste_refs_valides(
@@ -9500,17 +9496,17 @@ elif vue_active == "Couverture":
 
         with col_reelle:
             coverage_reading_card(
-                eyebrow="Couverture réelle",
-                title="ESI équipés réellement couverts",
-                question="Parmi les ESI équipés, combien ont un contrat actif couvrant leurs équipements ?",
+                eyebrow="Couverture par contrat équipement",
+                title="ESI équipés couverts par contrat équipement",
+                question="Parmi les ESI équipés, combien n’ont aucun équipement sans contrat ?",
                 rate=taux_reel_equipements,
                 covered=nb_esi_avec_contrat_equipement,
                 uncovered=nb_esi_sans_contrat_equipement,
                 base_label=f"{fmt_nombre(base_esi_equipes)} ESI équipés analysables",
                 color="#4F9B88",
                 gap_color="#F2C9D8",
-                covered_label="Équipés couverts",
-                uncovered_label="Équipés non couverts",
+                covered_label="Tous les équipements ont un contrat",
+                uncovered_label="Au moins un équipement sans contrat",
             )
 
         # Un nombre de contrats DISTINCTS par ESI, zéro inclus.
@@ -10143,22 +10139,23 @@ elif vue_active == "Alertes":
     ].copy()
 
     # -------------------------------------------------
-    # 3. ESI ÉQUIPÉS SANS COUVERTURE DES ÉQUIPEMENTS
+    # 3. ESI ÉQUIPÉS AVEC AU MOINS UN ÉQUIPEMENT SANS CONTRAT
     # -------------------------------------------------
-    colonne_esi_non_couvert = trouver_colonne(
-        df_esi_context,
-        [
-            "esi_avec_equipement_sans_couverture_valide",
-            "esi_avec_equipement_sans_contrat_equipement",
-        ],
+    # Définition métier :
+    # l'ESI possède au moins un équipement et au moins un de ses équipements
+    # ne possède aucun contrat rattaché.
+    masque_esi_equipes_non_couverts = (
+        (serie_numerique(df_esi_context, "nb_equipements") > 0)
+        & (
+            serie_numerique(
+                df_esi_context,
+                "nb_equipements_sans_contrat",
+            ) > 0
+        )
     )
-
-    if colonne_esi_non_couvert:
-        alertes_esi_equipes_non_couverts = df_esi_context[
-            serie_numerique(df_esi_context, colonne_esi_non_couvert) > 0
-        ].copy()
-    else:
-        alertes_esi_equipes_non_couverts = pd.DataFrame()
+    alertes_esi_equipes_non_couverts = df_esi_context[
+        masque_esi_equipes_non_couverts
+    ].copy()
 
     # -------------------------------------------------
     # 4. CONTRATS SANS RATTACHEMENT À UN PROGRAMME / ESI
@@ -10281,9 +10278,9 @@ elif vue_active == "Alertes":
 
     with ligne_prioritaire[2]:
         impact_alert_card(
-            "ESI équipés non couverts",
+            "ESI équipés avec équipement sans contrat",
             nb_esi_equipes_non_couverts,
-            "Vérifier le contrat couvrant les équipements.",
+            "Identifier les équipements sans contrat et créer ou corriger leur rattachement.",
             C_VIOLET,
             "Prioritaire",
             "◆",
@@ -10326,7 +10323,7 @@ elif vue_active == "Alertes":
     libelles_alertes = {
         "Expirés": "Contrats actifs expirés",
         "Sans contrat": "ESI sans contrat actif",
-        "Non couverts": "ESI équipés non couverts",
+        "Non couverts": "ESI équipés avec équipement sans contrat",
         "Non rattachés": "Contrats sans rattachement",
         "Multi-contrats": "Multi-contrats sur un même métier",
     }
@@ -10377,19 +10374,19 @@ elif vue_active == "Alertes":
         )
         detail_color = "#E5A000"
 
-    elif type_alerte == "ESI équipés non couverts":
+    elif type_alerte == "ESI équipés avec équipement sans contrat":
         table_alerte = preparer_esi_table(
             alertes_esi_equipes_non_couverts
         )
-        nom_export = "esi_equipes_non_couverts.xlsx"
-        message_vide = "Aucun ESI équipé sans couverture contractuelle."
+        nom_export = "esi_equipes_avec_equipement_sans_contrat.xlsx"
+        message_vide = "Aucun ESI équipé avec un équipement sans contrat."
         detail_title = (
             f"{fmt_nombre(nb_esi_equipes_non_couverts)} ESI équipé(s) "
-            "sans couverture exploitable"
+            "avec au moins un équipement sans contrat"
         )
         detail_message = (
-            "Ces ESI disposent d'équipements mais aucun contrat exploitable "
-            "ne couvre actuellement les équipements concernés."
+            "Ces ESI disposent d'au moins un équipement auquel aucun contrat "
+            "n'est rattaché. Un même ESI peut aussi posséder d'autres équipements avec contrat."
         )
         detail_color = C_VIOLET
 

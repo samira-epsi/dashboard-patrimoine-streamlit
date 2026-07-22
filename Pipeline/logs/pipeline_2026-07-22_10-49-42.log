@@ -1,0 +1,22 @@
+2026-07-22 10:49:42 | INFO | Fichier de logs : C:\Users\gueye-sb\Downloads\CODE TDB 2\Pipeline\logs\pipeline_2026-07-22_10-49-42.log
+2026-07-22 10:49:42 | INFO | ########################################################################
+2026-07-22 10:49:42 | INFO | DÉMARRAGE DU PIPELINE PATRIMOINE
+2026-07-22 10:49:42 | INFO | Run ID : b6828e55-8f38-44ab-9240-ff541bf7ac4e
+2026-07-22 10:49:42 | ERROR | 
+Traceback (most recent call last):
+  File "c:\Users\gueye-sb\Downloads\CODE TDB 2\Pipeline\run_pipeline.py", line 431, in main
+    executer_pipeline(
+    ~~~~~~~~~~~~~~~~~^
+        logger
+        ^^^^^^
+    )
+    ^
+  File "c:\Users\gueye-sb\Downloads\CODE TDB 2\Pipeline\run_pipeline.py", line 367, in executer_pipeline
+    PROJECT_DIR,
+    ^^^^^^^^^^^
+NameError: name 'PROJECT_DIR' is not defined. Did you mean: 'PROJECT_ROOT'?
+2026-07-22 10:49:42 | ERROR | ########################################################################
+2026-07-22 10:49:42 | ERROR | ÉCHEC DU PIPELINE
+2026-07-22 10:49:42 | ERROR | Run ID : b6828e55-8f38-44ab-9240-ff541bf7ac4e
+2026-07-22 10:49:42 | ERROR | Les étapes suivantes n'ont pas été exécutées.
+2026-07-22 10:49:42 | ERROR | ########################################################################
