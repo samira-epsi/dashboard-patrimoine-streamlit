@@ -9722,7 +9722,7 @@ elif vue_active == "Couverture":
         st.markdown("<br>", unsafe_allow_html=True)
         section(
             "Équipements du patrimoine",
-            "Comprendre la composition du parc et les équipements encore sans rattachement contractuel.",
+            # "Comprendre la composition du parc et les équipements encore sans rattachement contractuel.",
         )
 
         repartition_types = construire_repartition_types_equipement(
