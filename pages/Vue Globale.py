@@ -10336,7 +10336,7 @@ elif vue_active == "Alertes":
         impact_alert_card(
             "Contrats actifs expirés",
             nb_contrats_expires,
-            "Prolonger, désactiver ou corriger le statut.",
+            # "Prolonger, désactiver ou corriger le statut.",
             C_RED,
             "Prioritaire",
             "!",
@@ -10346,7 +10346,7 @@ elif vue_active == "Alertes":
         impact_alert_card(
             "Contrats sans rattachement",
             nb_contrats_sans_rattachement,
-            "Rattacher le contrat à un programme ou un ESI.",
+            # "Rattacher le contrat à un programme ou un ESI.",
             "#D06B2C",
             "Prioritaire",
             "↗",
@@ -10358,7 +10358,7 @@ elif vue_active == "Alertes":
             nb_equipements_sans_contrat,
             (
                 f"Répartis dans {fmt_nombre(nb_esi_equipes_non_couverts)} ESI. "
-                "Créer ou corriger leur rattachement contractuel."
+                # "Créer ou corriger leur rattachement contractuel."
             ),
             C_VIOLET,
             "Prioritaire",
@@ -10376,7 +10376,7 @@ elif vue_active == "Alertes":
         impact_alert_card(
             "ESI sans contrat actif",
             nb_esi_sans_contrat,
-            "Confirmer si l'absence de contrat est normale.",
+            # "Confirmer si l'absence de contrat est normale.",
             "#E5A000",
             "À traiter",
             "•",
@@ -10386,7 +10386,7 @@ elif vue_active == "Alertes":
         impact_alert_card(
             "Multi-contrats même métier",
             nb_esi_multi_metier,
-            "Identifier les éventuels chevauchements.",
+            # "Identifier les éventuels chevauchements.",
             C_NAVY,
             "À contrôler",
             "≡",
