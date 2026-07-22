@@ -1,7 +1,7 @@
 import streamlit as st
 import pandas as pd
 from sqlalchemy import create_engine
-from config import DB_URL_2
+from config import DB_URL
 
 
 def setup_page(title="Dashboard Patrimoine", icon="🏢"):
@@ -18,7 +18,7 @@ def setup_page(title="Dashboard Patrimoine", icon="🏢"):
 @st.cache_resource
 def get_engine():
     return create_engine(
-        DB_URL_2,
+        DB_URL,
         pool_pre_ping=True,
         pool_size=5,
         max_overflow=15
