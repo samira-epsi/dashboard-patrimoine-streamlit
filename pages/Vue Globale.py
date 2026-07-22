@@ -5043,7 +5043,17 @@ def preparer_base_evolution_contrats(
         "contract_deactivation_date",
         "contract_end_date",
     ]:
-        base[col] = pd.to_datetime(base[col], errors="coerce")
+        if col not in base.columns:
+            base[col] = pd.NaT
+
+        base[col] = (
+            pd.to_datetime(
+                base[col],
+                errors="coerce",
+                utc=True,
+            )
+            .dt.tz_localize(None)
+        )
 
     base["contract_reference"] = (
         base["contract_reference"]
