@@ -6511,7 +6511,7 @@ def anomaly_main_card(
             <div class="vg-anomaly-main-value">{_safe(fmt_nombre(value))}</div>
             <div class="vg-anomaly-main-title">Logements sans programme</div>
             <div class="vg-anomaly-main-help">
-                Ces logements ne Sont rattachés à aucun programme.
+                Ces logements ne sont rattachés à aucun programme.
             </div>
             <div class="vg-anomaly-main-share">{_safe(fmt_pourcentage(share))} du total</div>
         </div>
