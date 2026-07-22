@@ -9331,13 +9331,13 @@ elif vue_active == "Couverture":
 
     if statut_selectionne is not None:
         statut_texte = "actifs" if statut_selectionne == "active" else "inactifs"
-        info(
-            f"Les contrats {statut_texte} sélectionnés sont rattachés à "
-            f"{fmt_nombre(programmes_value)} ESI, représentant "
-            f"{fmt_nombre(logements_value)} logements et "
-            f"{fmt_nombre(equipements_value)} équipements. "
-            "Seuls les contrats rattachés à un ESI sont inclus."
-        )
+        # info(
+        #     f"Les contrats {statut_texte} sélectionnés sont rattachés à "
+        #     f"{fmt_nombre(programmes_value)} ESI, représentant "
+        #     f"{fmt_nombre(logements_value)} logements et "
+        #     f"{fmt_nombre(equipements_value)} équipements. "
+        #     "Seuls les contrats rattachés à un ESI sont inclus."
+        # )
 
 
     with st.expander(
