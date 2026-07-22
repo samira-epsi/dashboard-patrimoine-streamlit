@@ -8028,59 +8028,59 @@ nb_situations_alertes = (
 )
 
 # Dans Couverture, l'alerte est le premier élément métier affiché.
-if vue_active == "Couverture":
-    if nb_situations_alertes > 0:
-        alerte_col, bouton_alerte_col = st.columns(
-            [5, 1.2],
-            gap="medium",
-            vertical_alignment="center",
-        )
-        with alerte_col:
-            st.markdown(
-                f"""
-                <div class="vg-coverage-alert">
-                    <div class="vg-coverage-alert-content">
-                        <div class="vg-coverage-alert-icon">!</div>
-                        <div>
-                            <div class="vg-coverage-alert-title">
-                                {fmt_nombre(nb_situations_alertes)} signal(s) à vérifier
-                            </div>
-                            <div class="vg-coverage-alert-help">
-                                Contrats expirés ou non rattachés, ESI non couverts
-                                et chevauchements contractuels détectés.
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                """,
-                unsafe_allow_html=True,
-            )
-        with bouton_alerte_col:
-            st.button(
-                "Voir les alertes",
-                key="ouvrir_alertes_depuis_couverture",
-                width="stretch",
-                on_click=ouvrir_onglet_alertes,
-            )
-    else:
-        st.markdown(
-            """
-            <div class="vg-coverage-alert"
-                 style="background:#F1FBF8;border-color:#CFECE3;border-left-color:#008080;">
-                <div class="vg-coverage-alert-content">
-                    <div class="vg-coverage-alert-icon"
-                         style="color:#008080;border-color:#CFECE3;">✓</div>
-                    <div>
-                        <div class="vg-coverage-alert-title">Aucun signal prioritaire</div>
-                        <div class="vg-coverage-alert-help">
-                            Aucun cas nécessitant une action immédiate n'est détecté.
-                        </div>
-                    </div>
-                </div>
-            </div>
-            """,
-            unsafe_allow_html=True,
-        )
+# if vue_active == "Couverture":
+#     if nb_situations_alertes > 0:
+#         alerte_col, bouton_alerte_col = st.columns(
+#             [5, 1.2],
+#             gap="medium",
+#             vertical_alignment="center",
+#         )
+#         with alerte_col:
+#             st.markdown(
+#                 f"""
+#                 <div class="vg-coverage-alert">
+#                     <div class="vg-coverage-alert-content">
+#                         <div class="vg-coverage-alert-icon">!</div>
+#                         <div>
+#                             <div class="vg-coverage-alert-title">
+#                                 {fmt_nombre(nb_situations_alertes)} signal(s) à vérifier
+#                             </div>
+#                             <div class="vg-coverage-alert-help">
+#                                 Contrats expirés ou non rattachés, ESI non couverts
+#                                 et chevauchements contractuels détectés.
+#                             </div>
+#                         </div>
+#                     </div>
+#                 </div>
+#                 """,
+#                 unsafe_allow_html=True,
+#             )
+#         with bouton_alerte_col:
+#             st.button(
+#                 "Voir les alertes",
+#                 key="ouvrir_alertes_depuis_couverture",
+#                 width="stretch",
+#                 on_click=ouvrir_onglet_alertes,
+#             )
+#     else:
+#         st.markdown(
+#             """
+#             <div class="vg-coverage-alert"
+#                  style="background:#F1FBF8;border-color:#CFECE3;border-left-color:#008080;">
+#                 <div class="vg-coverage-alert-content">
+#                     <div class="vg-coverage-alert-icon"
+#                          style="color:#008080;border-color:#CFECE3;">✓</div>
+#                     <div>
+#                         <div class="vg-coverage-alert-title">Aucun signal prioritaire</div>
+#                         <div class="vg-coverage-alert-help">
+#                             Aucun cas nécessitant une action immédiate n'est détecté.
+#                         </div>
+#                     </div>
+#                 </div>
+#             </div>
+#             """,
+#             unsafe_allow_html=True,
+#         )
 
 # La Vue globale permet de comparer les statuts.
 # La page Couverture analyse toujours les contrats actifs.
