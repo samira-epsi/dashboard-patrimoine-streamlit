@@ -10036,7 +10036,7 @@ elif vue_active == "Couverture":
             )
 
         st.caption(
-            "Lecture : chaque barre répond à la question « sur combien d’ESI ce métier est-il présent ? ». "
+            "Lecture : chaque barre répond à la question « Mes contrats pour ce métier couvrent combien d'ESI ?». "
             "Le pourcentage indique la part correspondante dans le périmètre."
         )
 
