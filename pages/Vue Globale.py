@@ -10167,6 +10167,44 @@ elif vue_active == "Alertes":
         masque_esi_equipes_non_couverts
     ].copy()
 
+    # Liste précise des équipements sans contrat actif.
+    # Cette liste sert à alimenter la carte et le niveau de détail
+    # "Équipements sans contrat".
+    if not df_equipements_couverture_kpi.empty:
+        masque_equipements_sans_contrat = (
+            serie_numerique(
+                df_equipements_couverture_kpi,
+                "equipment_covered_valid",
+            ) == 0
+        )
+
+        alertes_equipements_sans_contrat = (
+            df_equipements_couverture_kpi[
+                masque_equipements_sans_contrat
+            ]
+            .copy()
+        )
+
+        if "equipment_reference" in alertes_equipements_sans_contrat.columns:
+            references_valides = (
+                alertes_equipements_sans_contrat["equipment_reference"]
+                .astype("string")
+                .str.strip()
+            )
+
+            alertes_equipements_sans_contrat = (
+                alertes_equipements_sans_contrat[
+                    references_valides.notna()
+                    & ~references_valides.isin(
+                        ["", "nan", "None", "<NA>", "Non renseigné"]
+                    )
+                ]
+                .drop_duplicates(subset=["equipment_reference"])
+                .copy()
+            )
+    else:
+        alertes_equipements_sans_contrat = pd.DataFrame()
+
     # -------------------------------------------------
     # 4. CONTRATS SANS RATTACHEMENT À UN PROGRAMME / ESI
     # -------------------------------------------------
@@ -10214,6 +10252,16 @@ elif vue_active == "Alertes":
         else len(alertes_esi_equipes_non_couverts)
     )
 
+    nb_equipements_sans_contrat = int(
+        alertes_equipements_sans_contrat["equipment_reference"].nunique()
+        if (
+            not alertes_equipements_sans_contrat.empty
+            and "equipment_reference"
+            in alertes_equipements_sans_contrat.columns
+        )
+        else len(alertes_equipements_sans_contrat)
+    )
+
     nb_contrats_sans_rattachement = int(
         alertes_contrats_sans_rattachement["contract_reference"].nunique()
         if (
@@ -10232,7 +10280,7 @@ elif vue_active == "Alertes":
     nb_alertes_prioritaires = (
         nb_contrats_expires
         + nb_contrats_sans_rattachement
-        + nb_esi_equipes_non_couverts
+        + nb_equipements_sans_contrat
     )
     nb_alertes_a_traiter = nb_esi_sans_contrat
     nb_alertes_a_controler = nb_esi_multi_metier
@@ -10288,9 +10336,12 @@ elif vue_active == "Alertes":
 
     with ligne_prioritaire[2]:
         impact_alert_card(
-            "ESI équipés avec équipement sans contrat",
-            nb_esi_equipes_non_couverts,
-            "Identifier les équipements sans contrat et créer ou corriger leur rattachement.",
+            "Équipements sans contrat",
+            nb_equipements_sans_contrat,
+            (
+                f"Répartis dans {fmt_nombre(nb_esi_equipes_non_couverts)} ESI. "
+                "Créer ou corriger leur rattachement contractuel."
+            ),
             C_VIOLET,
             "Prioritaire",
             "◆",
@@ -10385,19 +10436,54 @@ elif vue_active == "Alertes":
         detail_color = "#E5A000"
 
     elif type_alerte == "ESI équipés avec équipement sans contrat":
-        table_alerte = preparer_esi_table(
-            alertes_esi_equipes_non_couverts
+        niveau_detail_non_couvert = st.radio(
+            "Niveau de détail",
+            [
+                "ESI concernés",
+                "Équipements sans contrat",
+            ],
+            horizontal=True,
+            key="alertes_niveau_detail_non_couvert",
         )
-        nom_export = "esi_equipes_avec_equipement_sans_contrat.xlsx"
-        message_vide = "Aucun ESI équipé avec un équipement sans contrat."
-        detail_title = (
-            f"{fmt_nombre(nb_esi_equipes_non_couverts)} ESI équipé(s) "
-            "avec au moins un équipement sans contrat"
-        )
-        detail_message = (
-            "Ces ESI disposent d'au moins un équipement auquel aucun contrat "
-            "n'est rattaché. Un même ESI peut aussi posséder d'autres équipements avec contrat."
-        )
+
+        if niveau_detail_non_couvert == "ESI concernés":
+            table_alerte = preparer_esi_table(
+                alertes_esi_equipes_non_couverts
+            )
+            nom_export = (
+                "esi_equipes_avec_equipement_sans_contrat.xlsx"
+            )
+            message_vide = (
+                "Aucun ESI équipé avec un équipement sans contrat."
+            )
+            detail_title = (
+                f"{fmt_nombre(nb_esi_equipes_non_couverts)} ESI équipé(s) "
+                f"contiennent {fmt_nombre(nb_equipements_sans_contrat)} "
+                "équipement(s) sans contrat"
+            )
+            detail_message = (
+                "Cette vue présente les ESI concernés. "
+                "Un même ESI peut contenir plusieurs équipements sans contrat."
+            )
+        else:
+            table_alerte = preparer_equipements_table(
+                alertes_equipements_sans_contrat
+            )
+            nom_export = "equipements_sans_contrat.xlsx"
+            message_vide = (
+                "Aucun équipement sans contrat sur le périmètre sélectionné."
+            )
+            detail_title = (
+                f"{fmt_nombre(nb_equipements_sans_contrat)} "
+                "équipement(s) sans contrat"
+            )
+            detail_message = (
+                f"Ces équipements sont répartis dans "
+                f"{fmt_nombre(nb_esi_equipes_non_couverts)} ESI. "
+                "Cette vue identifie précisément les équipements "
+                "pour lesquels un contrat doit être créé ou rattaché."
+            )
+
         detail_color = C_VIOLET
 
     elif type_alerte == "Contrats sans rattachement":
