@@ -10468,9 +10468,26 @@ elif vue_active == "Alertes":
             ]
 
             table_alerte = table_alerte[
-                
                 colonnes_disponibles
             ].copy()
+ 
+        nom_export = "contrats_actifs_expires.xlsx"
+
+        message_vide = (
+            "Aucun contrat actif avec une date de fin dépassée."
+        )
+
+        detail_title = (
+            f"{fmt_nombre(nb_contrats_expires)} contrat(s) "
+            "encore actif(s) malgré une date de fin dépassée"
+        )
+
+        detail_message = (
+            "Ces contrats doivent être prolongés, désactivés ou corrigés "
+            "afin que leur statut corresponde à leur période de validité."
+        )
+
+        detail_color = C_RED
 
     elif type_alerte == "ESI sans contrat actif":
         table_alerte = preparer_esi_table(
