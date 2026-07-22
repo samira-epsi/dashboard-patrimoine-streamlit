@@ -6491,7 +6491,7 @@ def anomaly_hero(
         '<span class="vg-anomaly-hero-title">anomalies détectées</span>'
         '</div>'
         '<div class="vg-anomaly-hero-help">'
-        'Des objets ne peuvent pas être replacés correctement '
+        'Ces objets ne peuvent pas être replacés correctement '
         'dans la hiérarchie patrimoine.'
         '</div>'
         '</div>'
@@ -6511,8 +6511,7 @@ def anomaly_main_card(
             <div class="vg-anomaly-main-value">{_safe(fmt_nombre(value))}</div>
             <div class="vg-anomaly-main-title">Logements sans programme</div>
             <div class="vg-anomaly-main-help">
-                Ces logements ne peuvent pas être replacés dans la hiérarchie patrimoine.
-                Le rattachement au programme doit être retrouvé ou corrigé.
+                Ces logements ne Sont rattachés à aucun programme.
             </div>
             <div class="vg-anomaly-main-share">{_safe(fmt_pourcentage(share))} du total</div>
         </div>
@@ -10804,6 +10803,31 @@ else:
         table_anomalie = preparer_qualite_table(
             anomalies_logements_sans_programme
         )
+
+        colonnes_logements = [
+            "Référence objet",
+            "Libellé objet",
+            "Description",
+        ]
+
+        colonnes_disponibles = [
+            colonne
+            for colonne in colonnes_logements
+            if colonne in table_anomalie.columns
+        ]
+
+        table_anomalie = table_anomalie[
+            colonnes_disponibles
+        ].copy()
+
+        table_anomalie = table_anomalie.rename(
+            columns={
+                "Référence objet": "Référence logement",
+                "Libellé objet": "Libellé logement",
+            }
+        )
+
+
         nom_export_anomalie = "logements_sans_programme.xlsx"
         message_anomalie_vide = (
             "Aucun logement sans programme dans la table de qualité."
