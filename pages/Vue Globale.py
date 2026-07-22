@@ -5969,7 +5969,7 @@ def afficher_evolution_couverture_esi(
 
             st.plotly_chart(
                 fig,
-                use_container_width=True,
+                width="stretch",
                 config=config_plotly(
                     "evolution_mensuelle_couverture_esi"
                 ),
@@ -6182,7 +6182,7 @@ def afficher_evolution_contrats(
 
         st.plotly_chart(
             fig_flux,
-            use_container_width=True,
+            width="stretch",
             config=config_plotly("evolution_flux_contrats"),
         )
 
@@ -6267,7 +6267,7 @@ def afficher_evolution_contrats(
 
         st.plotly_chart(
             fig_stock,
-            use_container_width=True,
+            width="stretch",
             config=config_plotly("evolution_stock_contrats"),
         )
 
@@ -6563,17 +6563,25 @@ def coverage_summary(
     nb_esi_couverts: int,
     total_esi: int,
     nb_esi_equipes_non_couverts: int,
+    nb_equipements_sans_contrat: int,
 ):
     phrase = (
         f"{fmt_nombre(nb_esi_couverts)} ESI sur {fmt_nombre(total_esi)} "
         "disposent d’au moins un contrat actif."
     )
-    complement = (
-        f" Toutefois, {fmt_nombre(nb_esi_equipes_non_couverts)} ESI équipés "
-        "ont au moins un équipement sans contrat rattaché."
-        if nb_esi_equipes_non_couverts > 0
-        else " Aucun ESI équipé avec un équipement sans contrat n’est détecté."
-    )
+
+    if nb_equipements_sans_contrat > 0:
+        complement = (
+            f" Toutefois, {fmt_nombre(nb_equipements_sans_contrat)} équipements "
+            f"sans contrat sont répartis dans "
+            f"{fmt_nombre(nb_esi_equipes_non_couverts)} ESI équipés."
+        )
+    else:
+        complement = (
+            " Aucun équipement sans contrat n’est détecté "
+            "sur le périmètre sélectionné."
+        )
+
     contenu = (
         '<div class="vg-coverage-summary">'
         '<div class="vg-coverage-summary-kicker">Synthèse de couverture</div>'
@@ -7021,7 +7029,7 @@ def afficher_couverture(df_couverture: pd.DataFrame):
     )
     st.plotly_chart(
         fig,
-        use_container_width=True,
+        width="stretch",
         config=config_plotly("taux_couverture_patrimoine"),
     )
 
@@ -7103,7 +7111,7 @@ def afficher_barres_horizontales(
     )
     st.plotly_chart(
         fig,
-        use_container_width=True,
+        width="stretch",
         config=config_plotly("graphique_barres_horizontales"),
     )
 
@@ -8441,7 +8449,7 @@ if vue_active == "Vue globale":
                 )
                 st.plotly_chart(
                     fig,
-                    use_container_width=True,
+                    width="stretch",
                     config=config_plotly("repartition_statut_contrats"),
                 )
 
@@ -8492,7 +8500,7 @@ if vue_active == "Vue globale":
                 )
                 st.plotly_chart(
                     fig_metier,
-                    use_container_width=True,
+                    width="stretch",
                     config=config_plotly(
                         "repartition_contrats_par_metier"
                     ),
@@ -9294,14 +9302,23 @@ elif vue_active == "Couverture":
 
     if couverture_equipements_synthese.empty:
         nb_equipements_couverts_synthese = 0
+        nb_equipements_sans_contrat_synthese = 0
         total_equipements_synthese = 0
     else:
         ligne_equipements_couverts = couverture_equipements_synthese[
             couverture_equipements_synthese["Couverture"]
             == "Équipements avec contrat"
         ]
+        ligne_equipements_sans_contrat = couverture_equipements_synthese[
+            couverture_equipements_synthese["Couverture"]
+            == "Équipements sans contrat"
+        ]
+
         nb_equipements_couverts_synthese = int(
             ligne_equipements_couverts["Équipements"].sum()
+        )
+        nb_equipements_sans_contrat_synthese = int(
+            ligne_equipements_sans_contrat["Équipements"].sum()
         )
         total_equipements_synthese = int(
             couverture_equipements_synthese["Équipements"].sum()
@@ -9320,6 +9337,7 @@ elif vue_active == "Couverture":
         nb_esi_couverts=nb_esi_couverts_synthese,
         total_esi=total_esi_couverture,
         nb_esi_equipes_non_couverts=nb_esi_equipes_non_couverts_synthese,
+        nb_equipements_sans_contrat=nb_equipements_sans_contrat_synthese,
     )
 
     coverage_context(
@@ -10013,7 +10031,7 @@ elif vue_active == "Couverture":
             )
             st.plotly_chart(
                 fig_metiers,
-                use_container_width=True,
+                width="stretch",
                 config=config_plotly("presence_contrats_par_metier"),
             )
 
