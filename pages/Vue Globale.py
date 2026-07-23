@@ -4700,23 +4700,46 @@ def filtrer_table_par_esi(
 def construire_presence_metiers(
     df_contrats: pd.DataFrame,
     total_esi: int,
+    tous_les_metiers: list[str],
     top_n: int = 15,
 ) -> pd.DataFrame:
     """
-    Une présence métier = au moins un contrat DISTINCT du métier sur l'ESI.
-    Le pourcentage est calculé sur tous les ESI du périmètre.
+    Affiche tous les métiers de référence,
+    même lorsqu'ils sont absents du périmètre filtré.
     """
+
     colonnes = ["Métier", "ESI", "Taux"]
+
+    metiers_reference = (
+        pd.DataFrame(
+            {
+                "Métier": tous_les_metiers
+            }
+        )
+        .drop_duplicates()
+    )
+
     if (
         df_contrats.empty
         or "esi_reference" not in df_contrats.columns
         or "contract_topic" not in df_contrats.columns
     ):
-        return pd.DataFrame(columns=colonnes)
+        metiers_reference["ESI"] = 0
+        metiers_reference["Taux"] = 0.0
+
+        return (
+            metiers_reference
+            .sort_values(
+                ["ESI", "Métier"],
+                ascending=[True, True],
+            )
+            .reset_index(drop=True)
+        )
 
     df = df_contrats[
         df_contrats["esi_reference"].notna()
     ].copy()
+
     df["contract_topic"] = (
         df["contract_topic"]
         .fillna("Non renseigné")
@@ -4725,21 +4748,47 @@ def construire_presence_metiers(
         .replace("", "Non renseigné")
     )
 
-    resultat = (
-        df.groupby("contract_topic", as_index=False)
-        .agg(ESI=("esi_reference", "nunique"))
-        .rename(columns={"contract_topic": "Métier"})
+    resultat_perimetre = (
+        df.groupby(
+            "contract_topic",
+            as_index=False,
+        )
+        .agg(
+            ESI=("esi_reference", "nunique")
+        )
+        .rename(
+            columns={
+                "contract_topic": "Métier"
+            }
+        )
     )
+
+    resultat = metiers_reference.merge(
+        resultat_perimetre,
+        on="Métier",
+        how="left",
+    )
+
+    resultat["ESI"] = (
+        resultat["ESI"]
+        .fillna(0)
+        .astype(int)
+    )
+
     resultat["Taux"] = (
-        resultat["ESI"] / total_esi * 100
-        if total_esi
-        else 0.0
+        resultat["ESI"]
+        .div(total_esi if total_esi else 1)
+        .mul(100)
+        .round(1)
     )
 
     return (
-        resultat.sort_values(["ESI", "Métier"], ascending=[False, True])
-        .head(top_n)
-        .sort_values("ESI", ascending=True)
+        resultat
+        .sort_values(
+            ["ESI", "Métier"],
+            ascending=[True, True],
+        )
+        .tail(top_n)
         .reset_index(drop=True)
     )
 
@@ -9929,10 +9978,21 @@ elif vue_active == "Couverture":
             )
             else 0
         )
+        tous_les_metiers = (
+            df_contrats["contract_topic"]
+            .fillna("Non renseigné")
+            .astype(str)
+            .str.strip()
+            .replace("", "Non renseigné")
+            .drop_duplicates()
+            .sort_values()
+            .tolist()
+        )
 
         presence_metiers = construire_presence_metiers(
             df_contrats=df_contrats_kpi,
             total_esi=total_esi_metiers,
+            tous_les_metiers=tous_les_metiers,
             top_n=10_000,
         )
 
