@@ -1378,7 +1378,7 @@ def render_filtres_patrimoine(
     agence
     groupe
     secteur
-    référence Programme / ESI
+    ESI
     métier
     prestataire
     """
