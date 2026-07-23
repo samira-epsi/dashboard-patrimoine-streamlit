@@ -1325,14 +1325,7 @@ def inject_style():
         }
 
         .vg-anomaly-hero::after {
-            content: "?";
-            position: absolute;
-            right: 26px;
-            top: -40px;
-            color: rgba(255,255,255,.07);
-            font-size: 145px;
-            line-height: 1;
-            font-weight: 900;
+            display: none;
         }
 
         .vg-anomaly-hero-main {
