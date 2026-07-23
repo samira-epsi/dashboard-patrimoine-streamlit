@@ -6373,7 +6373,7 @@ def afficher_evolution_couverture_esi(
             )
 
             dataframe_download(
-                "Télécharger toutes les données en Excel",
+                "Télécharger toutes les données",
                 historique,
                 "evolution_couverture_esi.xlsx",
                 cle="export_evolution_couverture_esi",
@@ -10786,7 +10786,7 @@ elif vue_active == "Couverture":
                     height=420,
                 )
                 dataframe_download(
-                    "Télécharger le détail en Excel",
+                    "Télécharger le détail",
                     table_detail_metier,
                     "detail_metier.xlsx",
                     cle="export_detail_metier",
