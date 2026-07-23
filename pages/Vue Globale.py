@@ -10478,6 +10478,13 @@ elif vue_active == "Alertes":
         table_alerte = preparer_esi_table(
             alertes_esi_sans_contrat
         )
+        table_alerte = table_alerte.drop(
+            columns=[
+                "ESI couvert",
+                "Multi même métier",
+            ],
+            errors="ignore",
+        )
         nom_export = "esi_sans_contrat_actif.xlsx"
         message_vide = "Aucun ESI sans contrat actif."
         detail_title = (
