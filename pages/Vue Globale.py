@@ -10619,10 +10619,11 @@ elif vue_active == "Couverture":
             )
         )
 
-        afficher_detail_metier = st.toggle(
-            "Afficher le détail d’un métier",
-            value=False,
-            key="afficher_detail_metier",
+        afficher_detail_metier = bool(
+            st.session_state.get(
+                "afficher_detail_metier",
+                False,
+            )
         )
 
         liste_metiers = (
@@ -10832,6 +10833,12 @@ elif vue_active == "Couverture":
             "« Mes contrats pour ce métier couvrent combien "
             "d’ESI ? ». Le pourcentage indique la part "
             "correspondante dans le périmètre."
+        )
+
+        afficher_detail_metier = st.toggle(
+            "Afficher le détail d’un métier",
+            value=afficher_detail_metier,
+            key="afficher_detail_metier",
         )
 
         if afficher_detail_metier:
