@@ -1603,7 +1603,7 @@ def render_filtres_patrimoine(
     selected_programmes = (
         render_multiselect(
             label=(
-                "Référence programme / ESI"
+                "ESI"
             ),
             options=options[
                 "esi_reference"
