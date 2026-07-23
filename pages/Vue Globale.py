@@ -326,7 +326,25 @@ def inject_style():
             font-weight: 700;
             margin-bottom: 10px;
         }
+        .vg-equipment-type-value {
+            text-align: right;
+            white-space: nowrap;
+        }
 
+        .vg-equipment-type-rate {
+            color: var(--text-main);
+            font-size: 12px;
+            font-weight: 850;
+            line-height: 1.2;
+        }
+
+        .vg-equipment-type-detail {
+            margin-top: 3px;
+            color: var(--text-muted);
+            font-size: 10px;
+            font-weight: 650;
+            line-height: 1.2;
+        }
         .vg-card-help {
             color: var(--text-muted);
             font-size: 11.5px;
