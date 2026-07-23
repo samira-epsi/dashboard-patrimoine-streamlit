@@ -10673,10 +10673,10 @@ elif vue_active == "Couverture":
             )
 
         titre_graphique_metier = (
-            "ESI concernés par métier"
+            "ESI couverts par métier"
             if metier_selectionne is None
             else (
-                "ESI concernés par les contrats du métier :  "
+                "ESI couverts par les contrats du métier :  "
                 f"{metier_selectionne}"
             )
         )
