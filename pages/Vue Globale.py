@@ -4275,6 +4275,255 @@ def inject_style():
             }
         }
 
+        
+        /* =====================================================
+           CORRECTION MOBILE RÉELLE — LARGEUR, COLONNES ET PLOTLY
+        ===================================================== */
+
+        /* Ne jamais laisser un composant imposer une largeur desktop. */
+        html,
+        body,
+        #root,
+        .stApp,
+        [data-testid="stAppViewContainer"],
+        [data-testid="stMain"],
+        [data-testid="stMainBlockContainer"],
+        .block-container {
+            width: 100% !important;
+            max-width: 100% !important;
+            min-width: 0 !important;
+            box-sizing: border-box !important;
+        }
+
+        [data-testid="stAppViewContainer"],
+        [data-testid="stMain"],
+        [data-testid="stMainBlockContainer"] {
+            overflow-x: clip !important;
+        }
+
+        /* Plotly : texte foncé même quand Safari/iOS est en mode sombre. */
+        div[data-testid="stPlotlyChart"] svg text,
+        div[data-testid="stPlotlyChart"] .xtick text,
+        div[data-testid="stPlotlyChart"] .ytick text,
+        div[data-testid="stPlotlyChart"] .legend text,
+        div[data-testid="stPlotlyChart"] .gtitle,
+        div[data-testid="stPlotlyChart"] .annotation-text {
+            fill: #17243A !important;
+            color: #17243A !important;
+            opacity: 1 !important;
+            -webkit-text-fill-color: #17243A !important;
+        }
+
+        div[data-testid="stPlotlyChart"] .gridlayer path {
+            stroke: #E8EEF5 !important;
+        }
+
+        div[data-testid="stPlotlyChart"] .bg,
+        div[data-testid="stPlotlyChart"] .plot {
+            fill: #FFFFFF !important;
+        }
+
+        @media screen and (max-width: 760px) {
+
+            /* Le contenu principal occupe réellement l'écran. */
+            [data-testid="stMain"] .block-container {
+                padding: 0.65rem 0.75rem 1.5rem 0.75rem !important;
+                margin: 0 !important;
+            }
+
+            /*
+             * Toutes les colonnes Streamlit s'empilent.
+             * C'est ce qui empêchait la page de conserver sa largeur ordinateur.
+             */
+            [data-testid="stHorizontalBlock"] {
+                display: flex !important;
+                flex-direction: column !important;
+                align-items: stretch !important;
+                width: 100% !important;
+                max-width: 100% !important;
+                min-width: 0 !important;
+                gap: 0.75rem !important;
+            }
+
+            [data-testid="stHorizontalBlock"] > [data-testid="stColumn"],
+            [data-testid="stHorizontalBlock"] > div {
+                flex: 1 1 100% !important;
+                width: 100% !important;
+                max-width: 100% !important;
+                min-width: 0 !important;
+                margin-left: 0 !important;
+                margin-right: 0 !important;
+            }
+
+            /* Sidebar fermée : elle ne doit pas laisser une bande qui décale la page. */
+            [data-testid="stSidebar"][aria-expanded="false"] {
+                width: 0 !important;
+                min-width: 0 !important;
+                max-width: 0 !important;
+                transform: translateX(-100%) !important;
+            }
+
+            [data-testid="stSidebar"][aria-expanded="false"] + [data-testid="stMain"],
+            [data-testid="stAppViewContainer"]:has(
+                [data-testid="stSidebar"][aria-expanded="false"]
+            ) [data-testid="stMain"] {
+                margin-left: 0 !important;
+                width: 100% !important;
+            }
+
+            /* Hero et sections */
+            .vg-hero {
+                width: 100% !important;
+                margin: 0 0 12px 0 !important;
+                padding: 16px !important;
+                border-radius: 15px !important;
+            }
+
+            .vg-hero-title {
+                font-size: clamp(24px, 8vw, 32px) !important;
+                line-height: 1.12 !important;
+                overflow-wrap: anywhere !important;
+            }
+
+            .vg-hero-subtitle {
+                font-size: 13px !important;
+                line-height: 1.5 !important;
+            }
+
+            .vg-section-title {
+                font-size: 19px !important;
+                line-height: 1.25 !important;
+                overflow-wrap: anywhere !important;
+            }
+
+            /* Onglets principaux : scroll propre, sans couper la page. */
+            .st-key-dashboard_tabs {
+                width: 100% !important;
+                max-width: 100% !important;
+                overflow-x: auto !important;
+                overflow-y: hidden !important;
+                -webkit-overflow-scrolling: touch !important;
+            }
+
+            .st-key-dashboard_tabs div[role="radiogroup"] {
+                display: flex !important;
+                flex-direction: row !important;
+                flex-wrap: nowrap !important;
+                width: max-content !important;
+                min-width: 100% !important;
+                gap: 18px !important;
+            }
+
+            .st-key-dashboard_tabs div[role="radiogroup"] label {
+                flex: 0 0 auto !important;
+                white-space: nowrap !important;
+                font-size: 13px !important;
+            }
+
+            /* Les radios internes passent à la ligne sans créer de débordement. */
+            .st-key-contract_status_filter div[role="radiogroup"],
+            .st-key-alertes_navigation_rapide div[role="radiogroup"],
+            .st-key-anomalies_navigation_rapide div[role="radiogroup"],
+            div[data-testid="stExpander"] div[role="radiogroup"] {
+                display: flex !important;
+                flex-wrap: wrap !important;
+                width: 100% !important;
+                max-width: 100% !important;
+            }
+
+            .st-key-contract_status_filter div[role="radiogroup"] label,
+            .st-key-alertes_navigation_rapide div[role="radiogroup"] label,
+            .st-key-anomalies_navigation_rapide div[role="radiogroup"] label,
+            div[data-testid="stExpander"] div[role="radiogroup"] label {
+                flex: 1 1 135px !important;
+                max-width: 100% !important;
+                justify-content: flex-start !important;
+            }
+
+            /* Graphiques : aucune largeur minimale, aucun zoom accidentel. */
+            div[data-testid="stPlotlyChart"],
+            div[data-testid="stPlotlyChart"] > div,
+            div[data-testid="stPlotlyChart"] .js-plotly-plot,
+            div[data-testid="stPlotlyChart"] .plot-container,
+            div[data-testid="stPlotlyChart"] .svg-container {
+                width: 100% !important;
+                max-width: 100% !important;
+                min-width: 0 !important;
+                margin: 0 !important;
+            }
+
+            div[data-testid="stPlotlyChart"] {
+                overflow: hidden !important;
+                border-radius: 13px !important;
+            }
+
+            div[data-testid="stPlotlyChart"] .modebar {
+                display: none !important;
+            }
+
+            /* Les axes et légendes Plotly restent lisibles. */
+            div[data-testid="stPlotlyChart"] svg text {
+                fill: #17243A !important;
+                opacity: 1 !important;
+                font-size: 11px !important;
+            }
+
+            /* Les cartes et tableaux ne peuvent plus dépasser. */
+            .vg-card,
+            .vg-alert-card,
+            .vg-coverage-summary,
+            .vg-coverage-reading-card,
+            .vg-equipment-hero,
+            .vg-equipment-hero-main,
+            .vg-impact-alert-card,
+            .vg-alert-detail-intro,
+            .vg-anomaly-main-card,
+            .vg-anomaly-secondary-card,
+            .vg-anomaly-detail-intro,
+            div[data-testid="stDataFrame"] {
+                width: 100% !important;
+                max-width: 100% !important;
+                min-width: 0 !important;
+            }
+
+            .vg-equipment-hero,
+            .vg-equipment-stats,
+            .vg-park-grid,
+            .vg-contract-intensity,
+            .vg-coverage-reading-stats {
+                grid-template-columns: 1fr !important;
+            }
+
+            .vg-equipment-hero-main {
+                flex-direction: column !important;
+                align-items: flex-start !important;
+            }
+
+            div[data-testid="stDataFrame"] {
+                overflow-x: auto !important;
+                -webkit-overflow-scrolling: touch !important;
+            }
+
+            /* Le texte général reste foncé en thème sombre. */
+            [data-testid="stMain"] p,
+            [data-testid="stMain"] span,
+            [data-testid="stMain"] label,
+            [data-testid="stMain"] h1,
+            [data-testid="stMain"] h2,
+            [data-testid="stMain"] h3,
+            [data-testid="stMain"] h4 {
+                color: #17243A !important;
+                -webkit-text-fill-color: #17243A !important;
+            }
+
+            .vg-alerts-hero *,
+            .vg-anomaly-hero *,
+            .vg-coverage-main * {
+                color: #FFFFFF !important;
+                -webkit-text-fill-color: #FFFFFF !important;
+            }
+        }
+
         </style>
         """,
         unsafe_allow_html=True,
@@ -7618,13 +7867,47 @@ def status_banner(
     )
 def _layout_plotly(fig, height):
     fig.update_layout(
+        autosize=True,
         height=height,
-        margin=dict(l=8, r=24, t=10, b=18),
-        plot_bgcolor="white",
-        paper_bgcolor="white",
-        font=dict(family="Arial", size=12, color=C_INK),
+        margin=dict(l=8, r=16, t=10, b=18),
+        plot_bgcolor="#FFFFFF",
+        paper_bgcolor="#FFFFFF",
+        font=dict(
+            family="Arial",
+            size=12,
+            color="#17243A",
+        ),
+        legend=dict(
+            font=dict(color="#17243A"),
+        ),
+        hoverlabel=dict(
+            bgcolor="#FFFFFF",
+            bordercolor="#D9E0E8",
+            font=dict(
+                family="Arial",
+                size=12,
+                color="#17243A",
+            ),
+        ),
         showlegend=False,
     )
+
+    fig.update_xaxes(
+        tickfont=dict(color="#17243A"),
+        title_font=dict(color="#17243A"),
+        gridcolor="#E8EEF5",
+        zerolinecolor="#E8EEF5",
+        automargin=True,
+    )
+
+    fig.update_yaxes(
+        tickfont=dict(color="#17243A"),
+        title_font=dict(color="#17243A"),
+        gridcolor="#E8EEF5",
+        zerolinecolor="#E8EEF5",
+        automargin=True,
+    )
+
     return fig
 
 
