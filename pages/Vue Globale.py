@@ -2527,18 +2527,28 @@ def inject_style():
             display: none !important;
         }
 
+        .st-key-effacer_recherche_equipement {
+            display: flex !important;
+            align-items: flex-end !important;
+            height: 74px !important;
+        }
+
         .st-key-effacer_recherche_equipement button {
-            min-height: 44px !important;
+            width: 42px !important;
+            min-width: 42px !important;
             height: 44px !important;
-            width: 44px !important;
+            min-height: 44px !important;
             padding: 0 !important;
-            margin-top: 29px !important;
+            margin: 0 !important;
+
             color: #A3184A !important;
             background: #FFF7FA !important;
             border: 1px solid #E7C8D6 !important;
             border-radius: 11px !important;
+
             font-size: 16px !important;
             font-weight: 900 !important;
+            box-shadow: none !important;
         }
 
         .st-key-effacer_recherche_equipement button:hover {
@@ -2558,9 +2568,13 @@ def inject_style():
                 justify-content: center !important;
             }
 
+            .st-key-effacer_recherche_equipement {
+                height: auto !important;
+            }
+
             .st-key-effacer_recherche_equipement button {
-                margin-top: 0 !important;
                 width: 100% !important;
+                min-width: 100% !important;
             }
         }
 
@@ -10475,22 +10489,10 @@ elif vue_active == "Couverture":
                     ~masque_couverture_detail
                 ].copy()
 
-            recherche_active_equipement = str(
-                st.session_state.get(
-                    "recherche_detail_equipement",
-                    "",
-                )
-                or ""
-            ).strip()
-
-            if recherche_active_equipement:
-                colonne_recherche, colonne_effacer = st.columns(
-                    [0.965, 0.035],
-                    gap="small",
-                )
-            else:
-                colonne_recherche = st.container()
-                colonne_effacer = None
+            colonne_recherche, colonne_effacer = st.columns(
+                [0.95, 0.05],
+                gap="small",
+            )
 
             with colonne_recherche:
                 recherche_equipement = st.text_input(
@@ -10501,15 +10503,13 @@ elif vue_active == "Couverture":
                     key="recherche_detail_equipement",
                 )
 
-            if (
-                colonne_effacer is not None
-                and recherche_active_equipement
-            ):
-                with colonne_effacer:
+            with colonne_effacer:
+                if str(
+                    recherche_equipement or ""
+                ).strip():
                     st.button(
                         "✕",
                         key="effacer_recherche_equipement",
-                        help="Effacer la recherche",
                         on_click=effacer_recherche_equipement,
                     )
 
