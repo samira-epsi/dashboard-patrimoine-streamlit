@@ -1009,14 +1009,7 @@ def inject_style():
         }
 
         .vg-alerts-hero::after {
-            content: "!";
-            position: absolute;
-            right: 24px;
-            top: -43px;
-            color: rgba(255,255,255,.07);
-            font-size: 150px;
-            line-height: 1;
-            font-weight: 900;
+            display: none;
         }
 
         .vg-alerts-hero-inner {
