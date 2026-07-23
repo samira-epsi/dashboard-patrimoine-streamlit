@@ -3847,6 +3847,31 @@ def inject_style():
             }
         }
 
+    html,
+    body,
+    .stApp {
+        color-scheme: light !important;
+    }
+
+    .stApp,
+    [data-testid="stAppViewContainer"],
+    [data-testid="stMain"],
+    [data-testid="stMainBlockContainer"] {
+        background: #FAFAFB !important;
+        color: #1B2430 !important;
+    }
+
+    [data-testid="stSidebar"] {
+        background: #FAF7F9 !important;
+        color: #1B2430 !important;
+    }
+
+    input,
+    textarea,
+    div[data-baseweb="select"] > div {
+        color-scheme: light !important;
+    }
+
         </style>
         """,
         unsafe_allow_html=True,
