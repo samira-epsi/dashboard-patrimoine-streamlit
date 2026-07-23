@@ -1,7 +1,6 @@
 import html
 import re
 import unicodedata
-import textwrap
 from io import BytesIO
 from datetime import datetime
 from zoneinfo import ZoneInfo
@@ -7421,116 +7420,131 @@ def anomaly_cards_grid(
     nb_programmes: int,
     nb_equipements: int,
 ):
-    html_cartes = textwrap.dedent(
-        f"""
-        <div class="vg-anomaly-cards-grid">
-            <div class="vg-anomaly-main-card">
-                <div class="vg-anomaly-main-badge">Anomalie principale</div>
-                <div class="vg-anomaly-main-share">
-                    {_safe(fmt_pourcentage(part_logements))} du total
-                </div>
-                <div class="vg-anomaly-main-value">
-                    {_safe(fmt_nombre(nb_logements))}
-                </div>
-                <div class="vg-anomaly-main-title">
-                    Logements sans programme
-                </div>
-                <div class="vg-anomaly-main-help">
-                    Ces logements ne sont rattachés à aucun programme.
-                </div>
-            </div>
+    html_cartes = (
+        '<div class="vg-anomaly-cards-grid">'
+        '<div class="vg-anomaly-main-card">'
+        '<div class="vg-anomaly-main-badge">Anomalie principale</div>'
+        f'<div class="vg-anomaly-main-share">{_safe(fmt_pourcentage(part_logements))} du total</div>'
+        f'<div class="vg-anomaly-main-value">{_safe(fmt_nombre(nb_logements))}</div>'
+        '<div class="vg-anomaly-main-title">Logements sans programme</div>'
+        '<div class="vg-anomaly-main-help">Ces logements ne sont rattachés à aucun programme.</div>'
+        '</div>'
+        f'<div class="vg-anomaly-secondary-card" style="--anomaly-color:{_safe(C_NAVY)};">'
+        '<div class="vg-anomaly-secondary-icon">P</div>'
+        f'<div class="vg-anomaly-secondary-value">{_safe(fmt_nombre(nb_programmes))}</div>'
+        '<div class="vg-anomaly-secondary-title">Programmes sans logement</div>'
+        '<div class="vg-anomaly-secondary-help">'
+        'Programmes présents dans le référentiel mais sans aucun logement rattaché.'
+        '</div>'
+        '</div>'
+        f'<div class="vg-anomaly-secondary-card" style="--anomaly-color:{_safe(C_VIOLET)};">'
+        '<div class="vg-anomaly-secondary-icon">E</div>'
+        f'<div class="vg-anomaly-secondary-value">{_safe(fmt_nombre(nb_equipements))}</div>'
+        '<div class="vg-anomaly-secondary-title">Équipements sans programme</div>'
+        '<div class="vg-anomaly-secondary-help">'
+        'Équipements sans programme ou ESI identifiable.'
+        '</div>'
+        '</div>'
+        '</div>'
+    )
 
-            <div class="vg-anomaly-secondary-card"
-                 style="--anomaly-color:{_safe(C_NAVY)};">
-                <div class="vg-anomaly-secondary-icon">P</div>
-                <div class="vg-anomaly-secondary-value">
-                    {_safe(fmt_nombre(nb_programmes))}
-                </div>
-                <div class="vg-anomaly-secondary-title">
-                    Programmes sans logement
-                </div>
-                <div class="vg-anomaly-secondary-help">
-                    Programmes présents dans le référentiel mais sans aucun
-                    logement rattaché.
-                </div>
-            </div>
-
-            <div class="vg-anomaly-secondary-card"
-                 style="--anomaly-color:{_safe(C_VIOLET)};">
-                <div class="vg-anomaly-secondary-icon">E</div>
-                <div class="vg-anomaly-secondary-value">
-                    {_safe(fmt_nombre(nb_equipements))}
-                </div>
-                <div class="vg-anomaly-secondary-title">
-                    Équipements sans programme
-                </div>
-                <div class="vg-anomaly-secondary-help">
-                    Équipements sans programme ou ESI identifiable.
-                </div>
-            </div>
-        </div>
-        """
-    ).strip()
-
-    st.markdown(html_cartes, unsafe_allow_html=True)
-
+    st.markdown(
+        html_cartes,
+        unsafe_allow_html=True,
+    )
 
 def mobile_filter_button():
     with st.container(key="mobile_filter_trigger"):
         components.html(
             """
-            <!doctype html>
-            <html lang="fr">
-            <head>
-                <meta name="viewport" content="width=device-width, initial-scale=1">
-                <style>
-                    html, body {
-                        margin: 0;
-                        padding: 0;
-                        background: transparent;
-                        font-family: Arial, Helvetica, sans-serif;
-                    }
-                    button {
-                        width: 100%;
-                        min-height: 46px;
-                        border: 1px solid #E5114D;
-                        border-radius: 12px;
-                        background: #FFF3F7;
-                        color: #A3184A;
-                        font-size: 15px;
-                        font-weight: 750;
-                        cursor: pointer;
-                    }
-                    button:active {
-                        background: #FCE5ED;
-                    }
-                \n        /* Bouton Filtres mobile */\n        .st-key-mobile_filter_trigger {\n            display: none !important;\n        }\n\n        @media screen and (max-width: 760px) {\n            .st-key-mobile_filter_trigger {\n                display: block !important;\n                width: 100% !important;\n                margin: -2px 0 12px 0 !important;\n            }\n\n            .st-key-mobile_filter_trigger iframe {\n                width: 100% !important;\n                border: 0 !important;\n            }\n\n            /* La sidebar devient un panneau superposé et ne pousse plus le contenu. */\n            [data-testid="stSidebar"] {\n                position: fixed !important;\n                top: 0 !important;\n                bottom: 0 !important;\n                left: 0 !important;\n                z-index: 1000000 !important;\n                width: min(88vw, 340px) !important;\n                min-width: min(88vw, 340px) !important;\n                max-width: min(88vw, 340px) !important;\n                box-shadow: 12px 0 36px rgba(16, 42, 76, .22) !important;\n            }\n\n            [data-testid="stSidebar"][aria-expanded="false"] {\n                transform: translateX(-105%) !important;\n                width: min(88vw, 340px) !important;\n                min-width: min(88vw, 340px) !important;\n                max-width: min(88vw, 340px) !important;\n                visibility: hidden !important;\n                pointer-events: none !important;\n            }\n\n            [data-testid="stSidebar"][aria-expanded="true"] {\n                transform: translateX(0) !important;\n                visibility: visible !important;\n                pointer-events: auto !important;\n            }\n\n            [data-testid="stSidebarCollapsedControl"] {\n                display: none !important;\n            }\n\n            [data-testid="stMain"] {\n                margin-left: 0 !important;\n                width: 100% !important;\n            }\n        }\n
-        </style>
-            </head>
-            <body>
-                <button id="open-filters" type="button">☰ Filtres</button>
-                <script>
-                    const button = document.getElementById('open-filters');
-                    button.addEventListener('click', () => {
-                        const doc = window.parent.document;
-                        const selectors = [
-                            '[data-testid="stSidebarCollapsedControl"] button',
-                            '[data-testid="stSidebarCollapseButton"] button',
-                            '[data-testid="stSidebarCollapsedControl"]',
-                            '[data-testid="stSidebarCollapseButton"]'
-                        ];
+<!doctype html>
+<html lang="fr">
+<head>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>
+html, body {
+    margin: 0;
+    padding: 0;
+    overflow: hidden;
+    background: transparent;
+    font-family: Arial, Helvetica, sans-serif;
+}
+button {
+    width: 100%;
+    min-height: 46px;
+    border: 1px solid #E5114D;
+    border-radius: 12px;
+    background: #FFF3F7;
+    color: #A3184A;
+    font-size: 15px;
+    font-weight: 750;
+    cursor: pointer;
+}
+button:active {
+    background: #FCE5ED;
+}
 
-                        for (const selector of selectors) {
-                            const target = doc.querySelector(selector);
-                            if (target) {
-                                target.click();
-                                return;
-                            }
-                        }
-                    });
-                </script>
-            </body>
-            </html>
+        /* Bouton de filtres : téléphone uniquement */
+        .st-key-mobile_filter_trigger {
+            display: none !important;
+        }
+
+        @media screen and (max-width: 760px) {
+            .st-key-mobile_filter_trigger {
+                display: block !important;
+                width: 100% !important;
+                max-width: 100% !important;
+                margin: -2px 0 12px 0 !important;
+            }
+
+            .st-key-mobile_filter_trigger iframe {
+                display: block !important;
+                width: 100% !important;
+                max-width: 100% !important;
+                border: 0 !important;
+            }
+        }
+
+        @media screen and (min-width: 761px) {
+            .st-key-mobile_filter_trigger,
+            .st-key-mobile_filter_trigger iframe {
+                display: none !important;
+                width: 0 !important;
+                height: 0 !important;
+                min-height: 0 !important;
+                margin: 0 !important;
+                padding: 0 !important;
+                overflow: hidden !important;
+            }
+        }
+
+        </style>
+</head>
+<body>
+<button id="open-filters" type="button">☰ Filtres</button>
+<script>
+const button = document.getElementById("open-filters");
+
+button.addEventListener("click", () => {
+    const doc = window.parent.document;
+    const selectors = [
+        '[data-testid="stSidebarCollapsedControl"] button',
+        '[data-testid="stSidebarCollapsedControl"]',
+        '[data-testid="stSidebarCollapseButton"] button',
+        '[data-testid="stSidebarCollapseButton"]'
+    ];
+
+    for (const selector of selectors) {
+        const target = doc.querySelector(selector);
+        if (target) {
+            target.click();
+            break;
+        }
+    }
+});
+</script>
+</body>
+</html>
             """,
             height=50,
             scrolling=False,
