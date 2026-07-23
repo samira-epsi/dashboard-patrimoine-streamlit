@@ -2347,9 +2347,9 @@ def inject_style():
 
         .vg-equipment-type-row {
             display: grid;
-            grid-template-columns: minmax(165px, .9fr) minmax(280px, 2fr) 230px;
+            grid-template-columns: minmax(175px, .9fr) minmax(320px, 2.3fr) 205px;
             align-items: center;
-            gap: 13px;
+            gap: 10px;
             margin-bottom: 15px;
         }
 
@@ -2386,7 +2386,7 @@ def inject_style():
         .vg-equipment-type-uncovered {
             height: 100%;
             width: var(--uncovered-width);
-            background: #F0D6E0;
+            background: #F3B6C6;
             transition: width .2s ease;
         }
 
@@ -2405,11 +2405,16 @@ def inject_style():
         }
 
         .vg-equipment-type-detail {
-            margin-top: 3px;
+            margin-top: 4px;
             color: var(--text-muted);
             font-size: 9.8px;
             font-weight: 650;
-            line-height: 1.2;
+            line-height: 1.25;
+        }
+
+        .vg-equipment-type-detail strong {
+            color: var(--text-soft);
+            font-weight: 800;
         }
 
         .vg-equipment-types-legend {
@@ -7110,9 +7115,9 @@ def equipment_types_panel(
             f'{_safe(fmt_pourcentage(coverage_rate))} couverts'
             '</div>'
             '<div class="vg-equipment-type-detail">'
-            f'{_safe(fmt_nombre(covered_count))} couverts · '
-            f'{_safe(fmt_nombre(uncovered_count))} non couverts · '
-            f'{_safe(fmt_nombre(equipment_count))} au total'
+            f'<strong>{_safe(fmt_nombre(covered_count))} / '
+            f'{_safe(fmt_nombre(equipment_count))}</strong><br>'
+            f'{_safe(fmt_nombre(uncovered_count))} non couverts'
             '</div>'
             '</div>'
 
@@ -7128,8 +7133,8 @@ def equipment_types_panel(
         'Couverture par type d’équipement'
         '</div>'
         '<div class="vg-equipment-types-subtitle">'
-        'La barre montre directement la part couverte et la part non couverte '
-        'dans chaque catégorie.'
+        'Chaque barre représente 100 % de la catégorie : '
+        'vert pour les équipements couverts, rose pour les non couverts.'
         '</div>'
         '</div>'
         f'<div class="vg-equipment-types-total">'
@@ -7145,7 +7150,7 @@ def equipment_types_panel(
         '</div>'
         '<div class="vg-equipment-types-legend-item">'
         '<span class="vg-equipment-types-legend-dot" '
-        'style="--legend-color:#F0D6E0;"></span>'
+        'style="--legend-color:#F3B6C6;"></span>'
         'Non couverts'
         '</div>'
         '</div>'
@@ -10234,6 +10239,12 @@ elif vue_active == "Couverture":
             else "au moins un contrat actif ou inactif"
         )
 
+        if type_equipement_selectionne != "Tous les types":
+            definition_couverture = (
+                f"{definition_couverture} pour la catégorie "
+                f"« {type_equipement_selectionne} »"
+            )
+
         titre_couverture_equipement = (
             "Mesurer la couverture du parc"
             if type_equipement_selectionne == "Tous les types"
@@ -10274,11 +10285,11 @@ elif vue_active == "Couverture":
                 """
                 <div class="vg-equipment-category-bar">
                     <div class="vg-equipment-category-bar-title">
-                        Catégorie analysée
+                        Explorer une catégorie
                     </div>
                     <div class="vg-equipment-category-bar-help">
-                        Choisissez une catégorie : l’indicateur, le graphique
-                        et le tableau de détail seront automatiquement recalculés.
+                        La sélection met à jour l’indicateur de couverture,
+                        le graphique et le tableau de détail.
                     </div>
                 </div>
                 """,
@@ -10295,8 +10306,35 @@ elif vue_active == "Couverture":
                 label_visibility="collapsed",
             )
 
+            if type_equipement_selectionne != "Tous les types":
+                st.markdown(
+                    f"""
+                    <div class="vg-drilldown-summary">
+                        <span class="vg-drilldown-pill">
+                            {_safe(type_equipement_selectionne)}
+                        </span>
+                        <span class="vg-drilldown-pill">
+                            {fmt_nombre(total_equipements_couverture)} équipements
+                        </span>
+                        <span class="vg-drilldown-pill">
+                            {fmt_pourcentage(taux_equipements_avec_contrat)} couverts
+                        </span>
+                        <span class="vg-drilldown-pill">
+                            {fmt_nombre(nb_equipements_sans_contrat)} non couverts
+                        </span>
+                    </div>
+                    """,
+                    unsafe_allow_html=True,
+                )
+
+        libelle_detail_equipements = (
+            "Afficher le détail des équipements"
+            if type_equipement_selectionne == "Tous les types"
+            else f"Afficher le détail — {type_equipement_selectionne}"
+        )
+
         afficher_detail_equipements = st.toggle(
-            "Afficher le détail des équipements",
+            libelle_detail_equipements,
             value=False,
             key="afficher_detail_equipements",
         )
