@@ -10371,7 +10371,7 @@ elif vue_active == "Couverture":
             "Mesurer la couverture du parc"
             if type_equipement_selectionne == "Tous les types"
             else (
-                "Mesurer la couverture — "
+                "Mesurer la couverture : "
                 f"{type_equipement_selectionne}"
             )
         )
@@ -10451,7 +10451,7 @@ elif vue_active == "Couverture":
         libelle_detail_equipements = (
             "Afficher le détail des équipements"
             if type_equipement_selectionne == "Tous les types"
-            else f"Afficher le détail — {type_equipement_selectionne}"
+            else f"Afficher le détail : {type_equipement_selectionne}"
         )
 
         afficher_detail_equipements = st.toggle(
