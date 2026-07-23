@@ -10676,7 +10676,7 @@ elif vue_active == "Couverture":
             "ESI concernés par métier"
             if metier_selectionne is None
             else (
-                "ESI concernés par "
+                "ESI concernés par les contrats du métier :  "
                 f"{metier_selectionne}"
             )
         )
