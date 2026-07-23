@@ -6373,7 +6373,7 @@ def afficher_evolution_couverture_esi(
             )
 
             dataframe_download(
-                "Télécharger toutes les données",
+                "Télécharger toutes les données en Excel",
                 historique,
                 "evolution_couverture_esi.xlsx",
                 cle="export_evolution_couverture_esi",
@@ -10553,7 +10553,7 @@ elif vue_active == "Couverture":
             )
 
             dataframe_download(
-                " Exporter le détail",
+                "⬆ Exporter le détail",
                 table_detail_equipements,
                 (
                     "detail_equipements.xlsx"
@@ -10578,29 +10578,27 @@ elif vue_active == "Couverture":
         expanded=False,
     ):
         # =====================================================
-        # MÉTIERS ET ÉQUIPEMENTS
+        # MÉTIERS
         # =====================================================
 
         section(
             "Couverture par métier",
-            # "Tous les métiers présents sur les ESI du périmètre actif.",
         )
 
-        # -----------------------------------------------------
-        # 1. PRÉSENCE DES CONTRATS PAR MÉTIER — PLEINE LARGEUR
-        # -----------------------------------------------------
-        st.markdown(
-            '<div class="vg-mini-title">ESI concernés par métier</div>',
-            unsafe_allow_html=True,
-        )
         total_esi_metiers = int(
-            dedupliquer_esi(df_esi_context)["esi_reference"].nunique()
+            dedupliquer_esi(
+                df_esi_context
+            )["esi_reference"].nunique()
             if (
                 not df_esi_context.empty
-                and "esi_reference" in df_esi_context.columns
+                and "esi_reference"
+                in df_esi_context.columns
             )
             else 0
         )
+
+        # Liste de référence complète :
+        # les métiers restent visibles à 0 dans le périmètre.
         tous_les_metiers = (
             df_contrats["contract_topic"]
             .fillna("Non renseigné")
@@ -10612,25 +10610,113 @@ elif vue_active == "Couverture":
             .tolist()
         )
 
-        presence_metiers = construire_presence_metiers(
-            df_contrats=df_contrats_kpi,
-            total_esi=total_esi_metiers,
-            tous_les_metiers=tous_les_metiers,
-            top_n=10_000,
+        presence_metiers_complete = (
+            construire_presence_metiers(
+                df_contrats=df_contrats_kpi,
+                total_esi=total_esi_metiers,
+                tous_les_metiers=tous_les_metiers,
+                top_n=10_000,
+            )
+        )
+
+        afficher_detail_metier = st.toggle(
+            "Afficher le détail d’un métier",
+            value=False,
+            key="afficher_detail_metier",
+        )
+
+        liste_metiers = (
+            presence_metiers_complete["Métier"]
+            .astype(str)
+            .tolist()
+            if not presence_metiers_complete.empty
+            else []
+        )
+
+        # La valeur est lue avant le graphique.
+        # Ainsi, le choix réalisé plus bas agit sur tout le bloc au rerun.
+        metier_selectionne = None
+
+        if afficher_detail_metier and liste_metiers:
+            metier_session = str(
+                st.session_state.get(
+                    "coverage_drilldown_metier",
+                    liste_metiers[0],
+                )
+                or liste_metiers[0]
+            )
+
+            if metier_session not in liste_metiers:
+                metier_session = liste_metiers[0]
+                st.session_state[
+                    "coverage_drilldown_metier"
+                ] = metier_session
+
+            metier_selectionne = metier_session
+
+        # Quand un métier est sélectionné, le graphique,
+        # les indicateurs et le tableau utilisent ce métier.
+        if metier_selectionne is not None:
+            presence_metiers = (
+                presence_metiers_complete[
+                    presence_metiers_complete[
+                        "Métier"
+                    ].astype(str)
+                    == metier_selectionne
+                ]
+                .copy()
+                .reset_index(drop=True)
+            )
+        else:
+            presence_metiers = (
+                presence_metiers_complete.copy()
+            )
+
+        titre_graphique_metier = (
+            "ESI concernés par métier"
+            if metier_selectionne is None
+            else (
+                "ESI concernés — "
+                f"{metier_selectionne}"
+            )
+        )
+
+        st.markdown(
+            (
+                '<div class="vg-mini-title">'
+                f'{_safe(titre_graphique_metier)}'
+                '</div>'
+            ),
+            unsafe_allow_html=True,
         )
 
         st.caption(
-            f"Base analysée : {fmt_nombre(total_esi_metiers)} ESI. "
-            "Un ESI peut être compté dans plusieurs métiers."
+            f"Base analysée : "
+            f"{fmt_nombre(total_esi_metiers)} ESI. "
+            + (
+                "Un ESI peut être compté dans plusieurs métiers."
+                if metier_selectionne is None
+                else (
+                    "Le graphique et le détail sont filtrés "
+                    f"sur « {metier_selectionne} »."
+                )
+            )
         )
 
         if presence_metiers.empty:
-            st.info("Aucune donnée métier disponible sur le périmètre sélectionné.")
+            st.info(
+                "Aucune donnée métier disponible "
+                "sur le périmètre sélectionné."
+            )
+
         elif go is None:
             st.bar_chart(
-                presence_metiers.set_index("Métier")["Taux"],
+                presence_metiers.set_index(
+                    "Métier"
+                )["Taux"],
                 width="stretch",
             )
+
         else:
             fig_metiers = go.Figure(
                 go.Bar(
@@ -10659,29 +10745,59 @@ elif vue_active == "Couverture":
                             [1.0, "#A83A73"],
                         ],
                         showscale=False,
-                        line=dict(color="#FFFFFF", width=1),
+                        line=dict(
+                            color="#FFFFFF",
+                            width=1,
+                        ),
                     ),
                     hovertemplate=(
                         "<b>%{y}</b><br>"
                         "ESI concernés : %{x:,}<br>"
-                        "Part du périmètre : %{customdata:.1f} %"
+                        "Part du périmètre : "
+                        "%{customdata:.1f} %"
                         "<extra></extra>"
                     ),
                 )
             )
-            hauteur_metiers = max(
-                390,
-                min(620, 35 * len(presence_metiers) + 95),
+
+            hauteur_metiers = (
+                260
+                if metier_selectionne is not None
+                else max(
+                    390,
+                    min(
+                        620,
+                        35 * len(presence_metiers)
+                        + 95,
+                    ),
+                )
             )
-            _layout_plotly(fig_metiers, hauteur_metiers)
+
+            _layout_plotly(
+                fig_metiers,
+                hauteur_metiers,
+            )
+
+            valeur_max_metiers = (
+                int(
+                    presence_metiers[
+                        "ESI"
+                    ].max()
+                )
+                if not presence_metiers.empty
+                else 0
+            )
+
             fig_metiers.update_layout(
                 xaxis=dict(
-                    title="Nombre d’ESI ayant ce métier",
+                    title=(
+                        "Nombre d’ESI ayant ce métier"
+                    ),
                     range=[
                         0,
                         max(
                             int(total_esi_situation),
-                            int(presence_metiers["ESI"].max()) + 500,
+                            valeur_max_metiers + 500,
                         ),
                     ],
                     gridcolor=C_GRID,
@@ -10693,51 +10809,140 @@ elif vue_active == "Couverture":
                     automargin=True,
                     tickfont=dict(size=12),
                 ),
-                margin=dict(l=24, r=135, t=12, b=50),
+                margin=dict(
+                    l=24,
+                    r=135,
+                    t=12,
+                    b=50,
+                ),
                 bargap=0.34,
                 showlegend=False,
             )
+
             st.plotly_chart(
                 fig_metiers,
                 width="stretch",
-                config=config_plotly("presence_contrats_par_metier"),
+                config=config_plotly(
+                    "presence_contrats_par_metier"
+                ),
             )
 
         st.caption(
-            "Lecture : chaque barre répond à la question « Mes contrats pour ce métier couvrent combien d'ESI ?». "
-            "Le pourcentage indique la part correspondante dans le périmètre."
-        )
-
-
-        afficher_detail_metier = st.toggle(
-            "Afficher le détail d’un métier",
-            value=False,
-            key="afficher_detail_metier",
+            "Lecture : chaque barre répond à la question "
+            "« Mes contrats pour ce métier couvrent combien "
+            "d’ESI ? ». Le pourcentage indique la part "
+            "correspondante dans le périmètre."
         )
 
         if afficher_detail_metier:
-            liste_metiers = (
-                presence_metiers["Métier"].astype(str).tolist()
-                if not presence_metiers.empty
-                else []
-            )
-            metier_selectionne = st.selectbox(
-                "Métier",
-                liste_metiers,
-                key="coverage_drilldown_metier",
-            ) if liste_metiers else None
+            if liste_metiers:
+                st.markdown(
+                    """
+                    <div class="vg-equipment-category-bar">
+                        <div class="vg-equipment-category-bar-title">
+                            Explorer un métier
+                        </div>
+                        <div class="vg-equipment-category-bar-help">
+                            Le choix met à jour le graphique,
+                            les indicateurs et le tableau de détail.
+                        </div>
+                    </div>
+                    """,
+                    unsafe_allow_html=True,
+                )
+
+                metier_selectionne = st.selectbox(
+                    "Métier",
+                    liste_metiers,
+                    key="coverage_drilldown_metier",
+                    label_visibility="collapsed",
+                )
+
+            else:
+                metier_selectionne = None
+                st.info(
+                    "Aucun métier disponible "
+                    "dans ce périmètre."
+                )
 
             if metier_selectionne:
-                detail_metier = df_contrats_kpi[
-                    df_contrats_kpi["contract_topic"]
+                serie_metier_detail = (
+                    df_contrats_kpi[
+                        "contract_topic"
+                    ]
                     .fillna("Non renseigné")
                     .astype(str)
                     .str.strip()
-                    == metier_selectionne
-                ].copy()
+                    .replace(
+                        "",
+                        "Non renseigné",
+                    )
+                )
 
-                detail_metier = detail_metier.drop_duplicates(
-                    ["esi_reference", "contract_reference"]
+                detail_metier = (
+                    df_contrats_kpi[
+                        serie_metier_detail
+                        == metier_selectionne
+                    ]
+                    .copy()
+                )
+
+                detail_metier = (
+                    detail_metier
+                    .drop_duplicates(
+                        [
+                            "esi_reference",
+                            "contract_reference",
+                        ]
+                    )
+                )
+
+                nb_esi_metier = (
+                    detail_metier[
+                        "esi_reference"
+                    ].nunique()
+                    if "esi_reference"
+                    in detail_metier.columns
+                    else 0
+                )
+
+                nb_contrats_metier = (
+                    detail_metier[
+                        "contract_reference"
+                    ].nunique()
+                    if "contract_reference"
+                    in detail_metier.columns
+                    else 0
+                )
+
+                taux_metier = (
+                    nb_esi_metier
+                    / total_esi_metiers
+                    * 100
+                    if total_esi_metiers
+                    else 0.0
+                )
+
+                st.markdown(
+                    f"""
+                    <div class="vg-drilldown-summary">
+                        <span class="vg-drilldown-pill">
+                            {_safe(metier_selectionne)}
+                        </span>
+                        <span class="vg-drilldown-pill">
+                            {fmt_nombre(nb_esi_metier)} ESI
+                        </span>
+                        <span class="vg-drilldown-pill">
+                            {fmt_pourcentage(taux_metier)}
+                            du périmètre
+                        </span>
+                        <span class="vg-drilldown-pill">
+                            {fmt_nombre(nb_contrats_metier)}
+                            contrats
+                        </span>
+                    </div>
+                    """,
+                    unsafe_allow_html=True,
                 )
 
                 colonnes_metier = {
@@ -10745,38 +10950,38 @@ elif vue_active == "Couverture":
                     "agence": "Agence",
                     "groupe": "Groupe",
                     "secteur": "Secteur",
-                    "esi_reference": "Référence ESI",
+                    "esi_reference": (
+                        "Référence ESI"
+                    ),
                     "esi_label": "Libellé ESI",
-                    "contract_reference": "Référence contrat",
-                    "contract_label": "Libellé contrat",
+                    "contract_reference": (
+                        "Référence contrat"
+                    ),
+                    "contract_label": (
+                        "Libellé contrat"
+                    ),
                     "contract_status": "Statut",
-                    "third_party_label": "Prestataire",
+                    "third_party_label": (
+                        "Prestataire"
+                    ),
                 }
-                disponibles_metier = [
-                    colonne for colonne in colonnes_metier
-                    if colonne in detail_metier.columns
-                ]
-                table_detail_metier = (
-                    detail_metier[disponibles_metier]
-                    .rename(columns=colonnes_metier)
-                    .copy()
-                )
 
-                st.markdown(
-                    f"""
-                    <div class="vg-drilldown-summary">
-                        <span class="vg-drilldown-pill">
-                            {fmt_nombre(detail_metier["esi_reference"].nunique())} ESI
-                        </span>
-                        <span class="vg-drilldown-pill">
-                            {fmt_nombre(detail_metier["contract_reference"].nunique())} contrats
-                        </span>
-                        <span class="vg-drilldown-pill">
-                            {_safe(metier_selectionne)}
-                        </span>
-                    </div>
-                    """,
-                    unsafe_allow_html=True,
+                disponibles_metier = [
+                    colonne
+                    for colonne
+                    in colonnes_metier
+                    if colonne
+                    in detail_metier.columns
+                ]
+
+                table_detail_metier = (
+                    detail_metier[
+                        disponibles_metier
+                    ]
+                    .rename(
+                        columns=colonnes_metier
+                    )
+                    .copy()
                 )
 
                 st.dataframe(
@@ -10785,10 +10990,22 @@ elif vue_active == "Couverture":
                     hide_index=True,
                     height=420,
                 )
+
+                nom_metier_export = re.sub(
+                    r"[^a-zA-Z0-9_-]+",
+                    "_",
+                    str(
+                        metier_selectionne
+                    ),
+                ).strip("_")
+
                 dataframe_download(
-                    "Télécharger le détail",
+                    "Télécharger le détail en Excel",
                     table_detail_metier,
-                    "detail_metier.xlsx",
+                    (
+                        "detail_metier_"
+                        f"{nom_metier_export}.xlsx"
+                    ),
                     cle="export_detail_metier",
                 )
 
