@@ -7469,6 +7469,9 @@ html, body {
     background: transparent;
     font-family: Arial, Helvetica, sans-serif;
 }
+body {
+    display: none;
+}
 button {
     width: 100%;
     min-height: 46px;
@@ -7484,37 +7487,124 @@ button:active {
     background: #FCE5ED;
 }
 
-        /* Bouton de filtres : téléphone uniquement */
-        .st-key-mobile_filter_trigger {
-            display: none !important;
-        }
+        /* =====================================================
+           MOBILE V5 — SIDEBAR TOTALEMENT MASQUÉE + BOUTON MOBILE
+        ===================================================== */
 
-        @media screen and (max-width: 760px) {
-            .st-key-mobile_filter_trigger {
-                display: block !important;
-                width: 100% !important;
-                max-width: 100% !important;
-                margin: -2px 0 12px 0 !important;
-            }
-
-            .st-key-mobile_filter_trigger iframe {
-                display: block !important;
-                width: 100% !important;
-                max-width: 100% !important;
-                border: 0 !important;
-            }
-        }
-
+        /* Sécurité ordinateur : aucun espace réservé au bouton mobile. */
         @media screen and (min-width: 761px) {
             .st-key-mobile_filter_trigger,
-            .st-key-mobile_filter_trigger iframe {
+            [class*="st-key-mobile_filter_trigger"],
+            div:has(> .st-key-mobile_filter_trigger),
+            div:has(> [class*="st-key-mobile_filter_trigger"]) {
+                display: none !important;
+                visibility: hidden !important;
+                width: 0 !important;
+                height: 0 !important;
+                min-height: 0 !important;
+                max-height: 0 !important;
+                margin: 0 !important;
+                padding: 0 !important;
+                overflow: hidden !important;
+            }
+
+            .st-key-mobile_filter_trigger iframe,
+            [class*="st-key-mobile_filter_trigger"] iframe {
                 display: none !important;
                 width: 0 !important;
                 height: 0 !important;
                 min-height: 0 !important;
+            }
+        }
+
+        @media screen and (max-width: 760px) {
+            /*
+             * La sidebar devient un panneau flottant.
+             * Fermée : elle est entièrement hors écran, sans bande résiduelle.
+             */
+            [data-testid="stSidebar"] {
+                position: fixed !important;
+                z-index: 999999 !important;
+                top: 0 !important;
+                bottom: 0 !important;
+                left: 0 !important;
+                width: min(88vw, 330px) !important;
+                min-width: min(88vw, 330px) !important;
+                max-width: min(88vw, 330px) !important;
+                height: 100dvh !important;
                 margin: 0 !important;
+                background: #FCFAFB !important;
+                box-shadow: 14px 0 34px rgba(23, 36, 58, .18) !important;
+                transition: transform .22s ease !important;
+                overflow-y: auto !important;
+                overflow-x: hidden !important;
+            }
+
+            [data-testid="stSidebar"][aria-expanded="false"] {
+                transform: translateX(-110%) !important;
+                visibility: hidden !important;
+                pointer-events: none !important;
+            }
+
+            [data-testid="stSidebar"][aria-expanded="true"] {
+                transform: translateX(0) !important;
+                visibility: visible !important;
+                pointer-events: auto !important;
+            }
+
+            /*
+             * Certaines versions de Streamlit ne mettent pas aria-expanded
+             * sur la sidebar elle-même. On couvre aussi l'état collapsed.
+             */
+            [data-testid="stSidebar"].st-emotion-cache-1gwvy71,
+            [data-testid="stSidebar"][data-collapsed="true"] {
+                transform: translateX(-110%) !important;
+                visibility: hidden !important;
+                pointer-events: none !important;
+            }
+
+            /* Le contenu principal ne conserve aucune marge de sidebar. */
+            [data-testid="stAppViewContainer"],
+            [data-testid="stMain"],
+            [data-testid="stMainBlockContainer"] {
+                margin-left: 0 !important;
+                padding-left: 0 !important;
+                left: 0 !important;
+                width: 100% !important;
+                max-width: 100% !important;
+            }
+
+            /* Le contrôle natif de sidebar ne doit pas laisser une bande. */
+            [data-testid="stSidebarCollapsedControl"] {
+                position: fixed !important;
+                z-index: 1000000 !important;
+                top: 8px !important;
+                left: 8px !important;
+                margin: 0 !important;
+            }
+
+            /* Le bouton personnalisé reste visible uniquement sur téléphone. */
+            .st-key-mobile_filter_trigger,
+            [class*="st-key-mobile_filter_trigger"] {
+                display: block !important;
+                visibility: visible !important;
+                width: 100% !important;
+                max-width: 100% !important;
+                height: auto !important;
+                min-height: 50px !important;
+                margin: -2px 0 12px 0 !important;
                 padding: 0 !important;
-                overflow: hidden !important;
+                overflow: visible !important;
+            }
+
+            .st-key-mobile_filter_trigger iframe,
+            [class*="st-key-mobile_filter_trigger"] iframe {
+                display: block !important;
+                width: 100% !important;
+                max-width: 100% !important;
+                height: 50px !important;
+                min-height: 50px !important;
+                border: 0 !important;
             }
         }
 
@@ -7522,26 +7612,66 @@ button:active {
 </head>
 <body>
 <button id="open-filters" type="button">☰ Filtres</button>
+
 <script>
-const button = document.getElementById("open-filters");
+(function () {
+    const isMobile = window.parent.innerWidth <= 760;
+    const frame = window.frameElement;
 
-button.addEventListener("click", () => {
-    const doc = window.parent.document;
-    const selectors = [
-        '[data-testid="stSidebarCollapsedControl"] button',
-        '[data-testid="stSidebarCollapsedControl"]',
-        '[data-testid="stSidebarCollapseButton"] button',
-        '[data-testid="stSidebarCollapseButton"]'
-    ];
+    function hideParentContainer() {
+        if (!frame) return;
 
-    for (const selector of selectors) {
-        const target = doc.querySelector(selector);
-        if (target) {
-            target.click();
-            break;
+        frame.style.display = "none";
+        frame.style.height = "0px";
+        frame.style.minHeight = "0px";
+
+        let current = frame.parentElement;
+        for (let i = 0; i < 5 && current; i += 1) {
+            if (
+                current.classList &&
+                Array.from(current.classList).some(
+                    className => className.includes("mobile_filter_trigger")
+                )
+            ) {
+                current.style.display = "none";
+                current.style.height = "0px";
+                current.style.minHeight = "0px";
+                current.style.margin = "0";
+                current.style.padding = "0";
+                break;
+            }
+            current = current.parentElement;
         }
     }
-});
+
+    if (!isMobile) {
+        hideParentContainer();
+        return;
+    }
+
+    document.body.style.display = "block";
+
+    const button = document.getElementById("open-filters");
+
+    button.addEventListener("click", () => {
+        const doc = window.parent.document;
+
+        const selectors = [
+            '[data-testid="stSidebarCollapsedControl"] button',
+            '[data-testid="stSidebarCollapsedControl"]',
+            '[data-testid="stSidebarCollapseButton"] button',
+            '[data-testid="stSidebarCollapseButton"]'
+        ];
+
+        for (const selector of selectors) {
+            const target = doc.querySelector(selector);
+            if (target) {
+                target.click();
+                break;
+            }
+        }
+    });
+})();
 </script>
 </body>
 </html>
