@@ -6991,6 +6991,7 @@ def equipment_types_panel(
                 f'{_safe(fmt_pourcentage(share))} du parc'
             '</div>'
             '</div>'
+            '</div>'
         )
 
     contenu = (
