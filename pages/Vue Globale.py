@@ -10697,8 +10697,8 @@ elif vue_active == "Couverture":
                 "Un ESI peut être compté dans plusieurs métiers."
                 if metier_selectionne is None
                 else (
-                    "Le graphique et le détail sont filtrés "
-                    f"sur « {metier_selectionne} »."
+                    " "
+                
                 )
             )
         )
