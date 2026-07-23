@@ -2329,7 +2329,7 @@ def inject_style():
 
         .vg-equipment-type-row {
             display: grid;
-            grid-template-columns: minmax(145px, .8fr) minmax(0, 2fr) 150px;
+            grid-template-columns: minmax(145px, .8fr) minmax(0, 2fr) 255px;
             align-items: center;
             gap: 11px;
             margin-bottom: 12px;
@@ -4795,27 +4795,45 @@ def construire_presence_metiers(
 
 def construire_repartition_types_equipement(
     df_equipements: pd.DataFrame,
+    statut: str | None = "active",
     top_n: int = 12,
 ) -> pd.DataFrame:
     """
-    Répartition du parc par type d'équipement.
-    Une ligne source = un équipement distinct.
+    Répartition du parc et couverture par type d'équipement.
+
+    Un équipement est compté une seule fois, même s'il possède
+    plusieurs lignes ou plusieurs liens contractuels.
     """
-    colonnes = ["Type d’équipement", "Équipements", "ESI", "Part du parc"]
-    if df_equipements.empty:
+    colonnes = [
+        "Type d’équipement",
+        "Équipements",
+        "Équipements couverts",
+        "Équipements non couverts",
+        "Taux de couverture",
+        "ESI",
+        "Part du parc",
+    ]
+
+    if (
+        df_equipements.empty
+        or "equipment_reference" not in df_equipements.columns
+    ):
         return pd.DataFrame(columns=colonnes)
 
-    colonne_type = None
-    for candidate in [
-        "equipment_type_normalise",
-        "equipment_type",
-        "equipment_asset_type",
-    ]:
-        if candidate in df_equipements.columns:
-            colonne_type = candidate
-            break
+    colonne_type = next(
+        (
+            candidate
+            for candidate in [
+                "equipment_type_normalise",
+                "equipment_type",
+                "equipment_asset_type",
+            ]
+            if candidate in df_equipements.columns
+        ),
+        None,
+    )
 
-    if colonne_type is None or "equipment_reference" not in df_equipements.columns:
+    if colonne_type is None:
         return pd.DataFrame(columns=colonnes)
 
     df = df_equipements.copy()
@@ -4826,32 +4844,100 @@ def construire_repartition_types_equipement(
             .fillna("Non renseigné")
             .astype(str)
             .str.strip()
-            .replace("", "Non renseigné")
+            .replace(
+                {
+                    "": "Non renseigné",
+                    "nan": "Non renseigné",
+                    "None": "Non renseigné",
+                    "<NA>": "Non renseigné",
+                }
+            )
         )
     else:
-        df["Type d’équipement"] = df[colonne_type].map(
-            normaliser_type_equipement
+        df["Type d’équipement"] = (
+            df[colonne_type]
+            .map(normaliser_type_equipement)
+            .fillna("Non renseigné")
         )
 
-    # Un équipement ne doit compter qu'une seule fois, même s'il existe plusieurs liens.
-    agg = {
-        "equipment_reference": "nunique",
+    if statut == "active":
+        couverture = (
+            serie_numerique(df, "equipment_covered_valid") > 0
+        )
+    elif statut == "inactive":
+        couverture = (
+            serie_numerique(df, "nb_contrats_inactifs") > 0
+        )
+    else:
+        couverture = (
+            serie_numerique(df, "equipment_has_contract_link") > 0
+        )
+
+    df["_equipement_couvert"] = couverture.astype(int)
+
+    # Consolidation préalable : une seule ligne par équipement et par type.
+    aggregations_equipement = {
+        "_equipement_couvert": "max",
     }
     if "esi_reference" in df.columns:
-        agg["esi_reference"] = "nunique"
+        aggregations_equipement["esi_reference"] = "first"
+
+    equipements_uniques = (
+        df.groupby(
+            ["Type d’équipement", "equipment_reference"],
+            as_index=False,
+            dropna=False,
+        )
+        .agg(aggregations_equipement)
+    )
+
+    aggregations_type = {
+        "equipment_reference": "nunique",
+        "_equipement_couvert": "sum",
+    }
+    if "esi_reference" in equipements_uniques.columns:
+        aggregations_type["esi_reference"] = "nunique"
 
     resultat = (
-        df.groupby("Type d’équipement", as_index=False)
-        .agg(agg)
+        equipements_uniques
+        .groupby("Type d’équipement", as_index=False)
+        .agg(aggregations_type)
         .rename(
             columns={
                 "equipment_reference": "Équipements",
+                "_equipement_couvert": "Équipements couverts",
                 "esi_reference": "ESI",
             }
         )
     )
+
     if "ESI" not in resultat.columns:
         resultat["ESI"] = 0
+
+    resultat["Équipements"] = (
+        pd.to_numeric(resultat["Équipements"], errors="coerce")
+        .fillna(0)
+        .astype(int)
+    )
+    resultat["Équipements couverts"] = (
+        pd.to_numeric(
+            resultat["Équipements couverts"],
+            errors="coerce",
+        )
+        .fillna(0)
+        .astype(int)
+    )
+    resultat["Équipements non couverts"] = (
+        resultat["Équipements"]
+        - resultat["Équipements couverts"]
+    ).clip(lower=0)
+
+    resultat["Taux de couverture"] = (
+        resultat["Équipements couverts"]
+        .div(resultat["Équipements"].replace(0, pd.NA))
+        .mul(100)
+        .fillna(0.0)
+    )
 
     total = int(resultat["Équipements"].sum())
     resultat["Part du parc"] = (
@@ -4867,15 +4953,35 @@ def construire_repartition_types_equipement(
 
     if len(resultat) > top_n:
         principaux = resultat.head(top_n - 1).copy()
-        autres = resultat.iloc[top_n - 1:]
+        autres = resultat.iloc[top_n - 1:].copy()
+
+        total_autres = int(autres["Équipements"].sum())
+        couverts_autres = int(
+            autres["Équipements couverts"].sum()
+        )
+
         ligne_autres = pd.DataFrame(
             {
                 "Type d’équipement": ["Autres types"],
-                "Équipements": [int(autres["Équipements"].sum())],
+                "Équipements": [total_autres],
+                "Équipements couverts": [couverts_autres],
+                "Équipements non couverts": [
+                    max(total_autres - couverts_autres, 0)
+                ],
+                "Taux de couverture": [
+                    (
+                        couverts_autres / total_autres * 100
+                        if total_autres
+                        else 0.0
+                    )
+                ],
                 "ESI": [int(autres["ESI"].sum())],
-                "Part du parc": [float(autres["Part du parc"].sum())],
+                "Part du parc": [
+                    float(autres["Part du parc"].sum())
+                ],
             }
         )
+
         resultat = pd.concat(
             [principaux, ligne_autres],
             ignore_index=True,
@@ -6802,8 +6908,17 @@ def equipment_types_panel(
         st.info("Aucune donnée de typologie équipement disponible.")
         return
 
-    df = dataframe.sort_values("Équipements", ascending=False).head(maximum).copy()
-    max_value = float(df["Équipements"].max()) if not df.empty else 1.0
+    df = (
+        dataframe
+        .sort_values("Équipements", ascending=False)
+        .head(maximum)
+        .copy()
+    )
+    max_value = (
+        float(df["Équipements"].max())
+        if not df.empty
+        else 1.0
+    )
     colors = [
         "#D7A93C",
         "#67AFCF",
@@ -6815,24 +6930,63 @@ def equipment_types_panel(
     ]
 
     rows = []
-    for index, row in enumerate(df.itertuples(index=False)):
-        label = getattr(row, "_0", None)
-        if label is None:
-            label = row[0]
-        equipment_count = int(getattr(row, "Équipements"))
-        share = float(getattr(row, "_3", row[3]))
-        width = equipment_count / max_value * 100 if max_value else 0
+    for index, (_, row) in enumerate(df.iterrows()):
+        label = str(
+            row.get(
+                "Type d’équipement",
+                "Non renseigné",
+            )
+        )
+        equipment_count = int(
+            pd.to_numeric(
+                row.get("Équipements", 0),
+                errors="coerce",
+            )
+            or 0
+        )
+        covered_count = int(
+            pd.to_numeric(
+                row.get("Équipements couverts", 0),
+                errors="coerce",
+            )
+            or 0
+        )
+        coverage_rate = float(
+            pd.to_numeric(
+                row.get("Taux de couverture", 0.0),
+                errors="coerce",
+            )
+            or 0.0
+        )
+        share = float(
+            pd.to_numeric(
+                row.get("Part du parc", 0.0),
+                errors="coerce",
+            )
+            or 0.0
+        )
+        width = (
+            equipment_count / max_value * 100
+            if max_value
+            else 0
+        )
         color = colors[index % len(colors)]
 
         rows.append(
             '<div class="vg-equipment-type-row">'
-            f'<div class="vg-equipment-type-label" title="{_safe(label)}">{_safe(label)}</div>'
+            f'<div class="vg-equipment-type-label" '
+            f'title="{_safe(label)}">{_safe(label)}</div>'
             '<div class="vg-equipment-type-track">'
             f'<div class="vg-equipment-type-fill" '
-            f'style="--equipment-width:{width:.2f}%;--equipment-bar-color:{color};"></div>'
+            f'style="--equipment-width:{width:.2f}%;'
+            f'--equipment-bar-color:{color};"></div>'
             '</div>'
-            f'<div class="vg-equipment-type-value">'
-            f'{_safe(fmt_nombre(equipment_count))} · {_safe(fmt_pourcentage(share))}'
+            '<div class="vg-equipment-type-value">'
+            f'{_safe(fmt_nombre(covered_count))} / '
+            f'{_safe(fmt_nombre(equipment_count))} couverts · '
+            f'{_safe(fmt_pourcentage(coverage_rate))}'
+            f'<span title="Part du parc"> '
+            f'({ _safe(fmt_pourcentage(share)) } du parc)</span>'
             '</div>'
             '</div>'
         )
@@ -6841,12 +6995,16 @@ def equipment_types_panel(
         '<div class="vg-equipment-types-panel">'
         '<div class="vg-equipment-types-head">'
         '<div>'
-        '<div class="vg-equipment-types-title">Principaux types d’équipements</div>'
+        '<div class="vg-equipment-types-title">'
+        'Principaux types d’équipements'
+        '</div>'
         '<div class="vg-equipment-types-subtitle">'
-        'Les catégories les plus présentes dans le parc analysé.'
+        'Pour chaque type : nombre couvert, total et taux de couverture.'
         '</div>'
         '</div>'
-        f'<div class="vg-equipment-types-total">{_safe(fmt_nombre(total))} équipements</div>'
+        f'<div class="vg-equipment-types-total">'
+        f'{_safe(fmt_nombre(total))} équipements'
+        '</div>'
         '</div>'
         + "".join(rows)
         + '</div>'
@@ -9759,13 +9917,99 @@ elif vue_active == "Couverture":
             # "Comprendre la composition du parc et les équipements encore sans rattachement contractuel.",
         )
 
-        repartition_types = construire_repartition_types_equipement(
-            df_equipements=df_equipements_couverture_kpi,
-            top_n=12,
+        # Base du périmètre issue des filtres globaux.
+        df_equipements_analyse = (
+            df_equipements_couverture_kpi.copy()
         )
-        couverture_equipements = construire_couverture_reelle_equipements(
-            df_equipements=df_equipements_couverture_kpi,
-            statut=statut_selectionne,
+
+        colonne_type_analyse = next(
+            (
+                candidate
+                for candidate in [
+                    "equipment_type_normalise",
+                    "equipment_type",
+                    "equipment_asset_type",
+                ]
+                if candidate in df_equipements_analyse.columns
+            ),
+            None,
+        )
+
+        type_equipement_selectionne = "Tous les types"
+
+        if colonne_type_analyse is not None:
+            if (
+                colonne_type_analyse
+                == "equipment_type_normalise"
+            ):
+                serie_types_analyse = (
+                    df_equipements_analyse[
+                        colonne_type_analyse
+                    ]
+                    .fillna("Non renseigné")
+                    .astype(str)
+                    .str.strip()
+                    .replace(
+                        {
+                            "": "Non renseigné",
+                            "nan": "Non renseigné",
+                            "None": "Non renseigné",
+                            "<NA>": "Non renseigné",
+                        }
+                    )
+                )
+            else:
+                serie_types_analyse = (
+                    df_equipements_analyse[
+                        colonne_type_analyse
+                    ]
+                    .map(normaliser_type_equipement)
+                    .fillna("Non renseigné")
+                )
+
+            types_disponibles_analyse = sorted(
+                serie_types_analyse
+                .drop_duplicates()
+                .tolist()
+            )
+
+            type_equipement_selectionne = st.selectbox(
+                "Type d’équipement à analyser",
+                options=[
+                    "Tous les types",
+                    *types_disponibles_analyse,
+                ],
+                key="filtre_analyse_type_equipement",
+                help=(
+                    "Le choix met à jour l’indicateur de couverture, "
+                    "la composition du parc et le tableau de détail."
+                ),
+            )
+
+            if (
+                type_equipement_selectionne
+                != "Tous les types"
+            ):
+                df_equipements_analyse = (
+                    df_equipements_analyse.loc[
+                        serie_types_analyse
+                        == type_equipement_selectionne
+                    ]
+                    .copy()
+                )
+
+        repartition_types = (
+            construire_repartition_types_equipement(
+                df_equipements=df_equipements_analyse,
+                statut=statut_selectionne,
+                top_n=12,
+            )
+        )
+        couverture_equipements = (
+            construire_couverture_reelle_equipements(
+                df_equipements=df_equipements_analyse,
+                statut=statut_selectionne,
+            )
         )
 
         def valeur_couverture_equipement(
@@ -9850,75 +10094,8 @@ elif vue_active == "Couverture":
         )
 
         if afficher_detail_equipements:
-            detail_equipements = df_equipements_couverture_kpi.copy()
-
-            colonne_type_detail = next(
-                (
-                    candidate
-                    for candidate in [
-                        "equipment_type_normalise",
-                        "equipment_type",
-                        "equipment_asset_type",
-                    ]
-                    if candidate in detail_equipements.columns
-                ),
-                None,
-            )
-
-            if colonne_type_detail is not None:
-                if colonne_type_detail == "equipment_type_normalise":
-                    types_disponibles = (
-                        detail_equipements[colonne_type_detail]
-                        .dropna()
-                        .astype(str)
-                        .str.strip()
-                    )
-                else:
-                    types_disponibles = (
-                        detail_equipements[colonne_type_detail]
-                        .map(normaliser_type_equipement)
-                        .dropna()
-                        .astype(str)
-                        .str.strip()
-                    )
-                types_disponibles = sorted(
-                    [
-                        value
-                        for value in types_disponibles.unique().tolist()
-                        if value
-                        and value not in {
-                            "nan",
-                            "None",
-                            "<NA>",
-                            "Non renseigné",
-                        }
-                    ]
-                )
-
-                type_selectionne = st.selectbox(
-                    "Type d’équipement",
-                    ["Tous les types"] + types_disponibles,
-                    key="filtre_detail_type_equipement",
-                )
-
-                if type_selectionne != "Tous les types":
-                    if colonne_type_detail == "equipment_type_normalise":
-                        masque_type = (
-                            detail_equipements[colonne_type_detail]
-                            .astype(str)
-                            .str.strip()
-                            == type_selectionne
-                        )
-                    else:
-                        masque_type = (
-                            detail_equipements[colonne_type_detail]
-                            .map(normaliser_type_equipement)
-                            == type_selectionne
-                        )
-
-                    detail_equipements = detail_equipements[
-                        masque_type
-                    ].copy()
+            # Le détail reprend exactement le type choisi au-dessus.
+            detail_equipements = df_equipements_analyse.copy()
 
             recherche_equipement = st.text_input(
                 "Rechercher un équipement",
