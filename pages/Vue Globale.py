@@ -10305,7 +10305,16 @@ elif vue_active == "Couverture":
                 key="filtre_analyse_type_equipement",
                 label_visibility="collapsed",
             )
-
+            statut_couverture_selectionne = st.radio(
+                "Filtrer selon la couverture",
+                options=[
+                    "Tous",
+                    "Couverts",
+                    "Non couverts",
+                ],
+                horizontal=True,
+                key="filtre_statut_couverture_equipement",
+            )
             if type_equipement_selectionne != "Tous les types":
                 st.markdown(
                     f"""
@@ -10342,6 +10351,22 @@ elif vue_active == "Couverture":
         if afficher_detail_equipements:
             # Le détail reprend exactement le type choisi au-dessus.
             detail_equipements = df_equipements_analyse.copy()
+
+            if statut_couverture_selectionne == "Couverts":
+                detail_equipements = detail_equipements[
+                    serie_numerique(
+                        detail_equipements,
+                        "equipment_covered_valid",
+                    ) > 0
+                ].copy()
+
+            elif statut_couverture_selectionne == "Non couverts":
+                detail_equipements = detail_equipements[
+                    serie_numerique(
+                        detail_equipements,
+                        "equipment_covered_valid",
+                    ) <= 0
+                ].copy()
 
             recherche_equipement = st.text_input(
                 "Rechercher un équipement",
