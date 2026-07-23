@@ -2347,10 +2347,10 @@ def inject_style():
 
         .vg-equipment-type-row {
             display: grid;
-            grid-template-columns: minmax(145px, .8fr) minmax(0, 2fr) 255px;
+            grid-template-columns: minmax(165px, .9fr) minmax(280px, 2fr) 230px;
             align-items: center;
-            gap: 11px;
-            margin-bottom: 12px;
+            gap: 13px;
+            margin-bottom: 15px;
         }
 
         .vg-equipment-type-row:last-child {
@@ -2361,31 +2361,119 @@ def inject_style():
             overflow: hidden;
             color: var(--text-soft);
             font-size: 10.5px;
-            font-weight: 750;
+            font-weight: 800;
             text-overflow: ellipsis;
             white-space: nowrap;
         }
 
         .vg-equipment-type-track {
+            display: flex;
             overflow: hidden;
-            height: 10px;
+            width: 100%;
+            height: 13px;
             background: #EEF2F4;
             border-radius: 999px;
+            box-shadow: inset 0 0 0 1px rgba(27, 36, 48, .04);
         }
 
-        .vg-equipment-type-fill {
+        .vg-equipment-type-covered {
             height: 100%;
-            width: var(--equipment-width);
-            background: var(--equipment-bar-color);
-            border-radius: 999px;
+            width: var(--covered-width);
+            background: #4F9B88;
+            transition: width .2s ease;
+        }
+
+        .vg-equipment-type-uncovered {
+            height: 100%;
+            width: var(--uncovered-width);
+            background: #F0D6E0;
+            transition: width .2s ease;
         }
 
         .vg-equipment-type-value {
+            min-width: 0;
             color: var(--text-main);
-            font-size: 10.5px;
-            font-weight: 850;
             text-align: right;
             white-space: nowrap;
+        }
+
+        .vg-equipment-type-rate {
+            color: var(--text-main);
+            font-size: 11.5px;
+            font-weight: 900;
+            line-height: 1.2;
+        }
+
+        .vg-equipment-type-detail {
+            margin-top: 3px;
+            color: var(--text-muted);
+            font-size: 9.8px;
+            font-weight: 650;
+            line-height: 1.2;
+        }
+
+        .vg-equipment-types-legend {
+            display: flex;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 13px;
+            margin-top: -4px;
+            margin-bottom: 16px;
+            color: var(--text-soft);
+            font-size: 9.5px;
+            font-weight: 700;
+        }
+
+        .vg-equipment-types-legend-item {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .vg-equipment-types-legend-dot {
+            width: 9px;
+            height: 9px;
+            border-radius: 50%;
+            background: var(--legend-color);
+        }
+
+        .vg-equipment-category-bar {
+            margin: 14px 0 10px 0;
+            padding: 13px 15px 10px 15px;
+            background: #F8FAFC;
+            border: 1px solid #E4E9EE;
+            border-radius: 13px;
+        }
+
+        .vg-equipment-category-bar-title {
+            margin-bottom: 3px;
+            color: var(--text-main);
+            font-size: 11.5px;
+            font-weight: 850;
+        }
+
+        .vg-equipment-category-bar-help {
+            color: var(--text-soft);
+            font-size: 10px;
+            line-height: 1.35;
+        }
+
+        .st-key-filtre_analyse_type_equipement {
+            margin-top: -8px !important;
+            margin-bottom: 8px !important;
+        }
+
+        .st-key-filtre_analyse_type_equipement div[data-baseweb="select"] > div {
+            min-height: 44px !important;
+            background: #FFFFFF !important;
+            border: 1px solid #DCE3E9 !important;
+            border-radius: 11px !important;
+            box-shadow: none !important;
+        }
+
+        .st-key-filtre_analyse_type_equipement div[data-baseweb="select"] > div:focus-within {
+            border-color: #D65A83 !important;
+            box-shadow: 0 0 0 3px rgba(214, 90, 131, .08) !important;
         }
 
         .st-key-export_repartition_types_equipement,
@@ -2425,7 +2513,14 @@ def inject_style():
             }
 
             .vg-equipment-type-row {
-                grid-template-columns: 110px minmax(0, 1fr) 105px;
+                grid-template-columns: 1fr;
+                gap: 7px;
+                padding-bottom: 10px;
+                border-bottom: 1px solid #EEF1F4;
+            }
+
+            .vg-equipment-type-value {
+                text-align: left;
             }
 
             .vg-equipment-ring {
@@ -6922,6 +7017,14 @@ def equipment_types_panel(
     total: int,
     maximum: int = 7,
 ):
+    """
+    Affiche une barre empilée par catégorie :
+
+    vert = équipements couverts
+    rose clair = équipements non couverts
+
+    La longueur totale représente 100 % de la catégorie.
+    """
     if dataframe.empty:
         st.info("Aucune donnée de typologie équipement disponible.")
         return
@@ -6932,105 +7035,129 @@ def equipment_types_panel(
         .head(maximum)
         .copy()
     )
-    max_value = (
-        float(df["Équipements"].max())
-        if not df.empty
-        else 1.0
-    )
-    colors = [
-        "#D7A93C",
-        "#67AFCF",
-        "#E7A1C5",
-        "#9BCFC7",
-        "#F0CF6B",
-        "#B5D9EA",
-        "#B8AEEA",
-    ]
 
     rows = []
-    for index, (_, row) in enumerate(df.iterrows()):
+
+    for _, row in df.iterrows():
         label = str(
             row.get(
                 "Type d’équipement",
                 "Non renseigné",
             )
         )
-        equipment_count = int(
-            pd.to_numeric(
-                row.get("Équipements", 0),
-                errors="coerce",
-            )
-            or 0
+
+        equipment_count_raw = pd.to_numeric(
+            row.get("Équipements", 0),
+            errors="coerce",
         )
-        covered_count = int(
-            pd.to_numeric(
-                row.get("Équipements couverts", 0),
-                errors="coerce",
-            )
-            or 0
+        covered_count_raw = pd.to_numeric(
+            row.get("Équipements couverts", 0),
+            errors="coerce",
         )
-        coverage_rate = float(
-            pd.to_numeric(
-                row.get("Taux de couverture", 0.0),
-                errors="coerce",
-            )
-            or 0.0
+
+        equipment_count = (
+            0
+            if pd.isna(equipment_count_raw)
+            else int(equipment_count_raw)
         )
-        share = float(
-            pd.to_numeric(
-                row.get("Part du parc", 0.0),
-                errors="coerce",
-            )
-            or 0.0
+        covered_count = (
+            0
+            if pd.isna(covered_count_raw)
+            else int(covered_count_raw)
         )
-        width = (
-            equipment_count / max_value * 100
-            if max_value
-            else 0
+
+        covered_count = min(
+            max(covered_count, 0),
+            max(equipment_count, 0),
         )
-        color = colors[index % len(colors)]
+        uncovered_count = max(
+            equipment_count - covered_count,
+            0,
+        )
+
+        coverage_rate = (
+            covered_count / equipment_count * 100
+            if equipment_count
+            else 0.0
+        )
+        uncovered_rate = max(
+            100.0 - coverage_rate,
+            0.0,
+        )
 
         rows.append(
             '<div class="vg-equipment-type-row">'
+
             f'<div class="vg-equipment-type-label" '
-            f'title="{_safe(label)}">{_safe(label)}</div>'
-            '<div class="vg-equipment-type-track">'
-            f'<div class="vg-equipment-type-fill" '
-            f'style="--equipment-width:{width:.2f}%;'
-            f'--equipment-bar-color:{color};"></div>'
+            f'title="{_safe(label)}">'
+            f'{_safe(label)}'
             '</div>'
+
+            '<div class="vg-equipment-type-track" '
+            f'title="{_safe(fmt_nombre(covered_count))} couverts et '
+            f'{_safe(fmt_nombre(uncovered_count))} non couverts">'
+
+            '<div class="vg-equipment-type-covered" '
+            f'style="--covered-width:{coverage_rate:.2f}%;"></div>'
+
+            '<div class="vg-equipment-type-uncovered" '
+            f'style="--uncovered-width:{uncovered_rate:.2f}%;"></div>'
+
+            '</div>'
+
             '<div class="vg-equipment-type-value">'
             '<div class="vg-equipment-type-rate">'
-                f'{_safe(fmt_pourcentage(coverage_rate))} couverts'
+            f'{_safe(fmt_pourcentage(coverage_rate))} couverts'
             '</div>'
             '<div class="vg-equipment-type-detail">'
-                f'{_safe(fmt_nombre(covered_count))} sur '
-                f'{_safe(fmt_nombre(equipment_count))} · '
-                f'{_safe(fmt_pourcentage(share))} du parc'
+            f'{_safe(fmt_nombre(covered_count))} couverts · '
+            f'{_safe(fmt_nombre(uncovered_count))} non couverts · '
+            f'{_safe(fmt_nombre(equipment_count))} au total'
             '</div>'
             '</div>'
+
             '</div>'
         )
 
     contenu = (
         '<div class="vg-equipment-types-panel">'
+
         '<div class="vg-equipment-types-head">'
         '<div>'
         '<div class="vg-equipment-types-title">'
-        'Principaux types d’équipements'
+        'Couverture par type d’équipement'
         '</div>'
         '<div class="vg-equipment-types-subtitle">'
-        'Pour chaque type : nombre couvert, total et taux de couverture.'
+        'La barre montre directement la part couverte et la part non couverte '
+        'dans chaque catégorie.'
         '</div>'
         '</div>'
         f'<div class="vg-equipment-types-total">'
         f'{_safe(fmt_nombre(total))} équipements'
         '</div>'
         '</div>'
+
+        '<div class="vg-equipment-types-legend">'
+        '<div class="vg-equipment-types-legend-item">'
+        '<span class="vg-equipment-types-legend-dot" '
+        'style="--legend-color:#4F9B88;"></span>'
+        'Couverts'
+        '</div>'
+        '<div class="vg-equipment-types-legend-item">'
+        '<span class="vg-equipment-types-legend-dot" '
+        'style="--legend-color:#F0D6E0;"></span>'
+        'Non couverts'
+        '</div>'
+        '</div>'
+
         + "".join(rows)
         + '</div>'
     )
-    st.markdown(contenu, unsafe_allow_html=True)
+
+    st.markdown(
+        contenu,
+        unsafe_allow_html=True,
+    )
 
 
 
@@ -9957,6 +10084,11 @@ elif vue_active == "Couverture":
         )
 
         type_equipement_selectionne = "Tous les types"
+        types_disponibles_analyse = []
+        serie_types_analyse = pd.Series(
+            index=df_equipements_analyse.index,
+            dtype="string",
+        )
 
         if colonne_type_analyse is not None:
             if (
@@ -9986,6 +10118,16 @@ elif vue_active == "Couverture":
                     ]
                     .map(normaliser_type_equipement)
                     .fillna("Non renseigné")
+                    .astype(str)
+                    .str.strip()
+                    .replace(
+                        {
+                            "": "Non renseigné",
+                            "nan": "Non renseigné",
+                            "None": "Non renseigné",
+                            "<NA>": "Non renseigné",
+                        }
+                    )
                 )
 
             types_disponibles_analyse = sorted(
@@ -9994,18 +10136,27 @@ elif vue_active == "Couverture":
                 .tolist()
             )
 
-            type_equipement_selectionne = st.selectbox(
-                "Type d’équipement à analyser",
-                options=[
+            options_types_analyse = [
+                "Tous les types",
+                *types_disponibles_analyse,
+            ]
+
+            type_equipement_selectionne = str(
+                st.session_state.get(
+                    "filtre_analyse_type_equipement",
                     "Tous les types",
-                    *types_disponibles_analyse,
-                ],
-                key="filtre_analyse_type_equipement",
-                help=(
-                    "Le choix met à jour l’indicateur de couverture, "
-                    "la composition du parc et le tableau de détail."
-                ),
+                )
+                or "Tous les types"
             )
+
+            if (
+                type_equipement_selectionne
+                not in options_types_analyse
+            ):
+                type_equipement_selectionne = "Tous les types"
+                st.session_state[
+                    "filtre_analyse_type_equipement"
+                ] = "Tous les types"
 
             if (
                 type_equipement_selectionne
@@ -10083,9 +10234,18 @@ elif vue_active == "Couverture":
             else "au moins un contrat actif ou inactif"
         )
 
+        titre_couverture_equipement = (
+            "Mesurer la couverture du parc"
+            if type_equipement_selectionne == "Tous les types"
+            else (
+                "Mesurer la couverture — "
+                f"{type_equipement_selectionne}"
+            )
+        )
+
         step_header(
             1,
-            "Mesurer la couverture du parc",
+            titre_couverture_equipement,
             " ",
         )
 
@@ -10108,6 +10268,33 @@ elif vue_active == "Couverture":
             total=total_equipements_couverture,
             maximum=7,
         )
+
+        if colonne_type_analyse is not None:
+            st.markdown(
+                """
+                <div class="vg-equipment-category-bar">
+                    <div class="vg-equipment-category-bar-title">
+                        Catégorie analysée
+                    </div>
+                    <div class="vg-equipment-category-bar-help">
+                        Choisissez une catégorie : l’indicateur, le graphique
+                        et le tableau de détail seront automatiquement recalculés.
+                    </div>
+                </div>
+                """,
+                unsafe_allow_html=True,
+            )
+
+            st.selectbox(
+                "Catégorie d’équipement",
+                options=[
+                    "Tous les types",
+                    *types_disponibles_analyse,
+                ],
+                key="filtre_analyse_type_equipement",
+                label_visibility="collapsed",
+            )
+
         afficher_detail_equipements = st.toggle(
             "Afficher le détail des équipements",
             value=False,
@@ -10143,7 +10330,19 @@ elif vue_active == "Couverture":
             dataframe_download(
                 "⬆ Exporter le détail",
                 table_detail_equipements,
-                "detail_equipements.xlsx",
+                (
+                    "detail_equipements.xlsx"
+                    if type_equipement_selectionne == "Tous les types"
+                    else (
+                        "detail_equipements_"
+                        + re.sub(
+                            r"[^a-zA-Z0-9_-]+",
+                            "_",
+                            type_equipement_selectionne,
+                        ).strip("_")
+                        + ".xlsx"
+                    )
+                ),
                 cle="export_detail_equipements",
             )
 
