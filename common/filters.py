@@ -83,7 +83,7 @@ def inject_filters_style():
             color: {C_3F_NAVY};
             font-size: 25px;
             line-height: 1.1;
-            font-weight: 600;
+            font-weight: 800;
             letter-spacing: -0.4px;
             margin-bottom: 8px;
         }}
@@ -569,7 +569,7 @@ def inject_filters_style():
         .filters-header {
             margin-top: 0 !important;
             margin-bottom: 18px !important;
-            min-height: 178px !important;
+            min-height: 160px !important;
             box-sizing: border-box !important;
 
             display: flex !important;
