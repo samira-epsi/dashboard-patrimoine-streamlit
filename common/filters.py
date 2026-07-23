@@ -83,7 +83,7 @@ def inject_filters_style():
             color: {C_3F_NAVY};
             font-size: 25px;
             line-height: 1.1;
-            font-weight: 800;
+            font-weight: 600;
             letter-spacing: -0.4px;
             margin-bottom: 8px;
         }}
