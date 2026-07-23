@@ -569,7 +569,7 @@ def inject_filters_style():
         .filters-header {
             margin-top: 0 !important;
             margin-bottom: 18px !important;
-            min-height: 150px !important;
+            min-height: 140px !important;
             box-sizing: border-box !important;
 
             display: flex !important;
