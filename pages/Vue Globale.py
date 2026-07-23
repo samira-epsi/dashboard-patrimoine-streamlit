@@ -97,6 +97,12 @@ def format_nombre(value) -> str:
 def effacer_recherche_contrat():
     st.session_state["global_search_contract"] = ""
 
+
+def effacer_recherche_equipement():
+    """Vide uniquement la recherche du tableau des équipements."""
+    st.session_state["recherche_detail_equipement"] = ""
+
+
 def ouvrir_onglet_alertes():
     st.session_state["dashboard_vue_active"] = "Alertes"
 
@@ -2479,6 +2485,83 @@ def inject_style():
         .st-key-filtre_analyse_type_equipement div[data-baseweb="select"] > div:focus-within {
             border-color: #D65A83 !important;
             box-shadow: 0 0 0 3px rgba(214, 90, 131, .08) !important;
+        }
+
+        /* Filtres présents uniquement dans le détail équipements */
+        .st-key-filtre_statut_couverture_equipement {
+            margin: 4px 0 12px 0 !important;
+        }
+
+        .st-key-filtre_statut_couverture_equipement div[role="radiogroup"] {
+            display: inline-flex !important;
+            gap: 5px !important;
+            padding: 5px !important;
+            background: #F5F6F8 !important;
+            border: 1px solid #E2E6EA !important;
+            border-radius: 12px !important;
+        }
+
+        .st-key-filtre_statut_couverture_equipement div[role="radiogroup"] label {
+            min-height: 38px !important;
+            padding: 7px 13px !important;
+            color: var(--text-soft) !important;
+            background: #FFFFFF !important;
+            border: 1px solid transparent !important;
+            border-radius: 9px !important;
+            font-size: 11px !important;
+            font-weight: 750 !important;
+        }
+
+        .st-key-filtre_statut_couverture_equipement div[role="radiogroup"] label:has(input:checked) {
+            color: #FFFFFF !important;
+            background: #4F9B88 !important;
+            border-color: #4F9B88 !important;
+        }
+
+        .st-key-filtre_statut_couverture_equipement div[role="radiogroup"] label:has(input:checked) * {
+            color: #FFFFFF !important;
+        }
+
+        .st-key-filtre_statut_couverture_equipement div[role="radiogroup"] label input[type="radio"],
+        .st-key-filtre_statut_couverture_equipement div[role="radiogroup"] label div[data-baseweb="radio"] > div:first-child {
+            display: none !important;
+        }
+
+        .st-key-effacer_recherche_equipement button {
+            min-height: 44px !important;
+            height: 44px !important;
+            width: 44px !important;
+            padding: 0 !important;
+            margin-top: 29px !important;
+            color: #A3184A !important;
+            background: #FFF7FA !important;
+            border: 1px solid #E7C8D6 !important;
+            border-radius: 11px !important;
+            font-size: 16px !important;
+            font-weight: 900 !important;
+        }
+
+        .st-key-effacer_recherche_equipement button:hover {
+            color: #FFFFFF !important;
+            background: var(--3f-red) !important;
+            border-color: var(--3f-red) !important;
+        }
+
+        @media screen and (max-width: 900px) {
+            .st-key-filtre_statut_couverture_equipement div[role="radiogroup"] {
+                display: flex !important;
+                width: 100% !important;
+            }
+
+            .st-key-filtre_statut_couverture_equipement div[role="radiogroup"] label {
+                flex: 1 1 0 !important;
+                justify-content: center !important;
+            }
+
+            .st-key-effacer_recherche_equipement button {
+                margin-top: 0 !important;
+                width: 100% !important;
+            }
         }
 
         .st-key-export_repartition_types_equipement,
@@ -10305,16 +10388,6 @@ elif vue_active == "Couverture":
                 key="filtre_analyse_type_equipement",
                 label_visibility="collapsed",
             )
-            statut_couverture_selectionne = st.radio(
-                "Filtrer selon la couverture",
-                options=[
-                    "Tous",
-                    "Couverts",
-                    "Non couverts",
-                ],
-                horizontal=True,
-                key="filtre_statut_couverture_equipement",
-            )
             if type_equipement_selectionne != "Tous les types":
                 st.markdown(
                     f"""
@@ -10349,32 +10422,102 @@ elif vue_active == "Couverture":
         )
 
         if afficher_detail_equipements:
-            # Le détail reprend exactement le type choisi au-dessus.
+            # Le détail reprend la catégorie choisie au-dessus.
             detail_equipements = df_equipements_analyse.copy()
 
-            if statut_couverture_selectionne == "Couverts":
-                detail_equipements = detail_equipements[
+            st.markdown(
+                '<div class="vg-mini-title">Filtrer le détail</div>',
+                unsafe_allow_html=True,
+            )
+
+            statut_couverture_selectionne = st.radio(
+                "État de couverture",
+                options=[
+                    "Tous",
+                    "Couverts",
+                    "Non couverts",
+                ],
+                horizontal=True,
+                key="filtre_statut_couverture_equipement",
+                label_visibility="collapsed",
+            )
+
+            # Le sens de « couvert » suit le statut contractuel global.
+            if statut_selectionne == "active":
+                masque_couverture_detail = (
                     serie_numerique(
                         detail_equipements,
                         "equipment_covered_valid",
                     ) > 0
+                )
+            elif statut_selectionne == "inactive":
+                masque_couverture_detail = (
+                    serie_numerique(
+                        detail_equipements,
+                        "nb_contrats_inactifs",
+                    ) > 0
+                )
+            else:
+                masque_couverture_detail = (
+                    serie_numerique(
+                        detail_equipements,
+                        "equipment_has_contract_link",
+                    ) > 0
+                )
+
+            if statut_couverture_selectionne == "Couverts":
+                detail_equipements = detail_equipements[
+                    masque_couverture_detail
                 ].copy()
 
             elif statut_couverture_selectionne == "Non couverts":
                 detail_equipements = detail_equipements[
-                    serie_numerique(
-                        detail_equipements,
-                        "equipment_covered_valid",
-                    ) <= 0
+                    ~masque_couverture_detail
                 ].copy()
 
-            recherche_equipement = st.text_input(
-                "Rechercher un équipement",
-                placeholder="Référence, type, ESI, société, agence...",
-                key="recherche_detail_equipement",
-            )
+            recherche_active_equipement = str(
+                st.session_state.get(
+                    "recherche_detail_equipement",
+                    "",
+                )
+                or ""
+            ).strip()
 
-            if recherche_equipement.strip():
+            if recherche_active_equipement:
+                colonne_recherche, colonne_effacer = st.columns(
+                    [0.965, 0.035],
+                    gap="small",
+                )
+            else:
+                colonne_recherche = st.container()
+                colonne_effacer = None
+
+            with colonne_recherche:
+                recherche_equipement = st.text_input(
+                    "Rechercher un équipement",
+                    placeholder=(
+                        "Référence, type, ESI, société, agence..."
+                    ),
+                    key="recherche_detail_equipement",
+                )
+
+            if (
+                colonne_effacer is not None
+                and recherche_active_equipement
+            ):
+                with colonne_effacer:
+                    st.button(
+                        "✕",
+                        key="effacer_recherche_equipement",
+                        help="Effacer la recherche",
+                        on_click=effacer_recherche_equipement,
+                    )
+
+            recherche_equipement = str(
+                recherche_equipement or ""
+            ).strip()
+
+            if recherche_equipement:
                 detail_equipements = filtrer_table_recherche(
                     detail_equipements,
                     recherche_equipement,
@@ -10384,12 +10527,31 @@ elif vue_active == "Couverture":
                 detail_equipements
             )
 
+            nb_resultats_detail = len(
+                table_detail_equipements
+            )
+
+            libelle_statut_detail = {
+                "Tous": "tous les états",
+                "Couverts": "couverts",
+                "Non couverts": "non couverts",
+            }.get(
+                statut_couverture_selectionne,
+                "tous les états",
+            )
+
+            st.caption(
+                f"{fmt_nombre(nb_resultats_detail)} équipement(s) "
+                f"{libelle_statut_detail} affiché(s)."
+            )
+
             st.dataframe(
                 table_detail_equipements,
                 width="stretch",
                 hide_index=True,
                 height=430,
             )
+
             dataframe_download(
                 "⬆ Exporter le détail",
                 table_detail_equipements,
@@ -10408,6 +10570,7 @@ elif vue_active == "Couverture":
                 ),
                 cle="export_detail_equipements",
             )
+
 
 
     with st.expander(
