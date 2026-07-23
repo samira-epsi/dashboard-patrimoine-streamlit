@@ -10553,7 +10553,7 @@ elif vue_active == "Couverture":
             )
 
             dataframe_download(
-                "⬆ Exporter le détail",
+                " Exporter le détail",
                 table_detail_equipements,
                 (
                     "detail_equipements.xlsx"
