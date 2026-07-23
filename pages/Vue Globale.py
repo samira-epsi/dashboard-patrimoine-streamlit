@@ -146,7 +146,7 @@ def inject_style():
             position: relative;
             overflow: hidden;
             padding: 28px 34px !important;
-            margin: 60px 0 14px 0 !important;
+            margin: 55px 0 14px 0 !important;
             background: var(--3f-pink-soft) !important;
             border: 1px solid #E8D8E1 !important;
             border-radius: 20px !important;
