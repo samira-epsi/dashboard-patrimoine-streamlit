@@ -11184,7 +11184,19 @@ elif vue_active == "Alertes":
         df_prestations=df_prestations,
         df_contrats_rattaches=df_contrats,
     )
-
+    # Garder uniquement les contrats actifs
+    if (
+        not contrats_source_alertes.empty
+        and "contract_status" in contrats_source_alertes.columns
+    ):
+        contrats_source_alertes = contrats_source_alertes[
+            contrats_source_alertes["contract_status"]
+            .fillna("")
+            .astype(str)
+            .str.lower()
+            .str.strip()
+            .eq("active")
+        ].copy()
     if (
         not contrats_source_alertes.empty
         and "esi_reference" in contrats_source_alertes.columns
