@@ -11212,11 +11212,98 @@ elif vue_active == "Alertes":
         alertes_contrats_sans_rattachement = pd.DataFrame()
 
     # -------------------------------------------------
-    # 5. PLUSIEURS CONTRATS SUR LE MÊME MÉTIER
+    # 5. PLUSIEURS CONTRATS ACTIFS SUR LE MÊME MÉTIER
     # -------------------------------------------------
-    alertes_multi_metier = df_esi_context[
-        serie_numerique(df_esi_context, "esi_multi_meme_metier") > 0
-    ].copy()
+    # La table ESI indique seulement qu'un cas de multi-contrats existe.
+    # Le détail ESI x métier est donc reconstruit depuis les contrats afin
+    # d'afficher le métier, le nombre de contrats et leurs références.
+    colonnes_multi_requises = {
+        "esi_reference",
+        "contract_reference",
+        "contract_topic",
+        "contract_status_clean",
+    }
+
+    if (
+        not df_contrats_filtre.empty
+        and colonnes_multi_requises.issubset(df_contrats_filtre.columns)
+    ):
+        contrats_multi_source = df_contrats_filtre[
+            df_contrats_filtre["esi_reference"].notna()
+            & df_contrats_filtre["contract_reference"].notna()
+            & df_contrats_filtre["contract_topic"].notna()
+            & df_contrats_filtre["contract_status_clean"].eq("active")
+        ].copy()
+
+        contrats_multi_source["contract_topic"] = (
+            contrats_multi_source["contract_topic"]
+            .astype(str)
+            .str.strip()
+        )
+
+        contrats_multi_source = contrats_multi_source[
+            ~contrats_multi_source["contract_topic"].isin(
+                ["", "nan", "None", "<NA>", "Non renseigné"]
+            )
+        ].copy()
+
+        # Une seule ligne par ESI, métier et contrat actif.
+        contrats_multi_source = contrats_multi_source.drop_duplicates(
+            subset=[
+                "esi_reference",
+                "contract_topic",
+                "contract_reference",
+            ]
+        )
+
+        alertes_multi_metier = (
+            contrats_multi_source
+            .groupby(
+                ["esi_reference", "contract_topic"],
+                as_index=False,
+            )
+            .agg(
+                nb_contrats_multi=("contract_reference", "nunique"),
+                references_contrats=(
+                    "contract_reference",
+                    lambda valeurs: " | ".join(
+                        sorted(set(valeurs.astype(str)))
+                    ),
+                ),
+            )
+        )
+
+        alertes_multi_metier = alertes_multi_metier[
+            alertes_multi_metier["nb_contrats_multi"] >= 2
+        ].copy()
+
+        # Ajouter les informations patrimoniales de l'ESI.
+        colonnes_identite_esi = [
+            colonne
+            for colonne in [
+                "esi_reference",
+                "esi_label",
+                "societe",
+                "agence",
+                "groupe",
+                "secteur",
+            ]
+            if colonne in df_esi_context.columns
+        ]
+
+        if "esi_reference" in colonnes_identite_esi:
+            identite_esi = (
+                df_esi_context[colonnes_identite_esi]
+                .drop_duplicates(subset=["esi_reference"])
+            )
+
+            alertes_multi_metier = alertes_multi_metier.merge(
+                identite_esi,
+                on="esi_reference",
+                how="left",
+            )
+    else:
+        alertes_multi_metier = pd.DataFrame()
 
     nb_contrats_expires = int(
         alertes_contrats_expires["contract_reference"].nunique()
@@ -11553,34 +11640,94 @@ elif vue_active == "Alertes":
         detail_color = "#D06B2C"
 
     else:
-        table_alerte = preparer_esi_table(
-            alertes_multi_metier
+        # Le sélecteur permet d'isoler rapidement un métier.
+        if (
+            not alertes_multi_metier.empty
+            and "contract_topic" in alertes_multi_metier.columns
+        ):
+            metiers_multi = sorted(
+                alertes_multi_metier["contract_topic"]
+                .dropna()
+                .astype(str)
+                .unique()
+                .tolist()
+            )
+        else:
+            metiers_multi = []
+
+        metier_multi_selectionne = st.selectbox(
+            "Filtrer les multi-contrats par métier",
+            ["Tous les métiers"] + metiers_multi,
+            key="alertes_filtre_metier_multi",
         )
 
-        # Colonnes inutiles uniquement dans le détail Multi-contrats
-        table_alerte = table_alerte.drop(
-            columns=[
-                "ESI couvert",
-                "Multi même métier",
-            ],
-            errors="ignore",
+        if metier_multi_selectionne == "Tous les métiers":
+            detail_multi = alertes_multi_metier.copy()
+        else:
+            detail_multi = alertes_multi_metier[
+                alertes_multi_metier["contract_topic"]
+                == metier_multi_selectionne
+            ].copy()
+
+        colonnes_multi = {
+            "esi_reference": "Référence ESI",
+            "esi_label": "Libellé ESI",
+            "contract_topic": "Métier",
+            "nb_contrats_multi": "Nombre de contrats actifs",
+            "references_contrats": "Références des contrats",
+            "societe": "Société",
+            "agence": "Agence",
+            "groupe": "Groupe",
+            "secteur": "Secteur",
+        }
+
+        colonnes_multi_disponibles = [
+            colonne
+            for colonne in colonnes_multi
+            if colonne in detail_multi.columns
+        ]
+
+        table_alerte = (
+            detail_multi[colonnes_multi_disponibles]
+            .rename(columns=colonnes_multi)
+            .copy()
+        )
+
+        colonnes_tri_multi = [
+            colonne
+            for colonne in ["Nombre de contrats actifs", "Métier", "Référence ESI"]
+            if colonne in table_alerte.columns
+        ]
+
+        if colonnes_tri_multi:
+            table_alerte = table_alerte.sort_values(
+                colonnes_tri_multi,
+                ascending=[False] + [True] * (len(colonnes_tri_multi) - 1),
+            ).reset_index(drop=True)
+
+        nb_esi_multi_filtres = int(
+            detail_multi["esi_reference"].nunique()
+            if (
+                not detail_multi.empty
+                and "esi_reference" in detail_multi.columns
+            )
+            else 0
         )
 
         nom_export = "esi_multi_contrats_meme_metier.xlsx"
 
         message_vide = (
-            "Aucun ESI avec plusieurs contrats sur le même métier."
+            "Aucun ESI avec plusieurs contrats actifs pour ce métier."
         )
 
         detail_title = (
-            f"{fmt_nombre(nb_esi_multi_metier)} ESI présentent "
-            "plusieurs contrats sur un même métier"
+            f"{fmt_nombre(nb_esi_multi_filtres)} ESI présentent "
+            "plusieurs contrats actifs sur un même métier"
         )
 
         detail_message = (
-            "Ces situations ne sont pas automatiquement anormales. "
-            "Elles doivent être contrôlées pour identifier les chevauchements "
-            "réels et les cas métier légitimes."
+            "Sélectionnez un métier pour afficher les ESI concernés, "
+            "le nombre de contrats actifs et leurs références."
         )
 
         detail_color = C_NAVY
