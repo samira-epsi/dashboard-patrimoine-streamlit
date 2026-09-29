@@ -7,6 +7,14 @@ from zoneinfo import ZoneInfo
 
 import pandas as pd
 import streamlit as st
+
+# Réduit fortement les copies mémoire de DataFrames lors des filtres.
+# Disponible sur les versions récentes de pandas ; sans impact fonctionnel
+# sur les calculs du dashboard.
+try:
+    pd.options.mode.copy_on_write = True
+except Exception:
+    pass
 from sqlalchemy import create_engine, text
 from sqlalchemy.exc import SQLAlchemyError
 
@@ -4090,7 +4098,13 @@ def graduations_periodes(evolution: pd.DataFrame, maximum: int = 6):
 
 
 def nettoyer_df(df: pd.DataFrame) -> pd.DataFrame:
-    df = df.copy()
+    """Nettoie les colonnes utiles sans dupliquer profondément tout le DataFrame."""
+    if df is None or df.empty:
+        return df
+
+    # Avec Copy-on-Write, cette copie est légère : les blocs mémoire ne sont
+    # réellement copiés que lorsqu'une colonne est modifiée.
+    df = df.copy(deep=False)
 
     ref_cols = [
         "esi_reference",
@@ -4287,27 +4301,21 @@ def normaliser_type_equipement(value) -> str:
 
 def normaliser_equipements(df: pd.DataFrame) -> pd.DataFrame:
     """
-    Ajoute une colonne unique `equipment_type_normalise`.
-
-    Priorité :
-    1. equipment_type, car c'est le type métier ;
-    2. equipment_asset_type seulement en repli.
-
-    Les colonnes sources sont conservées intactes.
+    Ajoute une colonne unique `equipment_type_normalise` en limitant
+    les copies mémoire.
     """
-    if df.empty:
-        return df.copy()
+    if df is None or df.empty:
+        return df
 
     df = nettoyer_df(df)
 
     if "equipment_type" in df.columns:
-        source_type = df["equipment_type"].copy()
+        source_type = df["equipment_type"]
     else:
-        source_type = pd.Series(pd.NA, index=df.index, dtype="object")
+        source_type = pd.Series(pd.NA, index=df.index, dtype="string")
 
     if "equipment_asset_type" in df.columns:
-        asset_type = df["equipment_asset_type"].copy()
-
+        asset_type = df["equipment_asset_type"]
         source_vide = (
             source_type.isna()
             | source_type.astype(str).str.strip().isin(
@@ -4316,15 +4324,15 @@ def normaliser_equipements(df: pd.DataFrame) -> pd.DataFrame:
         )
         source_type = source_type.where(~source_vide, asset_type)
 
-    df["equipment_type_normalise"] = source_type.map(
-        normaliser_type_equipement
-    )
-
+    df["equipment_type_normalise"] = source_type.map(normaliser_type_equipement)
     return df
 
 
-
 def normaliser_contrats(df: pd.DataFrame) -> pd.DataFrame:
+    # Même avec 0 ligne, on garantit le schéma attendu par le dashboard.
+    if df is None:
+        df = pd.DataFrame()
+
     df = nettoyer_df(df)
 
     if "contract_status" not in df.columns:
@@ -4341,16 +4349,17 @@ def normaliser_contrats(df: pd.DataFrame) -> pd.DataFrame:
     for col in ["contract_start_date", "contract_end_date"]:
         if col not in df.columns:
             df[col] = pd.NaT
-        df[col] = pd.to_datetime(df[col], errors="coerce")
+        elif not pd.api.types.is_datetime64_any_dtype(df[col]):
+            df[col] = pd.to_datetime(df[col], errors="coerce")
 
     return df
 
 
 def normaliser_prestations(df: pd.DataFrame) -> pd.DataFrame:
-    if df.empty:
-        return df.copy()
+    if df is None or df.empty:
+        return df
 
-    df = df.copy()
+    df = df.copy(deep=False)
 
     ref_cols = [
         "contract_reference_3f",
@@ -4446,9 +4455,12 @@ def normaliser_prestations(df: pd.DataFrame) -> pd.DataFrame:
 
 
 def normaliser_creations(df: pd.DataFrame) -> pd.DataFrame:
+    if df is None or df.empty:
+        return df
     df = nettoyer_df(df)
     if "creation_date" in df.columns:
-        df["creation_date"] = pd.to_datetime(df["creation_date"], errors="coerce")
+        if not pd.api.types.is_datetime64_any_dtype(df["creation_date"]):
+            df["creation_date"] = pd.to_datetime(df["creation_date"], errors="coerce")
     else:
         df["creation_date"] = pd.NaT
     return df
@@ -4671,18 +4683,26 @@ def afficher_filtre_statut_contrat():
 
 
 def filtrer_contrats_par_statut(df_contrats: pd.DataFrame, statut):
-    df = normaliser_contrats(df_contrats)
+    """Filtre un DataFrame déjà normalisé, sans le renormaliser à chaque rerun."""
+    if df_contrats is None or df_contrats.empty:
+        return df_contrats
+
+    df = df_contrats
+
+    # Sécurité si la fonction reçoit exceptionnellement une source non normalisée.
+    if "contract_status_clean" not in df.columns:
+        df = normaliser_contrats(df)
 
     if statut is None:
-        return df.copy()
+        return df
 
     if statut == "active":
-        return df[df["contract_status_clean"] == "active"].copy()
+        return df.loc[df["contract_status_clean"].eq("active")]
 
     if statut == "inactive":
-        return df[df["contract_status_clean"] != "active"].copy()
+        return df.loc[~df["contract_status_clean"].eq("active")]
 
-    return df.copy()
+    return df
 
 
 def filtrer_esi_depuis_contrats(
@@ -4691,16 +4711,16 @@ def filtrer_esi_depuis_contrats(
     appliquer_filtre_contrat: bool,
 ):
     if not appliquer_filtre_contrat:
-        return df_esi.copy()
+        return df_esi
 
-    if df_contrats.empty:
-        return df_esi.iloc[0:0].copy()
+    if df_contrats is None or df_contrats.empty:
+        return df_esi.iloc[0:0]
 
-    refs = liste_refs_valides(df_contrats, "esi_reference")
+    refs = set(liste_refs_valides(df_contrats, "esi_reference"))
     if not refs:
-        return df_esi.iloc[0:0].copy()
+        return df_esi.iloc[0:0]
 
-    return df_esi[df_esi["esi_reference"].isin(refs)].copy()
+    return df_esi.loc[df_esi["esi_reference"].isin(refs)]
 
 
 def filtrer_prestations_depuis_contrats(
@@ -4709,23 +4729,21 @@ def filtrer_prestations_depuis_contrats(
     perimetre_filtre_actif: bool,
     statut_selectionne,
 ) -> pd.DataFrame:
-    if df_prestations.empty:
-        return df_prestations.copy()
+    if df_prestations is None or df_prestations.empty:
+        return df_prestations
 
-    df = df_prestations.copy()
+    df = df_prestations
 
     if perimetre_filtre_actif:
         refs = set(liste_refs_valides(df_contrats_kpi, "contract_reference"))
-        if not refs:
-            return df.iloc[0:0].copy()
-        if "contract_reference_3f" not in df.columns:
-            return df.iloc[0:0].copy()
-        df = df[df["contract_reference_3f"].isin(refs)].copy()
+        if not refs or "contract_reference_3f" not in df.columns:
+            return df.iloc[0:0]
+        df = df.loc[df["contract_reference_3f"].isin(refs)]
 
     if statut_selectionne == "active":
-        df = df[df["contract_status_clean"] == "active"].copy()
+        df = df.loc[df["contract_status_clean"].eq("active")]
     elif statut_selectionne == "inactive":
-        df = df[df["contract_status_clean"] != "active"].copy()
+        df = df.loc[~df["contract_status_clean"].eq("active")]
 
     return df
 
@@ -4740,17 +4758,40 @@ def construire_contrats_uniques_source(
     La source prestations contient les 576 contrats. Les données de rattachement
     sont utilisées uniquement en complément lorsqu'elles existent, sans créer
     artificiellement de rattachement pour les 9 contrats non rattachés.
+
+    Important : même lorsqu'aucun contrat ne correspond au périmètre filtré,
+    le DataFrame retourné conserve les colonnes attendues par le dashboard.
     """
-    if df_prestations.empty:
-        return (
-            df_contrats_rattaches.drop_duplicates("contract_reference").copy()
-            if not df_contrats_rattaches.empty
-            else pd.DataFrame()
+    if df_prestations is None or df_prestations.empty:
+        if (
+            df_contrats_rattaches is not None
+            and not df_contrats_rattaches.empty
+            and "contract_reference" in df_contrats_rattaches.columns
+        ):
+            source = (
+                df_contrats_rattaches
+                .drop_duplicates("contract_reference")
+                .copy()
+            )
+            return normaliser_contrats(source)
+
+        return pd.DataFrame(
+            columns=[
+                "contract_reference",
+                "contract_status",
+                "contract_status_clean",
+            ]
         )
 
     source = df_prestations.copy()
     if "contract_reference_3f" not in source.columns:
-        return pd.DataFrame()
+        return pd.DataFrame(
+            columns=[
+                "contract_reference",
+                "contract_status",
+                "contract_status_clean",
+            ]
+        )
 
     source = source[source["contract_reference_3f"].notna()].copy()
     source = source.sort_values(
@@ -4764,20 +4805,38 @@ def construire_contrats_uniques_source(
         columns={"contract_reference_3f": "contract_reference"}
     )
 
+    # Sécurité : la colonne utilisée par les graphiques doit toujours exister.
+    if "contract_status_clean" not in source.columns:
+        source = normaliser_contrats(source)
+
     # On complète seulement avec les informations patrimoniales réellement présentes.
-    if not df_contrats_rattaches.empty and "contract_reference" in df_contrats_rattaches.columns:
+    if (
+        df_contrats_rattaches is not None
+        and not df_contrats_rattaches.empty
+        and "contract_reference" in df_contrats_rattaches.columns
+    ):
         rattachements = (
             df_contrats_rattaches.sort_values(
-                [c for c in ["contract_reference", "esi_reference"] if c in df_contrats_rattaches.columns],
+                [
+                    c
+                    for c in ["contract_reference", "esi_reference"]
+                    if c in df_contrats_rattaches.columns
+                ],
                 na_position="last",
             )
             .drop_duplicates("contract_reference")
             .copy()
         )
         colonnes_rattachement = [
-            c for c in [
-                "contract_reference", "societe", "agence", "groupe",
-                "secteur", "esi_reference", "esi_label",
+            c
+            for c in [
+                "contract_reference",
+                "societe",
+                "agence",
+                "groupe",
+                "secteur",
+                "esi_reference",
+                "esi_label",
             ]
             if c in rattachements.columns
         ]
@@ -4926,15 +4985,22 @@ def filtrer_table_par_esi(
     dataframe: pd.DataFrame,
     df_esi_perimetre: pd.DataFrame,
 ) -> pd.DataFrame:
-    """Restreint une table au périmètre réel des ESI sélectionnés."""
-    if dataframe.empty or "esi_reference" not in dataframe.columns:
-        return dataframe.copy()
+    """
+    Restreint une table au périmètre réel des ESI sélectionnés.
+
+    Important : pas de .copy() profond ici. Avec Copy-on-Write, le filtre
+    reste isolé lors d'une modification ultérieure sans dupliquer immédiatement
+    tous les blocs du DataFrame.
+    """
+    if dataframe is None or dataframe.empty or "esi_reference" not in dataframe.columns:
+        return dataframe
 
     refs = set(liste_refs_valides(df_esi_perimetre, "esi_reference"))
     if not refs:
-        return dataframe.iloc[0:0].copy()
+        return dataframe.iloc[0:0]
 
-    return dataframe[dataframe["esi_reference"].isin(refs)].copy()
+    masque = dataframe["esi_reference"].isin(refs)
+    return dataframe.loc[masque]
 
 
 def construire_presence_metiers(
@@ -8865,11 +8931,17 @@ if vue_active == "Vue globale":
             contrats_uniques = df_contrats_source_kpi.drop_duplicates(
                 "contract_reference"
             ).copy()
+
+            # Un périmètre peut légitimement contenir 0 contrat.
+            # Dans ce cas, le graphique doit afficher 0/0 au lieu de planter.
+            if "contract_status_clean" not in contrats_uniques.columns:
+                contrats_uniques = normaliser_contrats(contrats_uniques)
+
             nb_actifs = int(
-                (contrats_uniques["contract_status_clean"] == "active").sum()
+                contrats_uniques["contract_status_clean"].eq("active").sum()
             )
             nb_inactifs = int(
-                (contrats_uniques["contract_status_clean"] != "active").sum()
+                (~contrats_uniques["contract_status_clean"].eq("active")).sum()
             )
 
             if go is None:
