@@ -1,0 +1,6 @@
+.tmp/
+__pycache__/
+*.pyc
+logs/
+interventions_3f.csv
+interventions_log_3f.csv
