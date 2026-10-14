@@ -2134,3 +2134,196 @@
 # #         print(e)
 
 # #     time.sleep(5)
+
+
+# Test pour récupérer les interventions actives
+# import sys
+
+# from services.operations_active import get_active_operations
+
+
+# def main():
+#     try:
+#         get_active_operations()
+#         return 0
+
+#     except KeyboardInterrupt:
+#         print("\nSynchronisation arrêtée par l'utilisateur.")
+#         return 130
+
+#     except Exception as error:
+#         print(f"\nErreur pendant la synchronisation : {error}")
+#         raise
+
+
+# if __name__ == "__main__":
+#     sys.exit(main())
+
+
+# Test pour récupérer les interventions closed
+# import sys
+
+# from services.operations_closed import get_closed_operations
+
+
+# def main():
+#     try:
+#         get_closed_operations()
+#         return 0
+
+#     except KeyboardInterrupt:
+#         print("\nSynchronisation des opérations clôturées arrêtée.")
+#         return 130
+
+#     except Exception as error:
+#         print(
+#             "\nErreur pendant la synchronisation "
+#             f"des opérations clôturées : {error}"
+#         )
+#         raise
+
+
+# if __name__ == "__main__":
+#     sys.exit(main())
+
+# Code pour tester les interventions denied
+
+# import sys
+
+# from services.operations_denied import get_denied_operations
+
+
+# def main():
+#     try:
+#         get_denied_operations()
+#         return 0
+
+#     except KeyboardInterrupt:
+#         print("\nSynchronisation arrêtée par l'utilisateur.")
+#         print(
+#             "Tu peux relancer le programme : "
+#             "le chargement reprendra au dernier point sauvegardé."
+#         )
+#         return 130
+
+#     except Exception as error:
+#         print(
+#             "\nErreur pendant la synchronisation "
+#             f"des opérations refusées : {error}"
+#         )
+#         raise
+
+
+# if __name__ == "__main__":
+#     sys.exit(main())
+
+
+# Code pour tester les nouveaux synchro des opérations
+# from services.operations_sync import sync_operations
+
+
+# def main():
+
+#     print("\n===== SYNCHRONISATION DES OPERATIONS =====")
+
+#     sync_operations()
+
+#     print("\n===== SYNCHRONISATION TERMINEE =====")
+
+
+# if __name__ == "__main__":
+#     main()
+
+# Code pour tester les donnée reconciliation
+# from services.reconcile_operations_all import (
+#     reconcile_all_operations,
+# )
+
+
+# if __name__ == "__main__":
+#     reconcile_all_operations()
+
+#  Code pour tester le système de MAJ
+# import sys
+
+# from services.operations_reliable_sync import (
+#     init_support_tables,
+#     run_daily,
+#     run_fast_reconcile,
+#     run_full_certification,
+# )
+
+
+# def main():
+#     """
+#     Modes :
+#       python main.py daily      -> mise à jour incrémentale rapide et sûre
+#       python main.py reconcile  -> contrôle mensuel rapide + réparation des écarts
+#       python main.py certify    -> contrôle exact des operation_key sur l'historique
+#     """
+
+#     init_support_tables()
+
+#     mode = sys.argv[1].lower() if len(sys.argv) > 1 else "daily"
+
+#     if mode == "daily":
+#         run_daily()
+
+#     elif mode == "reconcile":
+#         run_fast_reconcile()
+
+#     elif mode == "certify":
+#         run_full_certification()
+
+#     else:
+#         raise SystemExit(
+#             "Mode inconnu. Utilise : daily | reconcile | certify"
+#         )
+
+
+# if __name__ == "__main__":
+#     main()
+
+# Code pour tester les assets enrichements
+import argparse
+
+from services.operations_asset_enrichment import (
+    run_operations_asset_enrichment,
+)
+
+
+def main():
+    parser = argparse.ArgumentParser(
+        description=(
+            "Enrichit les assets utilisés par les opérations "
+            "dans asset_path_current et asset_nodes_current."
+        )
+    )
+
+    parser.add_argument(
+        "--limit",
+        type=int,
+        default=None,
+        help=(
+            "Nombre maximum d'asset_reference d'opérations à contrôler. "
+            "Exemple : python main_asset_enrichment.py --limit 20"
+        ),
+    )
+
+    args = parser.parse_args()
+
+    if (
+        args.limit is not None
+        and args.limit <= 0
+    ):
+        parser.error(
+            "--limit doit être supérieur à 0."
+        )
+
+    run_operations_asset_enrichment(
+        limit=args.limit
+    )
+
+
+if __name__ == "__main__":
+    main()

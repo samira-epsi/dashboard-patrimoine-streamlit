@@ -1,6 +1,23 @@
-.tmp/
+# Secrets et identifiants
+.env
+.env.*
+!.env.example
+.streamlit/secrets.toml
+
+# Python
 __pycache__/
 *.pyc
+.venv/
+venv/
+
+# Fichiers temporaires
+.tmp/
+*.tmp
 logs/
+**/logs/
+*.log
+
+# Données générées
 interventions_3f.csv
 interventions_log_3f.csv
+failed_nodes.csv
