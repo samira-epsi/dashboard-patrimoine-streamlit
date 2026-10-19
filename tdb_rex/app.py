@@ -18,7 +18,7 @@ from services import queries as q
 from services import fr
 from services import colf, colui
 
-st.set_page_config(page_title="Pilotage REX | Vue globale", page_icon="📊", layout="wide",
+st.set_page_config(page_title="Pilotage de l'activité du patrimoine", page_icon="📊", layout="wide",
                    initial_sidebar_state="auto")
 st.markdown(f"<style>{(Path(__file__).parent / 'styles' / 'theme.css').read_text(encoding='utf-8')}</style>",
             unsafe_allow_html=True)

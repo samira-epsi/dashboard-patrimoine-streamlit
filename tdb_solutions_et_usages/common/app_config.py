@@ -12,7 +12,7 @@ def setup_page(title="Dashboard Patrimoine", icon="🏢"):
         initial_sidebar_state="expanded"
     )
 
-    st.logo("assets/Logo.png")
+    st.logo("tdb_solutions_et_usages/assets/Logo.png")
 
 
 @st.cache_resource

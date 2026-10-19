@@ -23,9 +23,9 @@ try:
 except ImportError:
     go = None
 
-from common.app_config import setup_page
-from common.ui_style import apply_3f_page_style
-from common.filters import render_filtres_patrimoine
+from tdb_solutions_et_usages.common.app_config import setup_page
+from tdb_solutions_et_usages.common.ui_style import apply_3f_page_style
+from tdb_solutions_et_usages.common.filters import render_filtres_patrimoine
 from config import DB_URL
 
 
