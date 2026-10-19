@@ -4,7 +4,7 @@ pandas
 sqlalchemy
 psycopg2-binary
 plotly
-openpyxl
+
 
 # API Intent et pipelines
 requests
